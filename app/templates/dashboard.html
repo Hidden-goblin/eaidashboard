@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block contenu %}
+<div class="container">
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">Project</th>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">Version</th>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">Status</th>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">Started</th>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">End forecast</th>
+            <th scope="col" colspan="6" style="text-align:center;">Tickets</th>
+            <th scope="col" colspan="3" style="text-align:center;">Open Bugs</th>
+            <th scope="col" colspan="3" style="text-align:center;">Closed Bugs</th>
+        </tr>
+        <tr>
+            <th scope="col">Open</th>
+            <th scope="col">In Progress</th>
+            <th scope="col">Blocked</th>
+            <th scope="col">Out of scope</th>
+            <th scope="col">Done</th>
+            <th scope="col">Total</th>
+            <th scope="col">Blocking</th>
+            <th scope="col">Major</th>
+            <th scope="col">Minor</th>
+            <th scope="col">Blocking</th>
+            <th scope="col">Major</th>
+            <th scope="col">Minor</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in project_version %}
+        <tr>
+            <td>{{item.name}}</td>
+            <td>{{item.version}}</td>
+            <td>{{item.status}}</td>
+            <td>{{item.started.strftime("%Y-%m-%d") if item.started}}</td>
+            <td>{{item.end_forecast.strftime("%Y-%m-%d") if item.end_forecast}}</td>
+            <td>{{item.tickets.open}}</td>
+            <td>{{item.tickets.in_progress}}</td>
+            <td>{{item.tickets.blocked}}</td>
+            <td>{{item.tickets.cancelled}}</td>
+            <td>{{item.tickets.done}}</td>
+            <td>{{item.tickets.open + item.tickets.in_progress + item.tickets.blocked + item.tickets.cancelled + item.tickets.done}}</td>
+            <td>{{item.bugs.open_blocking}}</td>
+            <td>{{item.bugs.open_major}}</td>
+            <td>{{item.bugs.open_minor}}</td>
+            <td>{{item.bugs.closed_blocking}}</td>
+            <td>{{item.bugs.closed_major}}</td>
+            <td>{{item.bugs.closed_minor}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
