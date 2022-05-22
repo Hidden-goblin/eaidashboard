@@ -32,10 +32,6 @@ def create_project_version(project: RegisterVersion):
     if db[DashCollection.FUTURE.value].find_one({"version": proj["version"]}):
         raise DuplicateFutureVersion(f"Existing future version of {version}")
 
-    # Create index if not exist
-    if "version" not in db[DashCollection.FUTURE.value].index_information():
-        db[DashCollection.FUTURE.value].create_index("version", name="version", unique=True)
-
     return db[DashCollection.FUTURE.value].insert_one(Version(version=proj["version"],
                                                               created=datetime.now(),
                                                               updated=datetime.now(),

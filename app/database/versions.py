@@ -118,32 +118,20 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
     client = MongoClient(mongo_string)
     db = client[project_name]
     document = db[_collection].find_one({"version": _version}, projection={"_id": False})
-    del db
     if StatusEnum(to_be_status) not in authorized_transition[StatusEnum(document["status"])]:
         raise StatusTransitionForbidden("Transition is not accepted")
 
     # Check is moving from collection?
     if StatusEnum(to_be_status) == StatusEnum.ARCHIVED:
-        print(f"enter as to be status is {to_be_status}")
-        db = client[project_name]
-        # Create index if not exist
-        if "version" not in db[DashCollection.ARCHIVED.value].index_information():
-            db[DashCollection.ARCHIVED.value].create_index("version", name="version", unique=True)
         document["status"] = StatusEnum.ARCHIVED.value
         document["updated"] = datetime.now()
         result = db[DashCollection.ARCHIVED.value].insert_one(document)
         if not result.acknowledged:
             raise UpdateException("Cannot update the document")
-        del db
-        db = client[project_name]
         db[_collection].delete_one({"version": _version})
         return db[DashCollection.ARCHIVED.value].find_one({"version": _version},
                                                           projection={"_id": False})
     if StatusEnum(document["status"]) == StatusEnum.RECORDED:
-        # Create index if not exist
-        db = client[project_name]
-        if "version" not in db[DashCollection.CURRENT.value].index_information():
-            db[DashCollection.CURRENT.value].create_index("version", name="version", unique=True)
         document["status"] = StatusEnum(to_be_status).value
         document["updated"] = datetime.now()
         result = db[DashCollection.CURRENT.value].insert_one(document)
