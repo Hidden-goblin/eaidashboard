@@ -122,9 +122,6 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
 
     # Check is moving from collection?
     if StatusEnum(to_be_status) == StatusEnum.ARCHIVED:
-        # Create index if not exist
-        if "version" not in db["archived"].index_information():
-            db["archived"].create_index("version", name="version", unique=True)
         result = db["archived"].insert_one(document)
         if not result.acknowledged:
             raise UpdateException("Cannot update the document")
@@ -134,9 +131,6 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
         db[_collection].delete_one({"version": _version})
         return db["archived"].find_one({"version": _version}, projection={"_id": False})
     if StatusEnum(document["status"]) == StatusEnum.RECORDED:
-        # Create index if not exist
-        if "version" not in db["current"].index_information():
-            db["current"].create_index("version", name="version", unique=True)
         result = db["current"].insert_one(document)
         if not result.acknowledged:
             raise UpdateException("Cannot update the document")

@@ -20,3 +20,14 @@ def register_project(project_name: str):
         collection = db.projects
         collection.insert_one({"name": project_name.casefold()})
     return project_name.casefold()
+
+
+def set_index(project_name: str):
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    if "version" not in db["archived"].index_information():
+        db["archived"].create_index("version", name="version", unique=True)
+    if "version" not in db["current"].index_information():
+        db["current"].create_index("version", name="version", unique=True)
+    if "version" not in db["future"].index_information():
+        db["future"].create_index("version", name="version", unique=True)

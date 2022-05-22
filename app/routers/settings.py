@@ -3,11 +3,12 @@
 from datetime import datetime
 from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, Depends, Response, Security
+from fastapi import APIRouter, HTTPException, Depends, Response, Security, BackgroundTasks
 from pymongo import MongoClient
 
 from app.database import settings
 from app.schema.project_schema import Project
+from app.database.settings import set_index
 
 router = APIRouter(
     prefix="/api/v1/settings"
@@ -17,8 +18,10 @@ router = APIRouter(
 @router.post("/projects",
              response_model=Project,
              tags=["Settings"])
-async def post_register_projets(project: dict):
-    return {"name": settings.register_project(project["name"])}
+async def post_register_projets(project: dict, background_task: BackgroundTasks):
+    _project_name = settings.register_project(project["name"])
+    background_task.add_task(set_index, _project_name)
+    return {"name": _project_name}
 
 
 @router.get("/projects",

@@ -31,10 +31,6 @@ def create_project_version(project: RegisterVersion):
     if db["future"].find_one({"version": proj["version"]}):
         raise DuplicateFutureVersion(f"Existing future version of {version}")
 
-    # Create index if not exist
-    if "version" not in db["future"].index_information():
-        db["future"].create_index("version", name="version", unique=True)
-
     return db["future"].insert_one(Version(version=proj["version"],
                                            created=datetime.now(),
                                            updated=datetime.now(),
