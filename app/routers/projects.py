@@ -10,6 +10,7 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
+from app.database.db_settings import DashCollection
 from app.database.projects import create_project_version, get_project
 from app.database.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
@@ -41,9 +42,12 @@ async def projects(response: Response,
     db_names.sort()
     db_names = db_names[skip:limit]
     return [{"name": db_name,
-             "current": client[db_name]["current"].count_documents({}),
-             "future": client[db_name]["future"].count_documents({}),
-             "archive": client[db_name]["archive"].count_documents({})}
+             DashCollection.CURRENT.value: client[db_name][
+                 DashCollection.CURRENT.value].count_documents({}),
+             DashCollection.FUTURE.value: client[db_name][
+                 DashCollection.FUTURE.value].count_documents({}),
+             DashCollection.ARCHIVED.value: client[db_name][
+                 DashCollection.ARCHIVED.value].count_documents({})}
             for db_name in db_names]
 
 
@@ -129,7 +133,7 @@ async def version_details(project_name: str, version: str):
 async def update_version(project_name: str, version: str, body: UpdateVersion):
     result = None
     if "status" in body.dict() and body.dict()["status"] is not None:
-        result = update_version_status(project_name, version, body["status"])
+        result = update_version_status(project_name, version, body.dict()["status"])
     # Check it's ok :/
 
     return update_version_data(project_name.casefold(), version.casefold(), body)

@@ -27,6 +27,17 @@ class StatusEnum(Enum):
         return self.value
 
 
+class TicketType(Enum):
+    OPEN = "open"
+    CANCELLED = "cancelled"
+    BLOCKED = "blocked"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+
+    def __str__(self):
+        return self.value
+
+
 class Tickets(BaseModel):
     open: int
     cancelled: int
@@ -70,6 +81,7 @@ class UpdateVersion(BaseModel):
     tickets: Optional[UpdateTickets]
     bugs: Optional[Bugs]
 
+
 class TicketVersion(BaseModel):
     version: str
     created: datetime
@@ -85,6 +97,7 @@ class Project(BaseModel):
     future: Optional[int]
     current: Optional[int]
     archived: Optional[int]
+
 
 class TicketProject(BaseModel):
     name: str
