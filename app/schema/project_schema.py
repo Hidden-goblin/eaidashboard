@@ -113,5 +113,9 @@ class RegisterVersion(BaseModel):
     cancelled: Optional[int]
 
 
+class RegisterProject(BaseModel):
+    name: str
+
+
 class ErrorMessage(BaseModel):
     detail: str
