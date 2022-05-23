@@ -12,7 +12,12 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateInProgressVersion)
 from app.database.projects import create_project_version, get_project
 from app.database.versions import get_version, update_version_data, update_version_status
-from app.schema.project_schema import ErrorMessage, Project, RegisterVersion, UpdateVersion, Version
+from app.schema.project_schema import (ErrorMessage,
+                                       Project,
+                                       RegisterVersion,
+                                       UpdateVersion,
+                                       Version,
+                                       TicketProject)
 from app.conf import mongo_string
 
 router = APIRouter(
@@ -66,7 +71,7 @@ async def post_projects(project: RegisterVersion):
 
 
 @router.get("/projects/{project_name}",
-            response_model=Project,
+            response_model=TicketProject,
             responses={
                 404: {"model": ErrorMessage,
                       "description": "Project name is not registered (ignore case)"}
@@ -123,7 +128,7 @@ async def version_details(project_name: str, version: str):
             )
 async def update_version(project_name: str, version: str, body: UpdateVersion):
     result = None
-    if "status" in body:
+    if "status" in body.dict() and body.dict()["status"] is not None:
         result = update_version_status(project_name, version, body["status"])
     # Check it's ok :/
 
