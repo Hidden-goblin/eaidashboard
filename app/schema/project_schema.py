@@ -70,6 +70,15 @@ class UpdateVersion(BaseModel):
     tickets: Optional[UpdateTickets]
     bugs: Optional[Bugs]
 
+class TicketVersion(BaseModel):
+    version: str
+    created: datetime
+    updated: datetime
+    started: Optional[datetime]
+    end_forecast: Optional[datetime]
+    status: str
+    tickets: Tickets
+        
 
 class Project(BaseModel):
     name: str
@@ -77,7 +86,13 @@ class Project(BaseModel):
     current: Optional[int]
     archived: Optional[int]
 
-
+class TicketProject(BaseModel):
+    name: str
+    future: Optional[List[TicketVersion]]
+    current: Optional[List[TicketVersion]]
+    archived: Optional[List[TicketVersion]]
+        
+        
 class RegisterVersion(BaseModel):
     project: str
     version: str
