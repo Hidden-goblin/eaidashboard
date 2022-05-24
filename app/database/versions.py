@@ -6,11 +6,12 @@ import dpath.util
 from pymongo import MongoClient
 from dpath.util import merge as dp_merge
 
-from app.app_exception import ProjectNotRegistered, StatusTransitionForbidden, \
+from app.app_exception import IncorrectTicketCount, ProjectNotRegistered, StatusTransitionForbidden, \
     UnknownStatusException, UpdateException
 from app.conf import mongo_string
+from app.database.db_settings import DashCollection
 from app.database.settings import registered_projects
-from app.schema.project_schema import Bugs, StatusEnum, UpdateTickets, UpdateVersion
+from app.schema.project_schema import Bugs, StatusEnum, Tickets, UpdateTickets, UpdateVersion
 
 
 def clean_update_version(body: UpdateVersion) -> dict:
@@ -39,16 +40,16 @@ def get_version_and_collection(project_name: str, version: str):
 
     client = MongoClient(mongo_string)
     db = client[project_name]
-    current = db["current"]
-    future = db["future"]
-    archived = db["archived"]
+    current = db[DashCollection.CURRENT.value]
+    future = db[DashCollection.FUTURE.value]
+    archived = db[DashCollection.ARCHIVED.value]
 
     if current.find_one({"version": version.casefold()}):
-        return version.casefold(), "current"
+        return version.casefold(), DashCollection.CURRENT.value
     if future.find_one({"version": version.casefold()}):
-        return version.casefold(), "future"
+        return version.casefold(), DashCollection.FUTURE.value
     if archived.find_one({"version": version.casefold()}):
-        return version.casefold(), "archived"
+        return version.casefold(), DashCollection.ARCHIVED.value
 
     return None, None
 
@@ -117,35 +118,41 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
     client = MongoClient(mongo_string)
     db = client[project_name]
     document = db[_collection].find_one({"version": _version}, projection={"_id": False})
+    del db
     if StatusEnum(to_be_status) not in authorized_transition[StatusEnum(document["status"])]:
         raise StatusTransitionForbidden("Transition is not accepted")
 
     # Check is moving from collection?
     if StatusEnum(to_be_status) == StatusEnum.ARCHIVED:
+        print(f"enter as to be status is {to_be_status}")
+        db = client[project_name]
         # Create index if not exist
-        if "version" not in db["archived"].index_information():
-            db["archived"].create_index("version", name="version", unique=True)
-        result = db["archived"].insert_one(document)
+        if "version" not in db[DashCollection.ARCHIVED.value].index_information():
+            db[DashCollection.ARCHIVED.value].create_index("version", name="version", unique=True)
+        document["status"] = StatusEnum.ARCHIVED.value
+        document["updated"] = datetime.now()
+        result = db[DashCollection.ARCHIVED.value].insert_one(document)
         if not result.acknowledged:
             raise UpdateException("Cannot update the document")
-        db["archived"].update_one({"version": _version},
-                                  {"$set": {"status": StatusEnum.ARCHIVED.value,
-                                            "updated": datetime.now()}})
+        del db
+        db = client[project_name]
         db[_collection].delete_one({"version": _version})
-        return db["archived"].find_one({"version": _version}, projection={"_id": False})
+        return db[DashCollection.ARCHIVED.value].find_one({"version": _version},
+                                                          projection={"_id": False})
     if StatusEnum(document["status"]) == StatusEnum.RECORDED:
         # Create index if not exist
-        if "version" not in db["current"].index_information():
-            db["current"].create_index("version", name="version", unique=True)
-        result = db["current"].insert_one(document)
+        db = client[project_name]
+        if "version" not in db[DashCollection.CURRENT.value].index_information():
+            db[DashCollection.CURRENT.value].create_index("version", name="version", unique=True)
+        document["status"] = StatusEnum(to_be_status).value
+        document["updated"] = datetime.now()
+        result = db[DashCollection.CURRENT.value].insert_one(document)
         if not result.acknowledged:
             raise UpdateException("Cannot update the document")
-        db["current"].update_one({"version": _version},
-                                 {"$set": {"status": StatusEnum(to_be_status).value,
-                                           "updated": datetime.now()}})
         db[_collection].delete_one({"version": _version})
-        return db["current"].find_one({"version": _version}, projection={"_id": False})
-
+        return db[DashCollection.CURRENT.value].find_one({"version": _version},
+                                                         projection={"_id": False})
+    db = client[project_name]
     db[_collection].update_one({"version": _version},
                                {"$set": {"status": StatusEnum(to_be_status).value,
                                          "updated": datetime.now()}})
@@ -177,11 +184,29 @@ def dashboard():
     result = []
     for project in projects:
         db = client[project]
-        current = db["current"].find({}, projection={"_id": False})
-        future = db["future"].find({}, projection={"_id": False})
+        current = db[DashCollection.CURRENT.value].find({}, projection={"_id": False})
+        future = db[DashCollection.FUTURE.value].find({}, projection={"_id": False})
 
         result.extend({"name": project, **cur} for cur in current)
 
         result.extend({"name": project, **fut} for fut in future)
 
     return result
+
+
+def move_tickets(project_name, version, ticket_type, ticket_dispatch):
+    _version = get_version(project_name, version)
+    _base_type = _version["tickets"][ticket_type.value]
+    to_subtract = sum([value for key, value in ticket_dispatch.dict().items()
+                        if key != ticket_type.value])
+    if _base_type + ticket_dispatch.dict()[ticket_type.value] - to_subtract < 0:
+        raise IncorrectTicketCount("Dispatch error")
+    _base_tickets = Tickets(**_version["tickets"]).dict()
+    for key, value in ticket_dispatch.dict().items():
+        if key == ticket_type.value:
+            _base_tickets[key] += value
+        else:
+            _base_tickets[ticket_type.value] -= value
+            _base_tickets[key] += value
+
+    return update_version_data(project_name, version, UpdateVersion(tickets=Tickets(**_base_tickets)))

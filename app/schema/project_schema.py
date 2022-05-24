@@ -27,6 +27,17 @@ class StatusEnum(Enum):
         return self.value
 
 
+class TicketType(Enum):
+    OPEN = "open"
+    CANCELLED = "cancelled"
+    BLOCKED = "blocked"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+
+    def __str__(self):
+        return self.value
+
+
 class Tickets(BaseModel):
     open: int
     cancelled: int
@@ -71,6 +82,16 @@ class UpdateVersion(BaseModel):
     bugs: Optional[Bugs]
 
 
+class TicketVersion(BaseModel):
+    version: str
+    created: datetime
+    updated: datetime
+    started: Optional[datetime]
+    end_forecast: Optional[datetime]
+    status: str
+    tickets: Tickets
+        
+
 class Project(BaseModel):
     name: str
     future: Optional[int]
@@ -78,6 +99,13 @@ class Project(BaseModel):
     archived: Optional[int]
 
 
+class TicketProject(BaseModel):
+    name: str
+    future: Optional[List[TicketVersion]]
+    current: Optional[List[TicketVersion]]
+    archived: Optional[List[TicketVersion]]
+        
+        
 class RegisterVersion(BaseModel):
     project: str
     version: str

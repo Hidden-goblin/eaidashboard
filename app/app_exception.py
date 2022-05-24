@@ -27,3 +27,7 @@ class DuplicateInProgressVersion(Exception):
 
 class DuplicateFutureVersion(Exception):
     pass
+
+
+class IncorrectTicketCount(Exception):
+    pass
