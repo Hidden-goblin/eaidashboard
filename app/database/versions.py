@@ -185,16 +185,15 @@ def dashboard():
 def move_tickets(project_name, version, ticket_type, ticket_dispatch):
     _version = get_version(project_name, version)
     _base_type = _version["tickets"][ticket_type.value]
-    to_subtract = sum([value for key, value in ticket_dispatch.dict().items()
-                        if key != ticket_type.value])
+    to_subtract = sum(
+        value for key, value in ticket_dispatch.dict().items() if key != ticket_type.value)
+
     if _base_type + ticket_dispatch.dict()[ticket_type.value] - to_subtract < 0:
         raise IncorrectTicketCount("Dispatch error")
     _base_tickets = Tickets(**_version["tickets"]).dict()
     for key, value in ticket_dispatch.dict().items():
-        if key == ticket_type.value:
-            _base_tickets[key] += value
-        else:
+        if key != ticket_type.value:
             _base_tickets[ticket_type.value] -= value
-            _base_tickets[key] += value
-
-    return update_version_data(project_name, version, UpdateVersion(tickets=Tickets(**_base_tickets)))
+        _base_tickets[key] += value
+    return update_version_data(project_name, version,
+                               UpdateVersion(tickets=Tickets(**_base_tickets)))

@@ -9,6 +9,7 @@ from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
+from app.database.authorization import authorize_user
 from app.database.db_settings import DashCollection
 from app.database.projects import create_project_version, get_project
 from app.database.versions import get_version, move_tickets, update_version_data, \
@@ -40,7 +41,8 @@ router = APIRouter(
 async def put_tickets(project_name: str,
                       version: str,
                       ticket_type: TicketType,
-                      ticket_dispatch: Tickets):
+                      ticket_dispatch: Tickets,
+                      user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
         return move_tickets(project_name, version, ticket_type, ticket_dispatch)
     except ProjectNotRegistered as pnr:

@@ -10,6 +10,7 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
+from app.database.authorization import authorize_user
 from app.database.db_settings import DashCollection
 from app.database.projects import create_project_version, get_project
 from app.database.versions import get_version, update_version_data, update_version_status
@@ -31,7 +32,8 @@ router = APIRouter(
             tags=["Projects"])
 async def projects(response: Response,
                    skip: int = 0,
-                   limit: int = 100):
+                   limit: int = 100,
+                   user: Any = Security(authorize_user, scopes=["admin", "user"])):
     client = MongoClient(mongo_string)
     db_names = client.list_database_names()
     db_names.pop(db_names.index("admin")) if 'admin' in db_names else None
@@ -60,7 +62,8 @@ async def projects(response: Response,
                        "description": "version already exist"}
              },
              tags=["Projects"])
-async def post_projects(project: RegisterVersion):
+async def post_projects(project: RegisterVersion,
+                        user: Any = Security(authorize_user, scopes=["admin"])):
     try:
         result = create_project_version(project)
         return str(result.inserted_id)
@@ -83,7 +86,8 @@ async def post_projects(project: RegisterVersion):
             tags=["Projects"]
             )
 async def one_project(project_name: str,
-                      sections: Union[List[str], None] = Query(default=None)):
+                      sections: Union[List[str], None] = Query(default=None),
+                      user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
         return get_project(project_name.casefold(), sections)
     except ProjectNotRegistered as pnr:
@@ -97,7 +101,9 @@ async def one_project(project_name: str,
                       "description": "Project name is not registered (ignore case)"}
             },
             tags=["Versions"])
-async def version_details(project_name: str, version: str):
+async def version_details(project_name: str,
+                          version: str,
+                          user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
         return get_version(project_name.casefold(), version.casefold())
     except ProjectNotRegistered as pnr:
@@ -130,7 +136,10 @@ async def version_details(project_name: str, version: str):
    - archived
             """
             )
-async def update_version(project_name: str, version: str, body: UpdateVersion):
+async def update_version(project_name: str,
+                         version: str,
+                         body: UpdateVersion,
+                         user: Any = Security(authorize_user, scopes=["admin", "user"])):
     result = None
     if "status" in body.dict() and body.dict()["status"] is not None:
         result = update_version_status(project_name, version, body.dict()["status"])

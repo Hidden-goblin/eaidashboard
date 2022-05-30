@@ -3,10 +3,13 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app.database.users import init_user
 from app.routers import (projects,
                          settings,
                          front_dashboard,
-                         version)
+                         version,
+                         users,
+                         auth)
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
 """
@@ -24,3 +27,7 @@ app.include_router(projects.router)
 app.include_router(settings.router)
 app.include_router(front_dashboard.router)
 app.include_router(version.router)
+app.include_router(auth.router)
+app.include_router(users.router)
+
+init_user()

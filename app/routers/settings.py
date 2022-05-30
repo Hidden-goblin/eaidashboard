@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends, Response, Security, Backg
 from pymongo import MongoClient
 
 from app.database import settings
+from app.database.authorization import authorize_user
 from app.schema.project_schema import Project, RegisterProject
 from app.database.settings import set_index
 
@@ -18,7 +19,9 @@ router = APIRouter(
 @router.post("/projects",
              response_model=Project,
              tags=["Settings"])
-async def post_register_projets(project: RegisterProject, background_task: BackgroundTasks):
+async def post_register_projets(project: RegisterProject,
+                                background_task: BackgroundTasks,
+                                user: Any = Security(authorize_user, scopes=["admin"])):
     _project_name = settings.register_project(project["name"])
     background_task.add_task(set_index, _project_name)
     return {"name": _project_name}
@@ -28,5 +31,5 @@ async def post_register_projets(project: RegisterProject, background_task: Backg
             response_model=List[str],
             tags=["Settings"]
             )
-async def get_registered_projects():
+async def get_registered_projects(user: Any = Security(authorize_user, scopes=["admin", "user"])):
     return settings.registered_projects()
