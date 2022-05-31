@@ -51,4 +51,13 @@ def authorize_user(security_scopes: SecurityScopes,
             detail="Not enough permissions",
             headers={"WWW-Authenticate": authenticate_value},
         )
+    # Check disconnected
+    to_disable = db["token"].find_one({"username": email})
+    if to_disable is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Reconnect",
+            headers={"WWW-Authenticate": authenticate_value},
+        )
+
     return user

@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app.database.authentication import init_user_token
 from app.database.users import init_user
 from app.routers import (projects,
                          settings,
@@ -31,3 +32,4 @@ app.include_router(auth.router)
 app.include_router(users.router)
 
 init_user()
+init_user_token()

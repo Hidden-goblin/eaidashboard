@@ -3,7 +3,7 @@
 from pymongo import MongoClient
 from datetime import datetime
 from app.conf import mongo_string
-from app.database.authentication import authenticate_user, get_password_hash
+from app.database.authentication import authenticate_user, get_password_hash, revoke
 
 
 def init_user():
@@ -43,7 +43,9 @@ def self_update_user(username, password, new_password):
     user, scope = authenticate_user(username, password)
     if user is None:
         raise Exception("Unrecognized credentials")
-    return update_user(username, new_password)
+    result = update_user(username, new_password)
+    revoke(username)
+    return result
 
 
 def update_user(username, password=None, scopes=None):

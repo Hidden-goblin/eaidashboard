@@ -6,20 +6,24 @@ from fastapi import APIRouter, Security
 
 from app.database.authorization import authorize_user
 from app.database.users import self_update_user, update_user
+from app.schema.users import UpdateMe, UpdateUser
 
 router = APIRouter(
     prefix="/api/v1/users"
 )
 
 
-@router.put("/me")
-async def update_me(body: dict,
+@router.put("/me",
+            tags=["Users"])
+async def update_me(body: UpdateMe,
                     user: Any = Security(authorize_user, scopes=["admin", "user"])):
-    return self_update_user(**{**body, "username": user["username"]})
+    # If success register token with a ttl
+    return self_update_user(**{**body.dict(), "username": user["username"]})
 
 
-@router.post("/")
-async def create_update(body: dict,
+@router.post("/",
+             tags=["Users"])
+async def create_update(body: UpdateUser,
                         user: Any = Security(authorize_user, scopes=["admin"])):
-    result = update_user(**body)
+    result = update_user(**body.dict())
     return result is not None
