@@ -22,7 +22,7 @@ router = APIRouter(
 async def post_register_projets(project: RegisterProject,
                                 background_task: BackgroundTasks,
                                 user: Any = Security(authorize_user, scopes=["admin"])):
-    _project_name = settings.register_project(project["name"])
+    _project_name = settings.register_project(project.dict()["name"])
     background_task.add_task(set_index, _project_name)
     return {"name": _project_name}
 

@@ -23,6 +23,7 @@ app = FastAPI(title="Eaidashboard",
               })
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/assets", StaticFiles(directory="app/assets"), name="assets")
 
 app.include_router(projects.router)
 app.include_router(settings.router)

@@ -5,6 +5,10 @@ class ProjectNotRegistered(Exception):
     pass
 
 
+class VersionNotFound(Exception):
+    pass
+
+
 class UnknownStatusException(Exception):
     pass
 

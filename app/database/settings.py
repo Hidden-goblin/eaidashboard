@@ -3,6 +3,7 @@
 from pymongo import MongoClient
 
 from app.conf import mongo_string
+from app.database.db_settings import DashCollection
 
 
 def registered_projects():
@@ -25,9 +26,13 @@ def register_project(project_name: str):
 def set_index(project_name: str):
     client = MongoClient(mongo_string)
     db = client[project_name]
-    if "version" not in db["archived"].index_information():
-        db["archived"].create_index("version", name="version", unique=True)
-    if "version" not in db["current"].index_information():
-        db["current"].create_index("version", name="version", unique=True)
-    if "version" not in db["future"].index_information():
-        db["future"].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.ARCHIVED.value].index_information():
+        db[DashCollection.ARCHIVED.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.CURRENT.value].index_information():
+        db[DashCollection.CURRENT.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.FUTURE.value].index_information():
+        db[DashCollection.FUTURE.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.TICKETS.value].index_information():
+        db[DashCollection.TICKETS.value].create_index([("version", 1), ("reference", 1)],
+                                                      name="version",
+                                                      unique=True)

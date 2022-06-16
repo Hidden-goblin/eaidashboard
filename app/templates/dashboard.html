@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block contenu %}
+<div id="tickets" class="container"  hx-target="closest div" hx-swap="outerHTML">
+</div>
 <div class="container">
 <table class="table table-bordered table-striped">
     <thead>
@@ -12,6 +14,7 @@
             <th scope="col" colspan="6" style="text-align:center;">Tickets</th>
             <th scope="col" colspan="3" style="text-align:center;">Open Bugs</th>
             <th scope="col" colspan="3" style="text-align:center;">Closed Bugs</th>
+            <th scope="col" rowspan="2" style="vertical-align : middle;text-align:center;">Details</th>
         </tr>
         <tr>
             <th scope="col">Open</th>
@@ -36,21 +39,25 @@
             <td>{{item.status}}</td>
             <td>{{item.started.strftime("%Y-%m-%d") if item.started}}</td>
             <td>{{item.end_forecast.strftime("%Y-%m-%d") if item.end_forecast}}</td>
-            <td>{{item.tickets.open}}</td>
-            <td>{{item.tickets.in_progress}}</td>
-            <td>{{item.tickets.blocked}}</td>
-            <td>{{item.tickets.cancelled}}</td>
-            <td>{{item.tickets.done}}</td>
-            <td>{{item.tickets.open + item.tickets.in_progress + item.tickets.blocked + item.tickets.cancelled + item.tickets.done}}</td>
+            <td>{{item.statistics.open}}</td>
+            <td>{{item.statistics.in_progress}}</td>
+            <td>{{item.statistics.blocked}}</td>
+            <td>{{item.statistics.cancelled}}</td>
+            <td>{{item.statistics.done}}</td>
+            <td>{{item.statistics.open + item.statistics.in_progress + item.statistics.blocked + item.statistics.cancelled + item.statistics.done}}</td>
             <td>{{item.bugs.open_blocking}}</td>
             <td>{{item.bugs.open_major}}</td>
             <td>{{item.bugs.open_minor}}</td>
             <td>{{item.bugs.closed_blocking}}</td>
             <td>{{item.bugs.closed_major}}</td>
             <td>{{item.bugs.closed_minor}}</td>
+            <td><button type="button" class="btn btn-primary"
+                    hx-get="/{{item.name}}/versions/{{item.version}}/tickets"
+                    hx-target="#tickets">+</button></td>
         </tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
+
 {% endblock %}

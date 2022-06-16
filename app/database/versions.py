@@ -6,12 +6,13 @@ import dpath.util
 from pymongo import MongoClient
 from dpath.util import merge as dp_merge
 
-from app.app_exception import IncorrectTicketCount, ProjectNotRegistered, StatusTransitionForbidden, \
-    UnknownStatusException, UpdateException
+from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
+                               StatusTransitionForbidden,
+                               UnknownStatusException, UpdateException)
 from app.conf import mongo_string
 from app.database.db_settings import DashCollection
 from app.database.settings import registered_projects
-from app.schema.project_schema import Bugs, StatusEnum, Tickets, UpdateTickets, UpdateVersion
+from app.schema.project_schema import Bugs, StatusEnum, UpdateTickets, UpdateVersion
 
 
 def clean_update_version(body: UpdateVersion) -> dict:
@@ -77,6 +78,7 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
     if StatusEnum(to_be_status) not in accepted_status:
         raise UnknownStatusException("Status is not accepted")
 
+    # Todo: set definition outside the function
     authorized_transition = {
         StatusEnum.RECORDED: [
             StatusEnum.TEST_PLAN_WRITING,

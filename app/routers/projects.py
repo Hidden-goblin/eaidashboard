@@ -29,7 +29,8 @@ router = APIRouter(
 
 @router.get("/projects",
             response_model=List[Project],
-            tags=["Projects"])
+            tags=["Projects"],
+            description="Retrieve all projects")
 async def projects(response: Response,
                    skip: int = 0,
                    limit: int = 100,
@@ -53,7 +54,25 @@ async def projects(response: Response,
             for db_name in db_names]
 
 
-@router.post("/projects",
+@router.get("/projects/{project_name}",
+            response_model=TicketProject,
+            responses={
+                404: {"model": ErrorMessage,
+                      "description": "Project name is not registered (ignore case)"}
+            },
+            tags=["Projects"],
+            description="Retrieve one specific project details"
+            )
+async def one_project(project_name: str,
+                      sections: Union[List[str], None] = Query(default=None),
+                      user: Any = Security(authorize_user, scopes=["admin", "user"])):
+    try:
+        return get_project(project_name.casefold(), sections)
+    except ProjectNotRegistered as pnr:
+        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+
+
+@router.post("/projects/{project_name}/versions",
              response_model=str,
              responses={
                  404: {"model": ErrorMessage,
@@ -61,11 +80,13 @@ async def projects(response: Response,
                  400: {"model": ErrorMessage,
                        "description": "version already exist"}
              },
-             tags=["Projects"])
-async def post_projects(project: RegisterVersion,
+             tags=["Projects"],
+             description="Create a new version of this project")
+async def post_projects(project_name: str,
+                        project: RegisterVersion,
                         user: Any = Security(authorize_user, scopes=["admin"])):
     try:
-        result = create_project_version(project)
+        result = create_project_version(project_name,project)
         return str(result.inserted_id)
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
@@ -77,30 +98,14 @@ async def post_projects(project: RegisterVersion,
         raise HTTPException(400, detail=" ".join(dipv.args)) from dipv
 
 
-@router.get("/projects/{project_name}",
-            response_model=TicketProject,
-            responses={
-                404: {"model": ErrorMessage,
-                      "description": "Project name is not registered (ignore case)"}
-            },
-            tags=["Projects"]
-            )
-async def one_project(project_name: str,
-                      sections: Union[List[str], None] = Query(default=None),
-                      user: Any = Security(authorize_user, scopes=["admin", "user"])):
-    try:
-        return get_project(project_name.casefold(), sections)
-    except ProjectNotRegistered as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-
-
-@router.get("/projects/{project_name}/{version}",
+@router.get("/projects/{project_name}/versions/{version}",
             response_model=Union[Version, dict],
             responses={
                 404: {"model": ErrorMessage,
                       "description": "Project name is not registered (ignore case)"}
             },
-            tags=["Versions"])
+            tags=["Versions"],
+            description="Retrieve a specific project's version details")
 async def version_details(project_name: str,
                           version: str,
                           user: Any = Security(authorize_user, scopes=["admin", "user"])):
@@ -110,7 +115,7 @@ async def version_details(project_name: str,
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
 
 
-@router.put("/projects/{project_name}/{version}",
+@router.put("/projects/{project_name}/versions/{version}",
             response_model=Version,
             responses={
                 404: {"model": ErrorMessage,

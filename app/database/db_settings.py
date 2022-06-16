@@ -4,6 +4,7 @@ from enum import Enum
 
 
 class DashCollection(Enum):
+    TICKETS = "tickets"
     ARCHIVED = "archived"
     CURRENT = "current"
     FUTURE = "future"

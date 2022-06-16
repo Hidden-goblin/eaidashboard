@@ -1,0 +1,19 @@
+<button type="button" class="btn btn-primary" hx-delete="/clear" hx-swap="innerHTML">Clear</button>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Reference</th>
+            <th>Status</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for ticket in tickets %}
+        <tr>
+            <td>{{ticket.reference}}</td>
+            <td>{{ticket.status}}</td>
+            <td>{{ticket.description}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
