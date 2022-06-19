@@ -1,20 +1,8 @@
-<button type="button" class="btn btn-primary" hx-delete="/clear" hx-swap="innerHTML">Clear</button>
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Reference</th>
-            <th>Status</th>
-            <th>Description</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody id="ticketView" hx-target="closest tr" hx-swap="outerHTML">
-    {% for ticket in tickets %}
-        <tr>
-            <td>{{ticket.reference}}</td>
-            <td>{{ticket.status}}</td>
-            <td>{{ticket.description}}</td>
-            <td>
+<tr>
+    <td>{{ticket.reference}}</td>
+    <td>{{ticket.status}}</td>
+    <td>{{ticket.description}}</td>
+    <td>
         <button class="btn btn-danger"
                 hx-get="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}/edit"
                 hx-trigger="edit"
@@ -30,9 +18,6 @@
                        send cancel to .editing
                      end
                      trigger edit">
-          Edit
+            Edit
         </button>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+</tr>

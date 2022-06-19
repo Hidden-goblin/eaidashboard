@@ -33,8 +33,7 @@ router = APIRouter(
             description="Retrieve all projects")
 async def projects(response: Response,
                    skip: int = 0,
-                   limit: int = 100,
-                   user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                   limit: int = 100):
     client = MongoClient(mongo_string)
     db_names = client.list_database_names()
     db_names.pop(db_names.index("admin")) if 'admin' in db_names else None
@@ -61,11 +60,19 @@ async def projects(response: Response,
                       "description": "Project name is not registered (ignore case)"}
             },
             tags=["Projects"],
-            description="Retrieve one specific project details"
+            description="""Retrieve one specific project details.
+
+**sections** has value in
+
+  - future
+  - archived
+  - current
+            
+denoting the project's version you want to retrieve.
+            """
             )
 async def one_project(project_name: str,
-                      sections: Union[List[str], None] = Query(default=None),
-                      user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                      sections: Union[List[str], None] = Query(default=None)):
     try:
         return get_project(project_name.casefold(), sections)
     except ProjectNotRegistered as pnr:
@@ -81,7 +88,8 @@ async def one_project(project_name: str,
                        "description": "version already exist"}
              },
              tags=["Projects"],
-             description="Create a new version of this project")
+             description="""Create a new version of this project
+Only admin can create new version.""")
 async def post_projects(project_name: str,
                         project: RegisterVersion,
                         user: Any = Security(authorize_user, scopes=["admin"])):
@@ -107,8 +115,7 @@ async def post_projects(project_name: str,
             tags=["Versions"],
             description="Retrieve a specific project's version details")
 async def version_details(project_name: str,
-                          version: str,
-                          user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                          version: str):
     try:
         return get_version(project_name.casefold(), version.casefold())
     except ProjectNotRegistered as pnr:
@@ -122,7 +129,7 @@ async def version_details(project_name: str,
                       "description": "Project name is not registered (ignore case)"}
             },
             tags=["Versions"],
-            description=f"""Update the project-version on status, issues and bugs.
+            description="""Update the project-version on status, issues and bugs.
             
 **started** and **end_forecast** are dates in YYY-mm-dd format.
             
@@ -139,7 +146,8 @@ async def version_details(project_name: str,
    - ter sent
    - cancelled 
    - archived
-            """
+            
+Only admin or user can update a version"""
             )
 async def update_version(project_name: str,
                          version: str,

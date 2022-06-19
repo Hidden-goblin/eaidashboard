@@ -62,6 +62,13 @@ class ToBeTicket(BaseModel):
     updated: datetime = datetime.now()
 
 
+class UpdatedTicket(BaseModel):
+    description: Optional[str]
+    status: Optional[str]
+    version: Optional[str]
+    updated: datetime = datetime.now()
+
+
 class UpdateTickets(BaseModel):
     open: Optional[int]
     cancelled: Optional[int]

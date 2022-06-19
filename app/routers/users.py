@@ -14,7 +14,8 @@ router = APIRouter(
 
 
 @router.put("/me",
-            tags=["Users"])
+            tags=["Users"],
+            description="""Self update. Only registered users can update their data.""")
 async def update_me(body: UpdateMe,
                     user: Any = Security(authorize_user, scopes=["admin", "user"])):
     # If success register token with a ttl
@@ -22,7 +23,8 @@ async def update_me(body: UpdateMe,
 
 
 @router.post("/",
-             tags=["Users"])
+             tags=["Users"],
+             description="""Update a user. Only admin can do so.""")
 async def create_update(body: UpdateUser,
                         user: Any = Security(authorize_user, scopes=["admin"])):
     result = update_user(**body.dict())

@@ -6,11 +6,14 @@ from jwt import decode, PyJWTError
 from pydantic import ValidationError
 from pymongo import MongoClient
 from starlette import status
+from starlette.requests import Request
+from logging import getLogger
 
 from app.conf import mongo_string
 from app.database.authentication import ALGORITHM, PUBLIC_KEY
 from app.schema.authentication import TokenData
 
+log = getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="api/v1/token",
@@ -61,3 +64,31 @@ def authorize_user(security_scopes: SecurityScopes,
         )
 
     return user
+
+
+def is_updatable(request: Request, rights: tuple) -> bool:
+    if "token" not in request.session:
+        return False
+    try:
+        check_authorization(request.session["token"], rights)
+        return True
+    except Exception as ex:
+        log.error("".join(ex.args))
+        return False
+
+
+def check_authorization(token, rights: tuple):
+    payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+    email: str = payload.get("sub")
+    if email is None:
+        raise Exception("Not connected")
+    token_scopes = payload.get("scopes", [])
+    token_data = TokenData(scopes=token_scopes, email=email)
+    client = MongoClient(mongo_string)
+    db = client["settings"]
+    collection = db["users"]
+    user = collection.find_one({"username": email}, projection={"scopes": True, "username": True})
+    if user is None:
+        raise Exception("User not recognized")
+    if all(scope not in rights for scope in token_data.scopes):
+        raise Exception("Not enough rights")

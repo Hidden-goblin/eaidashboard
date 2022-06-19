@@ -13,6 +13,7 @@ dpath = "*"
 python-multipart = "*"
 passlib = "*"
 bcrypt = "*"
+itsdangerous = "*"
 pydantic = {extras = ["email"], version = "*"}
 pyjwt = {extras = ["crypto"], version = "*"}
 

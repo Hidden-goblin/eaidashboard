@@ -113,7 +113,16 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
             StatusEnum.ARCHIVED
         ],
         StatusEnum.CANCELLED: [
-            StatusEnum.ARCHIVED
+            StatusEnum.ARCHIVED,
+            StatusEnum.RECORDED,
+            StatusEnum.CAMPAIGN_STARTED,
+            StatusEnum.CAMPAIGN_ENDED,
+            StatusEnum.TEST_PLAN_WRITING,
+            StatusEnum.TEST_PLAN_SENT,
+            StatusEnum.TEST_PLAN_ACCEPTED,
+            StatusEnum.TER_WRITING,
+            StatusEnum.TER_SENT,
+            StatusEnum.CANCELLED
         ]
     }
     # Check transition is allowed

@@ -1,0 +1,21 @@
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+ <div id="modal" class="modal fade show" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        {{message}}
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            _="on click wait 10ms {{my_fetch}} then remove #modal-backdrop then remove #modal ">Dismiss</button>
+                </div>
+            </div>
+        </div>
+    </div>

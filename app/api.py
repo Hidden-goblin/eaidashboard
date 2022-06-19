@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
+from starlette.middleware.sessions import SessionMiddleware
 from app.database.authentication import init_user_token
 from app.database.users import init_user
 from app.routers import (projects,
@@ -21,6 +21,7 @@ app = FastAPI(title="Eaidashboard",
                   "name": "GNU GPL v3",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
               })
+app.add_middleware(SessionMiddleware, secret_key='toto')
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/assets", StaticFiles(directory="app/assets"), name="assets")

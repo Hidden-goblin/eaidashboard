@@ -1,0 +1,20 @@
+<tr hx-trigger='cancel' class='editing' hx-get="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket_reference}}" hx-ext="json-enc" hx-encoding="application/json" >
+  <td>{{ticket.reference}}</td>
+  <td><select name='status'>
+        <option value='open' {%if ticket.status == "open" %} selected {%endif%}>Open</option>
+        <option value='in_progress' {%if ticket.status == "in_progress" %} selected {%endif%}>In progress</option>
+        <option value='in_progress' {%if ticket.status == "blocked" %} selected {%endif%}>Blocked</option>
+        <option value='in_progress' {%if ticket.status == "cancelled" %} selected {%endif%}>Out of scope</option>
+        <option value='in_progress' {%if ticket.status == "done" %} selected {%endif%}>Done</option>
+  </select>
+  </td>
+  <td><input name='description' value="{{ticket.description}}"> </td>
+  <td>
+    <button class="btn btn-danger" hx-get="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}">
+      Cancel
+    </button>
+    <button class="btn btn-danger" hx-put="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}" hx-include="closest tr">
+      Save
+    </button>
+  </td>
+</tr>
