@@ -33,7 +33,7 @@
     </thead>
     <tbody>
     {% for item in project_version %}
-        <tr>
+        <tr id="{{item.name}}_{{item.version}}">
             <td>{{item.name}}</td>
             <td>{{item.version}}</td>
             <td>{{item.status}}</td>
