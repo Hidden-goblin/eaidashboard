@@ -28,3 +28,5 @@ DASH_PUBLIC=<path to public ssh key. May be accessible from network>
 ## First start app
 
 By default, an admin is created. Its name is `admin@admin.fr` and its password is `admin`. Please mind updating its password :)
+
+http://localhost:8081/openapi.json

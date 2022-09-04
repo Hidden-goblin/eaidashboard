@@ -64,3 +64,50 @@ def get_project(project_name: str, sections: Optional[List[str]]):
             db[DashCollection.ARCHIVED.value].find(projection={"_id": False,
                                                                "bugs": False}))
     return result
+
+
+def insert_results(project_name: str, result: List[dict]):
+    if project_name not in registered_projects():
+        raise ProjectNotRegistered("Project not found")
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    _result = db[DashCollection.RESULTS.value].insert_many(result)
+    if not _result.acknowledged:
+        raise Exception("Insertion error")
+    return True
+
+
+def get_project_results(project_name: str):
+    if project_name not in registered_projects():
+        raise ProjectNotRegistered("Project not found")
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    pipeline = [{"$project": {
+        "myDate": {"$dateToString": {"format": "%Y%m%dT%H:%M", "date": "$date"}},
+        "myStatus": "$status"
+    }},
+                {"$group": {
+                    "_id": {"date": "$myDate", "status": "$myStatus"},
+                    "mycount": {"$sum": 1}
+                }},
+        {"$sort": {"myDate": 1}},
+        {"$group": {
+            "_id": "$_id.date",
+            "res": {
+                "$push": {
+                    "k": "$_id.status",
+                    "v": "$mycount"
+                }
+            }
+        }}
+    ]
+    res = db[DashCollection.RESULTS.value].aggregate(pipeline)
+    result = []
+    for item in list(res):
+        tmp = {"date": item["_id"]}
+        for sub in item["res"]:
+            tmp[sub["k"]] = sub["v"]
+        result.append(tmp)
+    return result
+    # res = db.command("aggregate", DashCollection.RESULTS.value, pipeline=pipeline, explain=True)
+    # return res

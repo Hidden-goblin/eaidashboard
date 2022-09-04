@@ -1,10 +1,21 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
+from io import StringIO
 from typing import Any, List, Optional, Union
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Response, Security
+from fastapi import (APIRouter,
+                     File,
+                     HTTPException,
+                     Depends,
+                     Query,
+                     Response,
+                     Security,
+                     UploadFile)
 from pymongo import MongoClient
+from csv import DictReader
+
+from starlette.background import BackgroundTasks
 
 from app.app_exception import (ProjectNotRegistered,
                                DuplicateArchivedVersion,
@@ -12,12 +23,17 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
 from app.database.db_settings import DashCollection
-from app.database.projects import create_project_version, get_project
+from app.database.projects import (create_project_version,
+                                   get_project,
+                                   get_project_results,
+                                   insert_results)
+from app.database.settings import registered_projects
+from app.database.testrepository import add_epic, add_feature, add_scenario
 from app.database.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       UpdateVersion,
+                                       TestFeature, UpdateVersion,
                                        Version,
                                        TicketProject)
 from app.conf import mongo_string
@@ -159,3 +175,71 @@ async def update_version(project_name: str,
     # Check it's ok :/
 
     return update_version_data(project_name.casefold(), version.casefold(), body)
+
+
+@router.post("/projects/{project_name}/results")
+async def upload_results(project_name: str,
+                         result_date: str,
+                         file: UploadFile = File(),
+                         user: Any = Security(authorize_user, scopes=["admin", "user"])
+                         ):
+    contents = await file.read()
+    decoded = contents.decode()
+    buffer = StringIO(decoded)
+    rows = DictReader(buffer)
+    results = [{**row, "date": datetime.strptime(result_date, "%Y%m%dT%H:%M")} for row in rows]
+    insert_results(project_name, results)
+    return {"result": "ok"}
+
+
+@router.get("/projects/{project_name}/results")
+async def get_results(project_name: str):
+    return get_project_results(project_name)
+
+
+@router.post("/projects/{project_name}/repository")
+async def upload_repository(project_name: str,
+                            background_task: BackgroundTasks,
+                            file: UploadFile = File()):
+    if project_name.casefold() not in registered_projects():
+        raise ProjectNotRegistered("Project not found")
+    contents = await file.read()
+    decoded = contents.decode()
+
+    background_task.add_task(process_upload, decoded, project_name)
+
+
+def process_upload(csv_content, project_name):
+    buffer = StringIO(csv_content)
+    rows = DictReader(buffer)
+    epics = [{"project": project_name.casefold(), "epic_name": row["epic"]}
+             for row in rows if not row["feature_filename"] and row["epic"]]
+    epics.append({"project": project_name, "epic_name": "XXX-application-undefined-epic"})
+    buffer = StringIO(csv_content)
+    rows = DictReader(buffer)
+    features = [{"epic_name": row["epic"] if row["epic"] else "XXX-application-undefined-epic",
+                 "feature_name": row["feature_name"],
+                 "project_name": project_name,
+                 "description": row["feature_description"],
+                 "tags": row["feature_tags"],
+                 "filename": row["feature_filename"]
+                 }
+                for row in rows if not row["scenario_steps"] and row["feature_filename"]]
+    buffer = StringIO(csv_content)
+    rows = DictReader(buffer)
+    scenarios = [{"filename": row["feature_filename"],
+                  "project_name": project_name,
+                  "scenario_id": row["scenario_id"],
+                  "name": row["scenario_name"],
+                  "is_outline": True if row["scenario_is_outline"] == "True" else False,
+                  "description": row["scenario_description"],
+                  "steps": row["scenario_steps"],
+                  "tags": row["scenario_tags"]} for row in rows if row["scenario_steps"]]
+    for epic in epics:
+        add_epic(**epic)
+    for feature in features:
+        add_feature(feature)
+    for index, scenario in enumerate(scenarios):
+        if not scenario["scenario_id"]:
+            scenario["scenario_id"] = f"XXX-application-undefined-id-{index}"
+        add_scenario(scenario)

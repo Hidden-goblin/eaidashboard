@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from datetime import timezone
 from typing import Optional
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -35,11 +36,10 @@ def authenticate_user(username, password):
     db = client["settings"]
     collection = db["users"]
     user = collection.find_one({"username": username}, projection={"_id": False})
-    if not user:
+    if user and verify_password(password, user["password"]):
+        return user["username"], user["scopes"]
+    else:
         return None, []
-    if not verify_password(password, user["password"]):
-        return None, []
-    return user["username"], user["scopes"]
 
 
 def create_access_token(data: dict,
@@ -48,12 +48,14 @@ def create_access_token(data: dict,
     client = MongoClient(mongo_string)
     db = client["settings"]
     token = db["token"]
-    token.update_one({"username": data["sub"]}, {"$set": {"token_date": datetime.utcnow()}},
+    token.update_one({"username": data["sub"]},
+                     {"$set": {"token_date": datetime.now(timezone.utc)}},
                      upsert=True)
+
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode["exp"] = expire
     return encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

@@ -11,6 +11,8 @@ from starlette.responses import HTMLResponse
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token
 from app.database.authorization import is_updatable
+from app.database.projects import get_project_results
+from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
 from app.database.versions import dashboard as db_dash
 from app.schema.project_schema import UpdatedTicket
@@ -131,3 +133,14 @@ async def project_version_update_ticket(request: Request,
                                                             reference),
                                        "project_name": project_name,
                                        "project_version": project_version})
+
+
+@router.get("/testResults",
+            response_class=HTMLResponse,
+            tags=["Front"])
+async def get_test_results(request: Request):
+    projects = registered_projects()
+    result = {project: get_project_results(project) for project in projects}
+    return templates.TemplateResponse("test_results.html",
+                                      {"request": request,
+                                       "results": result})

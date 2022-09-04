@@ -16,6 +16,7 @@ bcrypt = "*"
 itsdangerous = "*"
 pydantic = {extras = ["email"], version = "*"}
 pyjwt = {extras = ["crypto"], version = "*"}
+psycopg = {extras = ["binary", "pool"], version = "*"}
 
 [dev-packages]
 
