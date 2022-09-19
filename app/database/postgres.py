@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 import psycopg
 from app.conf import postgre_string, postgre_setting_string, config
+from app.database.postgre_updates import POSTGRE_UPDATES
 
 
 def init_postgres():
@@ -15,6 +16,20 @@ def init_postgres():
 def update_postgres():
     connexion = psycopg.connect(postgre_string)
     create_schema(connexion)
+    cursor = connexion.cursor()
+    cursor.execute("select op_order from operations "
+                   "where type = 'database' "
+                   "order by op_order desc "
+                   "limit 1;")
+    last_update = cursor.fetchone()[0]
+    for index, update in enumerate(POSTGRE_UPDATES):
+        if index + 1 > last_update:
+            cursor.execute(update["request"])
+            connexion.commit()
+            cursor.execute("""insert into operations (type, op_user, op_order, content)
+    values ('database', 'application', %s, %s)
+     on conflict (type, op_order) do nothing; """, (index + 1, update["description"]))
+            connexion.commit()
 
 
 def create_schema(connexion):

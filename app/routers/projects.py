@@ -28,7 +28,8 @@ from app.database.projects import (create_project_version,
                                    get_project_results,
                                    insert_results)
 from app.database.settings import registered_projects
-from app.database.testrepository import add_epic, add_feature, add_scenario
+from app.database.testrepository import add_epic, add_feature, add_scenario, \
+    clean_scenario_with_fake_id
 from app.database.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
@@ -197,27 +198,49 @@ async def get_results(project_name: str):
     return get_project_results(project_name)
 
 
-@router.post("/projects/{project_name}/repository")
+@router.post("/projects/{project_name}/repository",
+             response_class=Response,
+             status_code=204,
+             description="Successful request, processing data."
+                         " It might be import error during the process.",
+             responses={
+                 # 204: {"description": "Processing data"},
+                 400: {"model": ErrorMessage,
+                       "description": "CSV file with no headers or bad headers"},
+                 404: {"model": ErrorMessage,
+                       "description": "project not found"}
+             },
+             tags=["Repository"])
 async def upload_repository(project_name: str,
                             background_task: BackgroundTasks,
-                            file: UploadFile = File()):
+                            file: UploadFile = File(),
+                            user: Any = Security(authorize_user, scopes=["admin", "user"])):
     if project_name.casefold() not in registered_projects():
-        raise ProjectNotRegistered("Project not found")
+        raise HTTPException(404, detail=f"Project '{project_name}' not found")
     contents = await file.read()
     decoded = contents.decode()
-
-    background_task.add_task(process_upload, decoded, project_name)
+    buffer = StringIO(decoded)
+    rows = DictReader(buffer)
+    if all(header in rows.fieldnames for header in ("epic", "feature_filename", "feature_name",
+                                                    "feature_tags", "feature_description",
+                                                    "scenario_id", "scenario_name","scenario_tags",
+                                                    "scenario_description", "scenario_is_outline",
+                                                    "scenario_steps")):
+        background_task.add_task(process_upload, decoded, project_name)
+        return Response(status_code=204)
+    else:
+        raise HTTPException(400, detail="Missing or bad csv header")
 
 
 def process_upload(csv_content, project_name):
-    buffer = StringIO(csv_content)
+    buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
     epics = [{"project": project_name.casefold(), "epic_name": row["epic"]}
              for row in rows if not row["feature_filename"] and row["epic"]]
     epics.append({"project": project_name, "epic_name": "XXX-application-undefined-epic"})
-    buffer = StringIO(csv_content)
+    buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
-    features = [{"epic_name": row["epic"] if row["epic"] else "XXX-application-undefined-epic",
+    features = [{"epic_name": row["epic"] or "XXX-application-undefined-epic",
                  "feature_name": row["feature_name"],
                  "project_name": project_name,
                  "description": row["feature_description"],
@@ -225,13 +248,13 @@ def process_upload(csv_content, project_name):
                  "filename": row["feature_filename"]
                  }
                 for row in rows if not row["scenario_steps"] and row["feature_filename"]]
-    buffer = StringIO(csv_content)
+    buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
     scenarios = [{"filename": row["feature_filename"],
                   "project_name": project_name,
                   "scenario_id": row["scenario_id"],
                   "name": row["scenario_name"],
-                  "is_outline": True if row["scenario_is_outline"] == "True" else False,
+                  "is_outline": row["scenario_is_outline"] == "True",
                   "description": row["scenario_description"],
                   "steps": row["scenario_steps"],
                   "tags": row["scenario_tags"]} for row in rows if row["scenario_steps"]]
@@ -239,6 +262,7 @@ def process_upload(csv_content, project_name):
         add_epic(**epic)
     for feature in features:
         add_feature(feature)
+    clean_scenario_with_fake_id(project_name.casefold())
     for index, scenario in enumerate(scenarios):
         if not scenario["scenario_id"]:
             scenario["scenario_id"] = f"XXX-application-undefined-id-{index}"

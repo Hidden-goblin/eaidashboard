@@ -3,9 +3,9 @@
   <td><select name='status'>
         <option value='open' {%if ticket.status == "open" %} selected {%endif%}>Open</option>
         <option value='in_progress' {%if ticket.status == "in_progress" %} selected {%endif%}>In progress</option>
-        <option value='in_progress' {%if ticket.status == "blocked" %} selected {%endif%}>Blocked</option>
-        <option value='in_progress' {%if ticket.status == "cancelled" %} selected {%endif%}>Out of scope</option>
-        <option value='in_progress' {%if ticket.status == "done" %} selected {%endif%}>Done</option>
+        <option value='blocked' {%if ticket.status == "blocked" %} selected {%endif%}>Blocked</option>
+        <option value='cancelled' {%if ticket.status == "cancelled" %} selected {%endif%}>Out of scope</option>
+        <option value='done' {%if ticket.status == "done" %} selected {%endif%}>Done</option>
   </select>
   </td>
   <td><input name='description' value="{{ticket.description}}"> </td>

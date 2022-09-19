@@ -67,6 +67,11 @@ def revoke(username):
     token.delete_one({"username": username})
 
 
+def invalidate_token(token):
+    payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+    revoke(payload.get("sub"))
+
+
 def init_user_token():
     client = MongoClient(mongo_string)
     db = client["settings"]

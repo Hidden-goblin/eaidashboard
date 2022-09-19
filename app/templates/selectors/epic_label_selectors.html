@@ -1,0 +1,19 @@
+<div>
+    <label >Epics</label>
+    <select name="epic"
+            hx-get="/front/v1/projects/{{project_name}}/repository"
+            hx-target="#features"
+            hx-indicator=".htmx-indicator">
+        {% for epic in epics %}
+            <option value="{{epic}}">{{epic}}</option>
+        {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Features</label>
+    <select id="features" name="feature">
+      {% for feature in features %}
+            <option value="{{feature}}">{{feature}}</option>
+        {% endfor %}
+    </select>
+  </div>

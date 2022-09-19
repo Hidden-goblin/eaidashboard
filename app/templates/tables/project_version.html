@@ -1,0 +1,16 @@
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+            <th>Version</th>
+            <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for version in versions %}
+          <tr id="version-{{version.value}}">
+            <td>{{version.value}}</td>
+            <td>{{version.status}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>

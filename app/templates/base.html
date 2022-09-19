@@ -12,6 +12,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
         <ul class="navbar-nav mr-auto">
+            {%if not request.session["token"]%}
             <li id="log">
                 <button hx-get="/login"
                         hx-target="#modals-here"
@@ -22,9 +23,35 @@
                     Log
                 </button>
             </li>
-            <li>
-                <a href="/testResults"  class="btn btn-primary" role="button">Test results</a>
+            {%else%}
+            <li id="deco">
+                <button hx-delete="/login"
+                        hx-trigger="click"
+                        class="btn btn-primary"
+                       _="on htmx:afterRequest wait 1s then go to url /">
+
+                    Logout
+                </button>
             </li>
+            <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Projects
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for project in projects %}
+                <li><a class="dropdown-item" hx-get="/front/v1/projects/{{project}}" hx-target="#content-block" hx-trigger="click">{{project}}</a></li>
+              {% endfor %}
+              <li><hr class="dropdown-divider"></li>
+              <li>Use <a _="on click go to url /docs">API docs</a> to create new project </li>
+          </ul>
+        </li>
+            {%endif%}
+<!--            <li>-->
+<!--                <a href="/testResults"  class="btn btn-primary" role="button">Test results</a>-->
+<!--            </li>-->
+        <li>
+            <button class="btn btn-secondary" _="on click go to url /">Back to main</button>
+        </li>
         </ul>
     </div>
 </nav>
@@ -33,7 +60,7 @@
 
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid" id="content-block">
 
     {% block contenu %}Mon contenu{% endblock %}
 </div>

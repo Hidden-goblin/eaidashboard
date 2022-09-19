@@ -35,3 +35,7 @@ class DuplicateFutureVersion(Exception):
 
 class IncorrectTicketCount(Exception):
     pass
+
+
+class CampaignNotFound(Exception):
+    pass

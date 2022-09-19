@@ -175,3 +175,15 @@ class TestScenario(BaseModel):
     description: str
     steps: str
     tags: str
+
+
+class ToBeCampaign(BaseModel):
+    version: str
+
+
+class TicketScenarioCampaign(BaseModel):
+    ticket_reference: str
+    scenario_id: str
+    epic: str
+    feature_name: str
+    feature_filename: Optional[str]

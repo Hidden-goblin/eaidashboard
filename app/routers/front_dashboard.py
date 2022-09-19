@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.conf import templates
-from app.database.authentication import authenticate_user, create_access_token
+from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
 from app.database.projects import get_project_results
 from app.database.settings import registered_projects
@@ -24,9 +24,13 @@ router = APIRouter()
             response_class=HTMLResponse,
             tags=["Front"])
 async def dashboard(request: Request):
+    projects = None
+    if "token" in request.session:
+        projects = registered_projects()
     return templates.TemplateResponse("dashboard.html",
                                       {"request": request,
-                                       "project_version": db_dash()})
+                                       "project_version": db_dash(),
+                                       "projects": projects if projects else []})
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
@@ -71,6 +75,16 @@ async def post_login(request: Request,
         data={"sub": sub,
               "scopes": scopes})
     request.session["token"] = access_token
+    return HTMLResponse("""<span _="on htmx:afterSettle wait 1s then then remove .modal-backdrop then remove .modal then wait 1s then go to url /"/> """)
+
+
+@router.delete("/login",
+             response_class=HTMLResponse,
+             tags=["Front"])
+async def logout(request: Request):
+    if is_updatable(request, ("admin", "user")):
+        invalidate_token(request.session["token"])
+    request.session.clear()
     return templates.TemplateResponse("void.html",
                                       {"request": request})
 
