@@ -22,7 +22,7 @@ router = APIRouter()
 
 @router.get("/",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Dashboard"])
 async def dashboard(request: Request):
     projects = None
     if "token" in request.session:
@@ -35,7 +35,7 @@ async def dashboard(request: Request):
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Utils"])
 async def project_version_tickets(request: Request, project_name, project_version):
 
     return templates.TemplateResponse("ticket_view.html",
@@ -47,14 +47,14 @@ async def project_version_tickets(request: Request, project_name, project_versio
 
 @router.delete("/clear",
                response_class=HTMLResponse,
-               tags=["Front"])
+               tags=["Front - Utils"])
 async def return_void():
     return HTMLResponse("")
 
 
 @router.get("/login",
             response_class=HTMLResponse,
-            tags=["Front"]
+            tags=["Front - Login"]
             )
 async def login(request: Request):
     return templates.TemplateResponse("login_modal.html",
@@ -63,7 +63,7 @@ async def login(request: Request):
 
 @router.post("/login",
              response_class=HTMLResponse,
-             tags=["Front"])
+             tags=["Front - Login"])
 async def post_login(request: Request,
                      username: str = Form(...),
                      password: str = Form(...)
@@ -80,7 +80,7 @@ async def post_login(request: Request,
 
 @router.delete("/login",
              response_class=HTMLResponse,
-             tags=["Front"])
+             tags=["Front - Login"])
 async def logout(request: Request):
     if is_updatable(request, ("admin", "user")):
         invalidate_token(request.session["token"])
@@ -91,7 +91,7 @@ async def logout(request: Request):
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}/edit",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Tickets"])
 async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row_edit.html",
                                       {"request": request,
@@ -104,7 +104,7 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Tickets"])
 async def project_version_ticket(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
@@ -117,7 +117,7 @@ async def project_version_ticket(request: Request, project_name, project_version
 
 @router.put("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Tickets"])
 async def project_version_update_ticket(request: Request,
                                         project_name: str,
                                         project_version: str,
@@ -151,7 +151,7 @@ async def project_version_update_ticket(request: Request,
 
 @router.get("/testResults",
             response_class=HTMLResponse,
-            tags=["Front"])
+            tags=["Front - Campaign"])
 async def get_test_results(request: Request):
     projects = registered_projects()
     result = {project: get_project_results(project) for project in projects}

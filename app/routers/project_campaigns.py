@@ -17,7 +17,7 @@ from csv import DictReader
 
 from starlette.background import BackgroundTasks
 
-from app.app_exception import (CampaignNotFound, ProjectNotRegistered,
+from app.app_exception import (CampaignNotFound, NonUniqueError, ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion, VersionNotFound)
@@ -28,7 +28,10 @@ from app.database.projects import (create_project_version,
                                    get_project_results,
                                    insert_results)
 from app.database.settings import registered_projects
-from app.database.testcampaign import create_campaign, is_campaign_exist, retrieve_campaign
+from app.database.testcampaign import (create_campaign,
+                                       is_campaign_exist,
+                                       retrieve_campaign,
+                                       fill_campaign as db_fill_campaign)
 from app.database.testrepository import add_epic, add_feature, add_scenario, \
     clean_scenario_with_fake_id, db_project_epics, db_project_features, db_project_scenarios
 from app.database.versions import get_version, get_version_and_collection, update_version_data, \
@@ -69,7 +72,8 @@ async def create_campaigns(project_name: str,
 
 # Link tickets & scenarios to campaign
 # { "tickets": [{"epic", "feature", "scenario_id"}...]}
-@router.put("/{project_name}/campaigns/{version}/{occurrence}")
+@router.put("/{project_name}/campaigns/{version}/{occurrence}",
+            tags=["Campaign"],)
 async def fill_campaign(project_name: str,
                         version: str,
                         occurrence: str,
@@ -84,10 +88,13 @@ async def fill_campaign(project_name: str,
         if not is_campaign_exist(project_name, version, occurrence):
             raise CampaignNotFound(f"Campaign occurrence {occurrence} "
                                    f"for project {project_name} in version {version} not found")
+        res = db_fill_campaign(project_name, version, occurrence, content)
 
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except CampaignNotFound as pnr:
+        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+    except NonUniqueError as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
 
 
@@ -101,7 +108,8 @@ async def get_campaigns(project_name: str,
     return retrieve_campaign(project_name, version, status)
 
 
-@router.get("/{project_name}/campaigns/{version}/{occurrence}")
+@router.get("/{project_name}/campaigns/{version}/{occurrence}",
+            tags=["Campaign"],)
 async def get_campaign(project_name: str,
                        version: str,
                        occurrence: str):

@@ -39,3 +39,7 @@ class IncorrectTicketCount(Exception):
 
 class CampaignNotFound(Exception):
     pass
+
+
+class NonUniqueError(Exception):
+    pass
