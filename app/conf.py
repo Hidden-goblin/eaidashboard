@@ -19,3 +19,10 @@ config = {**dotenv_values(".env"),
 mongo_string = (f"mongodb://{config['MONGO_USR']}:{config['MONGO_PWD']}"
                 f"@{config['MONGO_URL']}:{config['MONGO_PORT']}/")  # To variabilize
 date_format = "%Y-%m-%d %H:%M"
+
+postgre_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} user={config['PG_USR']}"
+                  f" password={config['PG_PWD']} dbname={config['PG_DB']}")
+
+postgre_setting_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} "
+                          f"user={config['PG_USR']}"
+                          f" password={config['PG_PWD']} dbname=postgres")

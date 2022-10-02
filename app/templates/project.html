@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block contenu %}
+<!-- Project data. -->
+<div id="project_{{project_name}}" class="container">
+  <h1>Project: {{project_name}}</h1>
+  <div id="{{project_name}}-versions" class="container">
+    <div id="dialog"></div>
+    <button class="btn btn-primary"
+            hx-get="/front/v1/projects/{{project_name}}/form/versions"
+            hx-target="#dialog">Add a new version</button>
+    <div id="versions_table">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+              <th>Version</th>
+              <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for version in versions %}
+            <tr id="version-{{version.value}}">
+              <td>{{version.value}}</td>
+              <td>{{version.status}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div id="{{project_name}}-repository" class="container">
+    <h1>{{project_name}} RepositoryEnum</h1>
+    <div id="repository_filter"
+         hx-trigger="load"
+         hx-get="/front/v1/projects/{{project_name}}/repository"
+         hx-target="this">
+
+    </div>
+  </div>
+</div>
+{% endblock %}

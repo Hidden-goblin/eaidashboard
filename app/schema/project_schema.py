@@ -1,9 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
-from uuid import UUID
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -38,12 +37,35 @@ class TicketType(Enum):
         return self.value
 
 
-class Tickets(BaseModel):
+class Statistics(BaseModel):
     open: int
     cancelled: int
     blocked: int
     in_progress: int
     done: int
+
+
+class Ticket(BaseModel):
+    status: str
+    reference: str
+    description: str
+    created: datetime
+    updated: datetime
+
+
+class ToBeTicket(BaseModel):
+    reference: str
+    description: str
+    status: str = TicketType.OPEN.value
+    created: datetime = datetime.now()
+    updated: datetime = datetime.now()
+
+
+class UpdatedTicket(BaseModel):
+    description: Optional[str]
+    status: Optional[str]
+    version: Optional[str]
+    updated: datetime = datetime.now()
 
 
 class UpdateTickets(BaseModel):
@@ -63,6 +85,25 @@ class Bugs(BaseModel):
     closed_minor: Optional[int]
 
 
+class BugTicket(BaseModel):
+    version: str
+    title: str
+    description: str
+    created: datetime = datetime.now()
+    updated: datetime = datetime.now()
+    url: str
+    status: str
+
+
+class UpdateBugTicket(BaseModel):
+    version: str
+    title: Optional[str]
+    description: Optional[str]
+    updated: datetime = datetime.now()
+    url: Optional[str]
+    status: Optional[str]
+
+
 class Version(BaseModel):
     version: str
     created: datetime
@@ -70,7 +111,7 @@ class Version(BaseModel):
     started: Optional[datetime]
     end_forecast: Optional[datetime]
     status: str
-    tickets: Tickets
+    statistics: Statistics
     bugs: Bugs
 
 
@@ -78,8 +119,6 @@ class UpdateVersion(BaseModel):
     started: Optional[str]
     end_forecast: Optional[str]
     status: Optional[str]
-    tickets: Optional[UpdateTickets]
-    bugs: Optional[Bugs]
 
 
 class TicketVersion(BaseModel):
@@ -89,7 +128,6 @@ class TicketVersion(BaseModel):
     started: Optional[datetime]
     end_forecast: Optional[datetime]
     status: str
-    tickets: Tickets
         
 
 class Project(BaseModel):
@@ -107,11 +145,32 @@ class TicketProject(BaseModel):
         
         
 class RegisterVersion(BaseModel):
-    project: str
     version: str
-    open: Optional[int]
-    cancelled: Optional[int]
+
+
+class RegisterProject(BaseModel):
+    name: str
 
 
 class ErrorMessage(BaseModel):
     detail: str
+
+
+class TestFeature(BaseModel):
+    epic_name: str
+    feature_name: str
+    project_name: str
+    description: str
+    filename: str
+    tags: str
+
+
+class TestScenario(BaseModel):
+    filename: str
+    project_name: str
+    scenario_id: str
+    name: str
+    is_outline: bool
+    description: str
+    steps: str
+    tags: str

@@ -1,0 +1,35 @@
+@startjson
+{
+  "name": "The project name as id",
+  "future": [
+    {
+      "version": "The version number as string",
+      "created": "2022-10-01T17:07:34.410Z",
+      "updated": "2022-10-01T17:07:34.410Z",
+      "started": "2022-10-01T17:07:34.410Z",
+      "end_forecast": "2022-10-01T17:07:34.410Z",
+      "status": "string"
+    }
+  ],
+  "current": [
+    {
+      "version": "The version number as string",
+      "created": "2022-10-01T17:07:34.411Z",
+      "updated": "2022-10-01T17:07:34.411Z",
+      "started": "2022-10-01T17:07:34.411Z",
+      "end_forecast": "2022-10-01T17:07:34.411Z",
+      "status": "string"
+    }
+  ],
+  "archived": [
+    {
+      "version": "The version number as string",
+      "created": "2022-10-01T17:07:34.411Z",
+      "updated": "2022-10-01T17:07:34.411Z",
+      "started": "2022-10-01T17:07:34.411Z",
+      "end_forecast": "2022-10-01T17:07:34.411Z",
+      "status": "string"
+    }
+  ]
+}
+@endjson

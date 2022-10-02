@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block contenu %}
+<div class="container" id="results">
+{%for key, result in results.items()%}
+    <div class="container" id="result_{{key}}">
+        <h1>{{key}}</h1>
+        <table id="result_{{key}}_data" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Skipped</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+            {%for res in result%}
+            <tr>
+                <td>{{res.date}}</td>
+                <td>{%if 'passed' in res%}{{res.passed}}{%else%}0{%endif%}</td>
+                <td>{%if 'failed' in res%}{{res.failed}}{%else%}0{%endif%}</td>
+                <td>{%if 'skipped' in res%}{{res.skipped}}{%else%}0{%endif%}</td>
+                <td>{%if 'passed' in res and 'failed' in res and 'skipped' in res%}
+                        {{res.passed+res.failed+res.skipped}}
+                    {%elif 'passed' in res and 'failed' in res and 'skipped' not in res%}
+                        {{res.passed+res.failed}}
+                    {%elif 'passed' in res and 'failed' not in res and 'skipped' in res%}
+                        {{res.passed+res.skipped}}
+                    {%elif 'passed' not in res and 'failed' in res and 'skipped' in res%}
+                        {{res.failed+res.skipped}}
+                    {%elif 'passed' not in res and 'failed' not in res and 'skipped' in res%}
+                        {{res.skipped}}
+                    {%elif 'passed' not in res and 'failed' in res and 'skipped' not in res%}
+                        {{res.failed}}
+                    {%else%}
+                        {{res.passed}}
+                    {%endif%}
+                </td>
+            </tr>
+            {%endfor%}
+            </tbody>
+        </table>
+    </div>
+{%endfor%}
+</div>
+{% endblock %}

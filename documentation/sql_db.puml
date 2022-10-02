@@ -1,0 +1,95 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+' -----------------------------------------
+' Maintenance
+' -----------------------------------------
+
+entity operations {
+id: int autoincrement
+--
+type: varchar(28)
+op_user: varchar(100)
+op_order: int
+--
+unique (type, op_order)
+}
+
+' -----------------------------------------
+' RepositoryEnum
+' -----------------------------------------
+entity epics {
+id: int autoincrement
+--
+name: str
+project_id: str
+--
+unique (name, project_id)
+}
+
+entity features {
+id: int autoincrement
+--
+epic_id: int <<FK>>
+name: str
+description: text
+filename: text
+tags: text
+project_id: str
+--
+unique (filename, project_id)
+FK epic_id: epics.id
+}
+
+entity scenarios {
+id: int autoincrement
+--
+scenario_id: text
+feature_id: int <<FK>
+name: text
+description: text
+steps: text
+tags: text
+isoutline: boolean
+--
+unique (scenario_id, feature_id, project_id)
+FK feature_id: features.id
+}
+
+' one epic per feature, zero more features per epic
+epics ||--o{ features
+' one feature per scenario, zero more scenarios per feature
+features ||--o{ scenarios
+
+' -----------------------------------------
+' Campaigns
+' -----------------------------------------
+
+entity campaigns {
+id: int autoincrement
+--
+project_id: text
+version: text
+occurrence: int
+description: text
+status: text
+--
+unique (project_id, version, occurrence)
+}
+
+entity campaign_tickets_scenarios {
+id: int autoincrement
+--
+campaign_id: int FK
+scenario_id: int FK
+ticket_reference: text
+status: str
+--
+unique (campaign_id, scenario_id, ticket_reference)
+FK campaign_id: campaigns.id
+FK scenario_id: scenarios.id
+}
+
+campaign_tickets_scenarios ||--|| campaigns
+campaign_tickets_scenarios ||--|| scenarios
+
+@enduml

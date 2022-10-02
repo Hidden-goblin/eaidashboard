@@ -5,6 +5,10 @@ class ProjectNotRegistered(Exception):
     pass
 
 
+class VersionNotFound(Exception):
+    pass
+
+
 class UnknownStatusException(Exception):
     pass
 
@@ -30,4 +34,24 @@ class DuplicateFutureVersion(Exception):
 
 
 class IncorrectTicketCount(Exception):
+    pass
+
+
+class CampaignNotFound(Exception):
+    pass
+
+
+class NonUniqueError(Exception):
+    pass
+
+
+class NotConnected(Exception):
+    pass
+
+
+class NotAuthorized(Exception):
+    pass
+
+
+class IncorrectFieldsRequest(Exception):
     pass
