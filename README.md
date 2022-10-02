@@ -23,6 +23,11 @@ TIMEDELTA=<time in minutes before token validity expiration>
 ALGORITHM="RS256"
 DASH_PRIVATE=<path to private ssh key. Should not be accessible from network>
 DASH_PUBLIC=<path to public ssh key. May be accessible from network>
+PG_URL=<the postgres db url>
+PG_PORT=<the postgres db port>
+PG_USR=<the postgres db user>
+PG_PWD=<the postgres db user password>
+PG_DB=<the postgres db name>
 ```
 
 ## First start app
