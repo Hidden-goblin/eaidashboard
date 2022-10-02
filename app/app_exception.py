@@ -43,3 +43,15 @@ class CampaignNotFound(Exception):
 
 class NonUniqueError(Exception):
     pass
+
+
+class NotConnected(Exception):
+    pass
+
+
+class NotAuthorized(Exception):
+    pass
+
+
+class IncorrectFieldsRequest(Exception):
+    pass

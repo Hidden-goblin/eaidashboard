@@ -9,6 +9,7 @@ from starlette import status
 from starlette.requests import Request
 from logging import getLogger
 
+from app.app_exception import NotAuthorized, NotConnected
 from app.conf import mongo_string
 from app.database.authentication import ALGORITHM, PUBLIC_KEY
 from app.schema.authentication import TokenData
@@ -81,7 +82,7 @@ def check_authorization(token, rights: tuple):
     payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
     email: str = payload.get("sub")
     if email is None:
-        raise Exception("Not connected")
+        raise NotConnected("Not connected")
     token_scopes = payload.get("scopes", [])
     token_data = TokenData(scopes=token_scopes, email=email)
     client = MongoClient(mongo_string)
@@ -89,6 +90,21 @@ def check_authorization(token, rights: tuple):
     collection = db["users"]
     user = collection.find_one({"username": email}, projection={"scopes": True, "username": True})
     if user is None:
-        raise Exception("User not recognized")
+        raise NotAuthorized("User not recognized")
     if all(scope not in rights for scope in token_data.scopes):
-        raise Exception("Not enough rights")
+        raise NotAuthorized("Not enough rights")
+
+
+def check_token_validity(request: Request):
+    if "token" not in request.session:
+        return False
+    payload = decode(request.session["token"], PUBLIC_KEY, algorithms=[ALGORITHM])
+    email: str = payload.get("sub")
+    if email is None:
+        return False
+
+    client = MongoClient(mongo_string)
+    db = client["settings"]
+    collection = db["token"]
+    user = collection.find_one({"username": email})
+    return bool(user)

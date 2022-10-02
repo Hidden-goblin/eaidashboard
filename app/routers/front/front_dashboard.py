@@ -10,7 +10,7 @@ from starlette.responses import HTMLResponse
 
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
-from app.database.authorization import is_updatable
+from app.database.authorization import check_token_validity, is_updatable
 from app.database.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
@@ -24,9 +24,9 @@ router = APIRouter()
             response_class=HTMLResponse,
             tags=["Front - Dashboard"])
 async def dashboard(request: Request):
-    projects = None
-    if "token" in request.session:
-        projects = registered_projects()
+    if not check_token_validity(request):
+        request.session.pop("token", None)
+    projects = registered_projects()
     return templates.TemplateResponse("dashboard.html",
                                       {"request": request,
                                        "project_version": db_dash(),

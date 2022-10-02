@@ -19,7 +19,7 @@ DESCRIPTION = [
         "name": "Tickets"
     },
     {
-        "name": "Repository",
+        "name": "RepositoryEnum",
         "description": "All API operations concerning a project's test repository."
     },
     {
@@ -51,7 +51,7 @@ DESCRIPTION = [
         "name": "Front - Campaign"
     },
     {
-        "name": "Front - Repository"
+        "name": "Front - RepositoryEnum"
     }
 ]
 # https://fastapi.tiangolo.com/tutorial/metadata/?h=tag+desc#metadata-for-tags

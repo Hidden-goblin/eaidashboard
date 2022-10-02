@@ -1,0 +1,10 @@
+@startjson
+[
+    {
+    "name": "the project name id",
+    "future": "The number of future versions",
+    "current": "The number of currently developed versions",
+    "archived": "The number of passed versions"
+    }
+]
+@endjson

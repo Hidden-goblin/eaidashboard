@@ -70,18 +70,19 @@ async def form_version(project_name: str,
 
 
 @router.post("/{project_name}/form/versions",
-            tags=["Front - Project"])
+             tags=["Front - Project"])
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...)
                       ):
-
+    if not is_updatable(request, ("admin", "user")):
+        raise HTTPException(status_code=403, detail="Not authorized")
     create_project_version(project_name, RegisterVersion(version=version))
     return HTMLResponse("")
 
 
 @router.get("/{project_name}/repository",
-            tags=["Front - Repository"])
+            tags=["Front - RepositoryEnum"])
 async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,

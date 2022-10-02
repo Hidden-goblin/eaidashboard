@@ -1,0 +1,24 @@
+@startjson
+{
+    "project": "project_name",
+    "version": "version string",
+    "occurrence": "campaign occurrence number",
+    "status": "campaign status",
+    "tickets": [
+        {
+            "reference": "ticket reference",
+            "summary" : "ticket title",
+            "scenarios": [
+                {
+                  "epic_id": "epic id",
+                  "feature_id": "feature id",
+                  "scenario_id": "scenario user id",
+                  "name": "scenario name",
+                  "steps": "steps",
+                  "status": "current status"
+                }
+            ]
+        }
+    ]
+}
+@endjson

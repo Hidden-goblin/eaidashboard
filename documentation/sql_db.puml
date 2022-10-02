@@ -15,7 +15,7 @@ unique (type, op_order)
 }
 
 ' -----------------------------------------
-' Repository
+' RepositoryEnum
 ' -----------------------------------------
 entity epics {
 id: int autoincrement

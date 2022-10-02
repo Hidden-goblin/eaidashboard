@@ -1,9 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
-from uuid import UUID
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -175,15 +174,3 @@ class TestScenario(BaseModel):
     description: str
     steps: str
     tags: str
-
-
-class ToBeCampaign(BaseModel):
-    version: str
-
-
-class TicketScenarioCampaign(BaseModel):
-    ticket_reference: str
-    scenario_id: str
-    epic: str
-    feature_name: str
-    feature_filename: Optional[str]

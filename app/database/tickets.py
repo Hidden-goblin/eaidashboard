@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List
+from typing import Any, List, Union
 
 from pymongo import MongoClient
 
@@ -91,3 +91,13 @@ def get_ticket(project_name, project_version, reference):
     db = client[project_name]
     return db[DashCollection.TICKETS.value].find_one({"version": _version,
                                                       "reference": reference}, {"_id": False})
+
+
+def get_tickets_by_reference(project_name: str, project_version: str, references: Union[List, set]):
+    _version, _collection = get_version_and_collection(project_name, project_version)
+    if _version is None:
+        raise VersionNotFound(f"Version {project_version} does not exist")
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    return db[DashCollection.TICKETS.value].find({"reference": {"$in": list(references)}},
+                                                 {"_id": False})

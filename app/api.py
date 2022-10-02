@@ -7,16 +7,10 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.database.authentication import init_user_token
 from app.database.users import init_user
 from app.database.postgres import init_postgres, update_postgres
-from app.routers import (projects,
-                         settings,
-                         front_dashboard,
-                         version,
-                         users,
-                         auth,
-                         bugs,
-                         project_repository,
-                         project_campaigns,
-                         front_projects)
+from app.routers.rest import auth, bugs, project_campaigns, project_repository, projects, \
+    settings, \
+    users, version
+from app.routers.front import front_dashboard, front_projects
 from app.utils.openapi_tags import DESCRIPTION
 from app.utils.pgdb import pool
 

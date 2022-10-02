@@ -29,6 +29,8 @@ from app.database.projects import (create_project_version,
                                    insert_results)
 from app.database.settings import registered_projects
 from app.database.testcampaign import (create_campaign,
+                                       db_get_campaign_ticket_scenario, db_get_campaign_tickets,
+                                       db_set_campaign_ticket_scenario_status, get_campaign_content,
                                        is_campaign_exist,
                                        retrieve_campaign,
                                        fill_campaign as db_fill_campaign)
@@ -36,14 +38,14 @@ from app.database.testrepository import add_epic, add_feature, add_scenario, \
     clean_scenario_with_fake_id, db_project_epics, db_project_features, db_project_scenarios
 from app.database.versions import get_version, get_version_and_collection, update_version_data, \
     update_version_status
-from app.schema.postgres_enums import CampaignStatus
+from app.schema.postgres_enums import CampaignStatusEnum, CampaignTicketEnum, ScenarioStatusEnum
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       TestFeature, TicketScenarioCampaign, ToBeCampaign,
-                                       UpdateVersion,
+                                       TestFeature, UpdateVersion,
                                        Version,
                                        TicketProject)
+from app.schema.campaign_schema import CampaignLight, TicketScenarioCampaign, ToBeCampaign
 from app.conf import mongo_string
 from enum import Enum
 
@@ -56,7 +58,18 @@ router = APIRouter(
 @router.post("/{project_name}/campaigns",
              tags=["Campaign"],
              description="Create a new campaign linked to a project-version."
-                         " Multiple occurrence of the same campaign can be created")
+                         " Multiple occurrence of the same campaign can be created",
+             response_model=CampaignLight,
+             responses={
+                 404: {"model": ErrorMessage,
+                       "description": "Project name is not registered (ignore case),"
+                                      " the version does not exist"},
+                 400: {"model": ErrorMessage,
+                       "description": "version already exist"},
+                 401: {"model": ErrorMessage,
+                       "description": "You are not authenticated"}
+             }
+             )
 async def create_campaigns(project_name: str,
                            campaign: ToBeCampaign,
                            user: Any = Security(authorize_user, scopes=["admin"])):
@@ -104,17 +117,61 @@ async def fill_campaign(project_name: str,
             description="Retrieve campaign")
 async def get_campaigns(project_name: str,
                         version: str = None,
-                        status: CampaignStatus = None):
+                        status: CampaignStatusEnum = None):
     return retrieve_campaign(project_name, version, status)
 
 
+# Retrieve campaign for project-version
 @router.get("/{project_name}/campaigns/{version}/{occurrence}",
-            tags=["Campaign"],)
+            tags=["Campaign"], )
 async def get_campaign(project_name: str,
                        version: str,
                        occurrence: str):
-    pass
+    return get_campaign_content(project_name, version, occurrence)
 
-# Retrieve campaign for project-version
 
 # Retrieve scenarios for project-version-campaign-ticket
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets",
+            tags=["Campaign"], )
+async def get_campaign_tickets(project_name: str,
+                               version: str,
+                               occurrence: str,
+                               fields: List[CampaignTicketEnum] = Query(default=["reference",
+                                                                                 "scenario_id",
+                                                                                 "status"])):
+    return db_get_campaign_tickets(project_name, version, occurrence, fields)
+
+
+# Retrieve scenario for specific campaign and ticket
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/"
+            "tickets/{reference}/scenarios/{scenario_id}",
+            tags=["Campaign"])
+async def get_campaign_ticket_scenario(project_name: str,
+                                       version: str,
+                                       occurrence: str,
+                                       reference: str,
+                                       scenario_id: str):
+    return db_get_campaign_ticket_scenario(project_name,
+                                           version,
+                                           occurrence,
+                                           reference,
+                                           scenario_id)
+
+
+@router.put("/{project_name}/campaigns/{version}/{occurrence}/"
+            "tickets/{reference}/scenarios/{scenario_id}/status",
+            tags=["Campaign"])
+async def update_campaign_ticket_scenario_status(project_name: str,
+                                                 version: str,
+                                                 occurrence: str,
+                                                 reference: str,
+                                                 scenario_id: str,
+                                                 new_status: ScenarioStatusEnum,
+                                                 user: Any = Security(authorize_user,
+                                                                      scopes=["admin", "user"])):
+    return db_set_campaign_ticket_scenario_status(project_name,
+                                                  version,
+                                                  occurrence,
+                                                  reference,
+                                                  scenario_id,
+                                                  new_status)
