@@ -64,6 +64,24 @@ def get_version(project_name: str, version: str):
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
 
 
+def get_versions(project_name: str) -> list:
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    current = db[DashCollection.CURRENT.value]
+    future = db[DashCollection.FUTURE.value]
+    archived = db[DashCollection.ARCHIVED.value]
+    result = [elem["version"] for elem in future.find({},
+                                                      projection={"_id": False,
+                                                                  "version": True})]
+    result.extend([elem["version"] for elem in current.find({},
+                                                            projection={"_id": False,
+                                                                        "version": True})])
+    result.extend(elem["version"] for elem in archived.find({},
+                                                            projection={"_id": False,
+                                                                        "version": True}))
+    return result
+
+
 def update_version_status(project_name: str, version: str, to_be_status: str):
     _version, _collection = get_version_and_collection(project_name, version)
     accepted_status = [StatusEnum.RECORDED, StatusEnum.ARCHIVED, StatusEnum.CAMPAIGN_STARTED,

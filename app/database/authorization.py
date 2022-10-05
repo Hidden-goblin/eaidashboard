@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import jwt.exceptions
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jwt import decode, PyJWTError
@@ -98,7 +99,11 @@ def check_authorization(token, rights: tuple):
 def check_token_validity(request: Request):
     if "token" not in request.session:
         return False
-    payload = decode(request.session["token"], PUBLIC_KEY, algorithms=[ALGORITHM])
+    try:
+        payload = decode(request.session["token"], PUBLIC_KEY, algorithms=[ALGORITHM])
+    except jwt.exceptions.ExpiredSignatureError:
+        log.info("Signature expired")
+        return False
     email: str = payload.get("sub")
     if email is None:
         return False

@@ -12,21 +12,21 @@ router = APIRouter(
 
 
 @router.get("/{project_name}/epics",
-            tags=["RepositoryEnum"],
+            tags=["Repository"],
             description="Retrieve all epics linked to the project.")
 async def get_epics(project_name):
     return db_project_epics(project_name.casefold())
 
 
 @router.get("/{project_name}/epics/{epic}/features",
-            tags=["RepositoryEnum"],
+            tags=["Repository"],
             description="Retrieve all features linked to the project for this epic")
 async def get_feature(project_name, epic):
     return db_project_features(project_name, epic)
 
 
 @router.get("/{project_name}/repository",
-            tags=["RepositoryEnum"],
+            tags=["Repository"],
             description="""
             Retrieve the elements. The response depends on the retrieved elements.
             """)

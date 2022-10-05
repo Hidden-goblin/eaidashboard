@@ -6,6 +6,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+
 
 class StatusEnum(Enum):
     IN_PROGRESS = "in progress"
@@ -92,7 +94,8 @@ class BugTicket(BaseModel):
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
     url: str
-    status: str
+    status: BugStatusEnum
+    criticality: BugCriticalityEnum
 
 
 class UpdateBugTicket(BaseModel):

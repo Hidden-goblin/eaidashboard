@@ -8,7 +8,8 @@ from app.app_exception import ProjectNotRegistered
 from app.conf import mongo_string
 from app.database.db_settings import DashCollection
 from app.database.settings import registered_projects
-from app.database.versions import get_version_and_collection
+from app.database.versions import get_version_and_collection, get_versions
+from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugTicket, TicketType, UpdateBugTicket
 
 
@@ -23,15 +24,18 @@ def insert_bug(project_name: str, bug_ticket: BugTicket):
 
 
 def get_bugs(project_name: str,
-             status: Optional[TicketType] = None):
+             status: Optional[BugStatusEnum] = None,
+             criticality: Optional[BugCriticalityEnum] = None,
+             version: str = None):
     if project_name not in registered_projects():
         raise ProjectNotRegistered("Project not found")
+    temp_request = {"status": status,
+                    "criticality": criticality,
+                    "version": version}
+    request = {key: value for key, value in temp_request.items() if value is not None}
     client = MongoClient(mongo_string)
     db = client[project_name]
-    if status is not None:
-        return list(db[DashCollection.BUGS.value].find({"status": status.value},
-                                                       projection={"_id": False}))
-    return list(db[DashCollection.BUGS.value].find(projection={"_id": False}))
+    return list(db[DashCollection.BUGS.value].find(request, projection={"_id": False}))
 
 
 def update_bugs(project_name, bug_ticket: UpdateBugTicket):
@@ -44,8 +48,8 @@ def version_bugs(project_name, version, side_version=None):
         raise ProjectNotRegistered("Project not found")
     client = MongoClient(mongo_string)
     db = client[project_name]
-    pipeline = [{"$match": {"version": version}},
-                {"$project": {"myStatus": "$status"}},
+    pipeline_blocking = [{"$match": {"version": version, "criticality": BugCriticalityEnum.blocking}},
+                {"$project": {"myStatus": {"$concat": ["$status", "_", BugCriticalityEnum.blocking]}}},
                 {"$group": {
                     "_id": "$myStatus",
                     "count": {"$sum": 1}
@@ -60,9 +64,51 @@ def version_bugs(project_name, version, side_version=None):
                     ]
                 }}}
                 ]
-    res = db[DashCollection.BUGS.value].aggregate(pipeline)
+    pipeline_major = [{"$match": {"version": version, "criticality": BugCriticalityEnum.major}},
+                {"$project": {"myStatus": {"$concat": ["$status", "_", BugCriticalityEnum.major]}}},
+                {"$group": {
+                    "_id": "$myStatus",
+                    "count": {"$sum": 1}
+                }},
+                {"$replaceRoot": {"newRoot": {
+                    "$arrayToObject": [
+                        [{
+                            "k": "$_id",
+                            "v": "$count"
+                        }
+                        ]
+                    ]
+                }}}
+                ]
+    pipeline_minor = [{"$match": {"version": version, "criticality": BugCriticalityEnum.minor}},
+                {"$project": {"myStatus": {"$concat": ["$status", "_", BugCriticalityEnum.minor]}}},
+                {"$group": {
+                    "_id": "$myStatus",
+                    "count": {"$sum": 1}
+                }},
+                {"$replaceRoot": {"newRoot": {
+                    "$arrayToObject": [
+                        [{
+                            "k": "$_id",
+                            "v": "$count"
+                        }
+                        ]
+                    ]
+                }}}
+                ]
+    res_blocking = db[DashCollection.BUGS.value].aggregate(pipeline_blocking)
+    res_major = db[DashCollection.BUGS.value].aggregate(pipeline_major)
+    res_minor = db[DashCollection.BUGS.value].aggregate(pipeline_minor)
+    res = list(res_blocking)
+    res.extend(list(res_major))
+    res.extend(list(res_minor))
     result = {}
-    for item in list(res):
+    for item in res:
         result = {**result,
                   **item}
     print(result)
+
+
+def compute_bugs(project_name):
+    for version in get_versions(project_name):
+        version_bugs(project_name, version)

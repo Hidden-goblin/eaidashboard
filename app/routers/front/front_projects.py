@@ -82,7 +82,7 @@ async def add_version(project_name: str,
 
 
 @router.get("/{project_name}/repository",
-            tags=["Front - RepositoryEnum"])
+            tags=["Front - Repository"])
 async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,

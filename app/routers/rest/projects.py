@@ -210,7 +210,7 @@ async def get_results(project_name: str):
                  404: {"model": ErrorMessage,
                        "description": "project not found"}
              },
-             tags=["RepositoryEnum"])
+             tags=["Repository"])
 async def upload_repository(project_name: str,
                             background_task: BackgroundTasks,
                             file: UploadFile = File(),
