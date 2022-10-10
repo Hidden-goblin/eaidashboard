@@ -116,9 +116,14 @@ async def fill_campaign(project_name: str,
             tags=["Campaign"],
             description="Retrieve campaign")
 async def get_campaigns(project_name: str,
+                        response: Response,
                         version: str = None,
-                        status: CampaignStatusEnum = None):
-    return retrieve_campaign(project_name, version, status)
+                        status: CampaignStatusEnum = None,
+                        limit: int = 10,
+                        skip: int = 0):
+    campaigns, count = retrieve_campaign(project_name, version, status, limit=limit, skip=skip)
+    response.headers["X-total-count"] = count
+    return campaigns
 
 
 # Retrieve campaign for project-version

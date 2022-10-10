@@ -1,0 +1,39 @@
+{% extends "base_project.html" %}
+<!-- Project data. -->
+{% block project %}
+  <h1>Project: {{project_name}} Campaigns</h1>
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" {%if display_closed %} checked {% endif %}
+           hx-trigger="click"
+           _="on click go to url /front/v1/projects/{{project_name}}/bugs{%if not display_closed %}?status=all{% endif %}"
+    >
+    <label class="form-check-label" for="flexSwitchCheckDefault">Display closed</label>
+  </div>
+
+  <div id="{{project_name}}-bugs" class="container">
+    <div id="dialog"></div>
+    <table class="table table-bordered table-striped">
+      <thead>
+       <tr>
+        <th>Version</th>
+        <th>Titre</th>
+        <th>Criticality</th>
+        <th>Status</th>
+        <th>Created</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for bug in bugs %}
+      <tr>
+        <td>{{bug.version}}</td>
+        <td>{{bug.title}}</td>
+        <td>{{bug.criticality}}</td>
+        <td>{{bug.status}}</td>
+        <td>{{bug.created.strftime('%Y-%m-%d')}}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

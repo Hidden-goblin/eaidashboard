@@ -1,7 +1,6 @@
-{% extends "base.html" %}
-{% block contenu %}
+{% extends "base_project.html" %}
 <!-- Project data. -->
-<div id="project_{{project_name}}" class="container">
+{% block project %}
   <h1>Project: {{project_name}}</h1>
   <div id="{{project_name}}-versions" class="container">
     <div id="dialog"></div>

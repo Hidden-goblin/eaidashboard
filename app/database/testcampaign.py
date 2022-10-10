@@ -28,7 +28,11 @@ def create_campaign(project_name, version):
         return conn
 
 
-def retrieve_campaign(project_name, version: str = None, status: str = None):
+def retrieve_campaign(project_name,
+                      version: str = None,
+                      status: str = None,
+                      limit: int = 10,
+                      skip: int = 0):
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if version is None and status is None:
@@ -37,7 +41,10 @@ def retrieve_campaign(project_name, version: str = None, status: str = None):
                                       " description as description, "
                                       " status as status "
                                       "from campaigns "
-                                      "where project_id = %s;", (project_name,))
+                                      "where project_id = %s "
+                                      "order by version desc, occurrence desc "
+                                      "limit %s offset %s;",
+                                      (project_name, limit, skip))
         elif version is None:
             conn = connection.execute("select id as id, project_id as project_id,"
                                       " version as version, occurrence as occurrence,"
@@ -45,7 +52,10 @@ def retrieve_campaign(project_name, version: str = None, status: str = None):
                                       " status as status "
                                       "from campaigns "
                                       "where project_id = %s"
-                                      " and status = %s;", (project_name, status))
+                                      " and status = %s "
+                                      "order by version desc, occurrence desc "
+                                      "limit %s offset %s;",
+                                      (project_name, status, limit, skip))
         elif status is None:
             conn = connection.execute("select id as id, project_id as project_id,"
                                       " version as version, occurrence as occurrence,"
@@ -53,7 +63,10 @@ def retrieve_campaign(project_name, version: str = None, status: str = None):
                                       " status as status "
                                       "from campaigns "
                                       "where project_id = %s "
-                                      " and version = %s;", (project_name, version))
+                                      " and version = %s "
+                                      "order by version desc, occurrence desc "
+                                      "limit %s offset %s;",
+                                      (project_name, version, limit, skip))
         else:
             conn = connection.execute("select id as id, project_id as project_id,"
                                       " version as version, occurrence as occurrence,"
@@ -62,8 +75,14 @@ def retrieve_campaign(project_name, version: str = None, status: str = None):
                                       "from campaigns "
                                       "where project_id = %s "
                                       " and version = %s"
-                                      " and status = %s;", (project_name, version, status))
-        return conn.fetchall()
+                                      " and status = %s "
+                                      "order by version desc, occurrence desc "
+                                      "limit %s offset %s;",
+                                      (project_name, version, status, limit, skip))
+        count = connection.execute("select count(*) as total "
+                                   "from campaigns "
+                                   "where project_id = %s;", (project_name,))
+        return conn.fetchall(), count.fetchone()["total"]
 
 
 def retrieve_campaign_id(project_name: str, version: str, occurrence: str):

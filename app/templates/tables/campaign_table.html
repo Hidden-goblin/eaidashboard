@@ -1,0 +1,45 @@
+
+<table class="table table-bordered table-striped">
+      <thead>
+       <tr>
+        <th>Version</th>
+        <th>Occurrence</th>
+        <th>Status</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for campaign in campaigns %}
+      <tr>
+        <td>{{campaign.version}}</td>
+        <td>{{campaign.occurrence}}</td>
+        <td>{{campaign.status}}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+     {% if nav_bar %}
+      <nav aria-label="campaign navigation">
+        <ul class="pagination">
+            {% for page in pages %}
+              {% if current_page != page[0] and loop.first %}
+                 <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#campaign_table"
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">Previous</a></li>
+               {% else %}
+                    {% if current_page != page[0] and loop.last %}
+                      <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#campaign_table"
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">Next</a></li>
+                    {% else %}
+                             <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#campaign_table"
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">{{page[0]}}</a></li>
+                    {%endif%}
+               {%endif%}
+            {%endfor%}
+        </ul>
+      </nav>
+      {% endif %}
