@@ -16,7 +16,8 @@ router = APIRouter(prefix="/front/v1/projects")
 
 
 @router.get("/{project_name}/bugs",
-            tags=["Front - Project"])
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def front_project_bugs(project_name: str,
                              request: Request,
                              status: Optional[str] = None):

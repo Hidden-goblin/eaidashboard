@@ -22,7 +22,8 @@ router = APIRouter(prefix="/front/v1/projects")
 
 
 @router.get("/{project_name}",
-            tags=["Front - Project"])
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def front_project_management(project_name: str,
                                    request: Request):
     _versions = get_project(project_name, None)
@@ -40,7 +41,8 @@ async def front_project_management(project_name: str,
 
 
 @router.get("/{project_name}/versions",
-            tags=["Front - Project"])
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def project_versions(project_name: str,
                            request: Request):
     _versions = get_project(project_name, None)
@@ -58,8 +60,9 @@ async def project_versions(project_name: str,
                                       })
 
 
-@router.get("/{project_name}/form/versions",
-            tags=["Front - Project"])
+@router.get("/{project_name}/forms/version",
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def form_version(project_name: str,
                        request: Request):
     return templates.TemplateResponse("forms/add_version.html",
@@ -69,8 +72,9 @@ async def form_version(project_name: str,
                                       })
 
 
-@router.post("/{project_name}/form/versions",
-             tags=["Front - Project"])
+@router.post("/{project_name}/forms/version",
+             tags=["Front - Project"],
+             include_in_schema=False)
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...)
@@ -82,7 +86,8 @@ async def add_version(project_name: str,
 
 
 @router.get("/{project_name}/repository",
-            tags=["Front - Repository"])
+            tags=["Front - Repository"],
+            include_in_schema=False)
 async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,

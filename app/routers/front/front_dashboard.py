@@ -22,6 +22,7 @@ router = APIRouter()
 
 @router.get("/",
             response_class=HTMLResponse,
+            include_in_schema=False,
             tags=["Front - Dashboard"])
 async def dashboard(request: Request):
     if not check_token_validity(request):
@@ -35,7 +36,8 @@ async def dashboard(request: Request):
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
             response_class=HTMLResponse,
-            tags=["Front - Utils"])
+            tags=["Front - Utils"],
+            include_in_schema=False)
 async def project_version_tickets(request: Request, project_name, project_version):
 
     return templates.TemplateResponse("ticket_view.html",
@@ -47,14 +49,16 @@ async def project_version_tickets(request: Request, project_name, project_versio
 
 @router.delete("/clear",
                response_class=HTMLResponse,
-               tags=["Front - Utils"])
+               tags=["Front - Utils"],
+               include_in_schema=False)
 async def return_void():
     return HTMLResponse("")
 
 
 @router.get("/login",
             response_class=HTMLResponse,
-            tags=["Front - Login"]
+            tags=["Front - Login"],
+            include_in_schema=False
             )
 async def login(request: Request):
     return templates.TemplateResponse("login_modal.html",
@@ -63,7 +67,8 @@ async def login(request: Request):
 
 @router.post("/login",
              response_class=HTMLResponse,
-             tags=["Front - Login"])
+             tags=["Front - Login"],
+             include_in_schema=False)
 async def post_login(request: Request,
                      username: str = Form(...),
                      password: str = Form(...)
@@ -79,8 +84,9 @@ async def post_login(request: Request,
 
 
 @router.delete("/login",
-             response_class=HTMLResponse,
-             tags=["Front - Login"])
+               response_class=HTMLResponse,
+               tags=["Front - Login"],
+               include_in_schema=False)
 async def logout(request: Request):
     if is_updatable(request, ("admin", "user")):
         invalidate_token(request.session["token"])
@@ -91,7 +97,8 @@ async def logout(request: Request):
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}/edit",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row_edit.html",
                                       {"request": request,
@@ -104,7 +111,8 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_ticket(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
@@ -117,7 +125,8 @@ async def project_version_ticket(request: Request, project_name, project_version
 
 @router.put("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_update_ticket(request: Request,
                                         project_name: str,
                                         project_version: str,
@@ -151,7 +160,8 @@ async def project_version_update_ticket(request: Request,
 
 @router.get("/testResults",
             response_class=HTMLResponse,
-            tags=["Front - Campaign"])
+            tags=["Front - Campaign"],
+            include_in_schema=False)
 async def get_test_results(request: Request):
     projects = registered_projects()
     result = {project: get_project_results(project) for project in projects}
