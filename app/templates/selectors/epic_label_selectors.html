@@ -1,19 +1,23 @@
+<form>
 <div>
     <label >Epics</label>
-    <select name="epic"
-            hx-get="/front/v1/projects/{{project_name}}/repository"
+    <select name="epic" id="epic"
+            hx-get="/front/v1/projects/{{project_name}}/repository/epics-features"
             hx-target="#features"
             hx-indicator=".htmx-indicator">
         {% for epic in epics %}
             <option value="{{epic}}">{{epic}}</option>
         {% endfor %}
     </select>
-  </div>
-  <div>
-    <label>Features</label>
-    <select id="features" name="feature">
+</div>
+<div>
+   <label>Features</label>
+   <select id="features" name="feature">
       {% for feature in features %}
             <option value="{{feature}}">{{feature}}</option>
         {% endfor %}
-    </select>
-  </div>
+   </select>
+</div>
+<button hx-post="/front/v1/projects/{{project_name}}/repository/scenarios" hx-target="#repositoryTable" hx-ext='json-enc' hx-encoding='application/json'>Filter</button>
+    <button hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit=10&skip=0" hx-target="#repositoryTable">Clear filter</button>
+</form>

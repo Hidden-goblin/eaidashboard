@@ -1,7 +1,17 @@
-{% extends "base.html" %}
-{% block titre %}  {% endblock %}
-{% block contenu %}
+{% extends "base_project.html" %}
+{% block project %}
 <div id="project_{{project_name}}" class="container">
+<div id="{{project_name}}-repository" class="container">
+    <h1>{{project_name}} Repository</h1>
+    <div id="repository_filter"
+         hx-trigger="load"
+         hx-get="/front/v1/projects/{{project_name}}/repository/epics-features"
+         hx-target="this">
 
+    </div>
+    <div id="repositoryTable" hx-target="this" hx-trigger="load" hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit=10&skip=0">
+
+    </div>
+  </div>
 </div>
 {% endblock %}

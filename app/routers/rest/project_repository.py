@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
-from fastapi import (APIRouter)
+from fastapi import (APIRouter, Response)
 
 from app.database.testrepository import db_project_epics, db_project_features, db_project_scenarios
 from app.schema.postgres_enums import RepositoryEnum
@@ -31,6 +31,7 @@ async def get_feature(project_name, epic):
             Retrieve the elements. The response depends on the retrieved elements.
             """)
 async def get_scenarios(project_name: str,
+                        response: Response,
                         elements: RepositoryEnum = RepositoryEnum.epics,
                         limit: int = 100,
                         offset: int = 0,
@@ -44,8 +45,11 @@ async def get_scenarios(project_name: str,
         return db_project_features(project_name, limit=limit, offset=offset)
     else:
         temp = {"epic": epic, "feature": feature}
-        return db_project_scenarios(project_name,
-                                    limit=limit,
-                                    offset=offset,
-                                    **{key: value
-                                       for key, value in temp.items() if value is not None})
+        result, count = db_project_scenarios(project_name,
+                                             limit=limit,
+                                             offset=offset,
+                                             **{key: value
+                                                for key, value in temp.items() if
+                                                value is not None})
+        response.headers["X-total-count"] = str(count)
+        return result

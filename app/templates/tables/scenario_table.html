@@ -1,0 +1,49 @@
+
+<table class="table table-bordered table-striped">
+      <thead>
+       <tr>
+        <th>Epic</th>
+        <th>Feature</th>
+        <th>Name</th>
+           <th>Id</th>
+           <th>Found in</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for scenario in scenarios %}
+      <tr>
+        <td>{{scenario.epic}}</td>
+        <td>{{scenario.feature_name}}</td>
+        <td>{{scenario.name}}</td>
+          <td>{{scenario.scenario_id}}</td>
+          <td>{{scenario.filename}}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+     {% if nav_bar %}
+      <nav aria-label="campaign navigation">
+        <ul class="pagination">
+            {% for page in pages %}
+              {% if current_page != page[0] and loop.first %}
+                 <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#repositoryTable"
+                                          hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit={{page[1]}}&skip={{page[2]}}{{filter}}">Previous</a></li>
+               {% else %}
+                    {% if current_page != page[0] and loop.last %}
+                      <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#repositoryTable"
+                                          hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit={{page[1]}}&skip={{page[2]}}{{filter}}">Next</a></li>
+                    {% else %}
+                             <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="#repositoryTable"
+                                          hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit={{page[1]}}&skip={{page[2]}}{{filter}}">{{page[0]}}</a></li>
+                    {%endif%}
+               {%endif%}
+            {%endfor%}
+        </ul>
+      </nav>
+      {% endif %}

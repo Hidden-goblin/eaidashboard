@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import logging
 from datetime import datetime
 from io import StringIO
 from typing import Any, List, Optional, Union
@@ -53,6 +54,8 @@ router = APIRouter(
     prefix="/api/v1/projects"
 )
 
+log = logging.getLogger(__name__)
+
 
 # Create blank campaign for version
 @router.post("/{project_name}/campaigns",
@@ -74,6 +77,7 @@ async def create_campaigns(project_name: str,
                            campaign: ToBeCampaign,
                            user: Any = Security(authorize_user, scopes=["admin"])):
     try:
+        log.info("api: create_campaigns")
         _version, __ = get_version_and_collection(project_name, campaign.version)
         if _version is None:
             raise VersionNotFound(f"{campaign.version} does not belong to {project_name}.")
@@ -122,7 +126,7 @@ async def get_campaigns(project_name: str,
                         limit: int = 10,
                         skip: int = 0):
     campaigns, count = retrieve_campaign(project_name, version, status, limit=limit, skip=skip)
-    response.headers["X-total-count"] = count
+    response.headers["X-total-count"] = str(count)  # TODO check reason it don't work
     return campaigns
 
 

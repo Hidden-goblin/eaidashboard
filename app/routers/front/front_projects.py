@@ -85,19 +85,6 @@ async def add_version(project_name: str,
     return HTMLResponse("")
 
 
-@router.get("/{project_name}/repository",
-            tags=["Front - Repository"],
-            include_in_schema=False)
-async def get_repository(project_name: str,
-                         request: Request,
-                         epic: str = None,
-                         feature: str = None,
-                         is_board: bool = False):
-    if is_board:
-        return await repository_board(project_name, request, epic, feature)
-    return await repository_dropdowns(project_name, request, epic, feature)
-
-
 async def repository_dropdowns(project_name: str, request: Request, epic: str, feature: str):
     if epic is None and feature is None:
         epics = db_project_epics(project_name)
@@ -119,5 +106,6 @@ async def repository_dropdowns(project_name: str, request: Request, epic: str, f
                                           })
 
 
-async def repository_board(project_name, request, epic, feature):
+async def repository_board(project_name, request, epic, feature, limit, skip):
+
     pass
