@@ -1,0 +1,45 @@
+<form>
+<div>
+    <label >Epics</label>
+    <select name="epic" id="epic"
+            hx-get="/front/v1/projects/{{project_name}}/repository/epics-features"
+            hx-target="#features"
+            hx-indicator=".htmx-indicator">
+        {% for epic in epics %}
+            <option value="{{epic}}">{{epic}}</option>
+        {% endfor %}
+    </select>
+</div>
+<div>
+   <label>Features</label>
+   <select id="features" name="feature">
+      {% for feature in features %}
+            <option value="{{feature}}">{{feature}}</option>
+        {% endfor %}
+   </select>
+</div>
+<button hx-post="/front/v1/projects/{{project_name}}/campaigns/scenarios"
+        hx-trigger="load, click"
+        hx-target="#repositorySelector"
+        hx-ext='json-enc'
+        hx-encoding='application/json'>Filter</button>
+</form>
+
+<form>
+    <div id="repositorySelector">
+
+    </div>
+
+    <div class="button">
+        <button type="Add" class="btn btn-secondary"
+        hx-post="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}" hx-ext='json-enc'
+        hx-encoding='application/json'>
+
+            Add version
+        </button>
+        <button class="btn btn-secondary"
+                hx-delete="/clear"
+                hx-target="#campaignMessage"
+        >Close</button>
+    </div>
+</form>

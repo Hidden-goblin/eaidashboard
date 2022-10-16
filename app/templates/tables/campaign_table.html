@@ -13,6 +13,8 @@
         <td>{{campaign.version}}</td>
         <td>{{campaign.occurrence}}</td>
         <td>{{campaign.status}}</td>
+          <td><button class="btn btn-primary"
+                      _="on click go to url /front/v1/projects/{{project_name}}/campaigns/{{campaign.version}}/{{campaign.occurrence}}">Manage</button> </td>
       </tr>
       {% endfor %}
       </tbody>

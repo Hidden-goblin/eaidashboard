@@ -1,0 +1,9 @@
+@startjson
+{
+"reference": "external reference",
+"description": "ticket description (title ?)",
+"status": "Ticket status related to testing view",
+"created": "datetime of creation",
+"updated": "datetime of last update"
+}
+@endjson

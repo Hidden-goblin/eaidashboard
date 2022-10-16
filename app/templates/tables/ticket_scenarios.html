@@ -1,0 +1,29 @@
+<table class="table table-bordered table-striped">
+    <thead>
+    <tr>
+        <th>Epic</th>
+        <th>Feature</th>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for scenario in scenarios %}
+        <tr>
+            <td>{{scenario.epic_id}}</td>
+            <td>{{scenario.feature_name}}</td>
+            <td>{{scenario.scenario_id}}</td>
+            <td>{{scenario.name}}</td>
+            <td>{{scenario.status}}</td>
+            <td>Remove from ticket</td>
+            <td> <button class="btn btn-primary"
+                         hx-trigger="click"
+                hx-target="#campaignMessage"
+                hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}">Update</button></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

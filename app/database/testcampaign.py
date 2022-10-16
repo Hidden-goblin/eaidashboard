@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Union
 
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import CampaignNotFound, NonUniqueError
 from app.database.tickets import get_ticket, get_tickets_by_reference
@@ -87,6 +87,7 @@ def retrieve_campaign(project_name,
 
 def retrieve_campaign_id(project_name: str, version: str, occurrence: str):
     with pool.connection() as connection:
+        connection.row_factory = tuple_row
         return connection.execute("select id, status"
                                   " from campaigns"
                                   " where project_id = %s "
@@ -174,12 +175,14 @@ def fill_campaign(project_name: str,
 
 
 def get_campaign_content(project_name: str, version: str, occurrence: str):
+    """Retrieve the campaign fully (tickets and scenarios). No pagination."""
     if not is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
                                f"for project {project_name} in version {version} not found")
     campaign_id = retrieve_campaign_id(project_name, version, occurrence)
     with pool.connection() as connection:
         connection.row_factory = dict_row
+        # Select all sql data related to the campaign
         result = connection.execute("select ticket_reference as reference, status as status,"
                                     " sc.scenario_id as scenario_id, sc.name as name,"
                                     " sc.steps as steps, ft.name as feature_name, "
@@ -194,13 +197,16 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
                                     "where campaign_id = %s "
                                     "order by cts.ticket_reference desc;",
                                     (campaign_id[0],))
+        # Prepare the result
         camp = {"project": project_name,
                 "version": version,
                 "occurrence": occurrence,
                 "status": campaign_id[1],
                 "tickets": []}
+        # Accumulators
         tickets = set()
         current_ticket = {}
+        # Iter over result and dispatch between new ticket and ticket's scenario
         for row in result.fetchall():
             if row["reference"] not in tickets:
                 if current_ticket:
@@ -217,34 +223,60 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
                 "steps": row["steps"],
                 "status": row["status"]
             })
-
+        # Add the last ticket
         camp["tickets"].append(current_ticket)
+
+        # Retrieve data from mongo
         tickets_data = {tick["reference"]: tick["description"]
                         for tick in get_tickets_by_reference(project_name, version, tickets)}
+
+        # Update the tickets with their summary
         for tick in camp["tickets"]:
-            tick["summary"] = tickets_data[tick["reference"]]
+            if tick:
+                tick["summary"] = tickets_data[tick["reference"]]
         return camp
 
 
-def db_get_campaign_tickets(project_name, version, occurrence, fields: list[str] = ("reference",
-                                                                                    "scenario_id",
-                                                                                    "status")):
+def db_get_campaign_tickets(project_name,
+                            version,
+                            occurrence):
+    """"""
     if not is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
                                f"for project {project_name} in version {version} not found")
     campaign_id = retrieve_campaign_id(project_name, version, occurrence)
-    validate_campaign_tickets_fields(fields)
 
-    field_mapping = {"status": 1,
-                     "scenario_id": 2,
-                     "name": 3,
-                     "steps": 4,
-                     "feature_id": 5,
-                     "epic_id": 6}
     with pool.connection() as connection:
-        result = connection.execute("select ticket_reference as reference, status as status,"
-                                    " sc.scenario_id as scenario_id, sc.name as name,"
-                                    " sc.steps as steps, ft.name as feature_name, "
+        connection.row_factory = tuple_row
+        result = connection.execute("select distinct ticket_reference "
+                                    "from campaign_tickets_scenarios as cts "
+                                    "where campaign_id = %s "
+                                    "order by cts.ticket_reference desc;",
+                                    (campaign_id[0],))
+        tickets = result.fetchall()
+        updated_tickets = get_tickets_by_reference(project_name,
+                                                   version,
+                                                   [ticket[0] for ticket in tickets])
+        return {"project": project_name,
+                "version": version,
+                "occurrence": occurrence,
+                "status": campaign_id[1],
+                "tickets": updated_tickets}
+
+
+def db_get_campaign_ticket_scenarios(project_name,
+                                     version,
+                                     occurrence,
+                                     reference):
+    if not is_campaign_exist(project_name, version, occurrence):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        result = connection.execute("select sc.scenario_id as scenario_id, sc.name as name,"
+                                    " sc.steps as steps, cts.status as status,"
+                                    " ft.name as feature_name, "
                                     "ep.name as epic_id "
                                     "from campaign_tickets_scenarios as cts "
                                     "join scenarios as sc "
@@ -253,32 +285,10 @@ def db_get_campaign_tickets(project_name, version, occurrence, fields: list[str]
                                     "   on sc.feature_id = ft.id "
                                     "join epics as ep "
                                     "   on ft.epic_id = ep.id "
-                                    "where campaign_id = %s "
-                                    "order by cts.ticket_reference desc;",
-                                    (campaign_id[0],))
-        return_tickets = []
-        tickets = set()
-        current_ticket = {}
-        for row in result.fetchall():
-            if row[0] not in tickets:
-                if current_ticket:
-                    return_tickets.append(current_ticket)
-                tickets.add(row[0])
-                if "reference" in fields:
-                    current_ticket = {"reference": row[0],
-                                      "scenarios": []}
-                else:
-                    current_ticket = {"scenarios": []}
-            current_ticket["scenarios"].append(
-                {field: row[field_mapping[field]] for field in fields if field in field_mapping})
-        return_tickets.append(current_ticket)
-        if "summary" in fields:
-            tickets_data = {tick["reference"]: tick["description"]
-                            for tick in get_tickets_by_reference(project_name, version, tickets)}
-            for index, value in enumerate(tickets):
-                return_tickets[index]["summary"] = tickets_data[value]
-
-        return return_tickets
+                                    "where cts.campaign_id = %s "
+                                    "and cts.ticket_reference = %s ",
+                                    (campaign_id[0], reference))
+        return result.fetchall()
 
 
 def db_get_campaign_ticket_scenario(project_name,

@@ -132,7 +132,8 @@ async def get_campaigns(project_name: str,
 
 # Retrieve campaign for project-version
 @router.get("/{project_name}/campaigns/{version}/{occurrence}",
-            tags=["Campaign"], )
+            tags=["Campaign"],
+            description="Retrieve the full campaign")
 async def get_campaign(project_name: str,
                        version: str,
                        occurrence: str):
@@ -141,14 +142,12 @@ async def get_campaign(project_name: str,
 
 # Retrieve scenarios for project-version-campaign-ticket
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets",
-            tags=["Campaign"], )
+            tags=["Campaign"],
+            description="Retrieve a campaign tickets")
 async def get_campaign_tickets(project_name: str,
                                version: str,
-                               occurrence: str,
-                               fields: List[CampaignTicketEnum] = Query(default=["reference",
-                                                                                 "scenario_id",
-                                                                                 "status"])):
-    return db_get_campaign_tickets(project_name, version, occurrence, fields)
+                               occurrence: str):
+    return db_get_campaign_tickets(project_name, version, occurrence)
 
 
 # Retrieve scenario for specific campaign and ticket

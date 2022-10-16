@@ -1,9 +1,9 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
+import os
 from fastapi.templating import Jinja2Templates
 from dotenv import dotenv_values
-import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent

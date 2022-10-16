@@ -15,6 +15,7 @@ from app.routers.front import (front_dashboard, front_projects, front_projects_c
                                front_projects_bug, front_projects_repository)
 from app.utils.openapi_tags import DESCRIPTION
 from app.utils.pgdb import pool
+from app.conf import config
 
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
@@ -32,7 +33,7 @@ app = FastAPI(title="Eaidashboard",
 init_postgres()
 update_postgres()
 
-app.add_middleware(SessionMiddleware, secret_key='toto')
+app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_credentials=True,
                    allow_methods=["*"],
