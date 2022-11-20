@@ -1,3 +1,4 @@
+<!-- Add scenario form -->
 <form>
 <div>
     <label >Epics</label>
@@ -32,10 +33,10 @@
 
     <div class="button">
         <button type="Add" class="btn btn-secondary"
-        hx-post="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}" hx-ext='json-enc'
+        hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}" hx-ext='json-enc'
         hx-encoding='application/json'>
 
-            Add version
+            Add to ticket
         </button>
         <button class="btn btn-secondary"
                 hx-delete="/clear"

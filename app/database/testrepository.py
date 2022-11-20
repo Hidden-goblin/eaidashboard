@@ -208,5 +208,21 @@ def db_project_scenarios(project: str, epic: str = None, feature: str = None,
                 "full join features on features.id = scenarios.feature_id "
                 "full join epics on epics.id = features.epic_id "
                 "where scenarios.project_id = %s ",
-                (project.casefold(), ))
+                (project.casefold(),))
         return list(cursor), count.fetchone()["total"]
+
+
+def db_get_scenarios_id(project_name, epic_name, feature_name, scenarios_ref):
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        cursor = connection.execute("select sc.id from scenarios as sc "
+                                    "join features as ft on sc.feature_id = ft.id "
+                                    "join epics as epc on epc.id = ft.epic_id "
+                                    "where sc.project_id like %s "
+                                    "and epc.name like %s "
+                                    "and ft.name like  %s "
+                                    "and sc.scenario_id =Any(%s);", [project_name,
+                                                                     epic_name,
+                                                                     feature_name,
+                                                                     scenarios_ref])
+        return [row["id"] for row in cursor]

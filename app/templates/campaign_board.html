@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block titre %}  {% endblock %}
 {% block contenu %}
+<!-- Campaign Board -->
 <div id="project_{{project_name}}" class="container">
     <h1>Campaign for {{project_name}} version {{version}} (run {{occurrence}})</h1>
     <h2>Status: {{campaign.status}}</h2>
@@ -26,7 +27,7 @@
                 <div>
                     <button class="btn"
                             hx-trigger="click"
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{occurrence}}/{{ticket.reference}}"
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}"
                             hx-target="#campaignMessage"
                             >Add scenarios</button>
                     <button class="btn"

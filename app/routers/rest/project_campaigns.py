@@ -30,7 +30,9 @@ from app.database.projects import (create_project_version,
                                    insert_results)
 from app.database.settings import registered_projects
 from app.database.testcampaign import (create_campaign,
-                                       db_get_campaign_ticket_scenario, db_get_campaign_tickets,
+                                       db_get_campaign_ticket_scenario,
+                                       db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
+                                       db_put_campaign_ticket_scenarios,
                                        db_set_campaign_ticket_scenario_status, get_campaign_content,
                                        is_campaign_exist,
                                        retrieve_campaign,
@@ -46,7 +48,9 @@ from app.schema.project_schema import (ErrorMessage,
                                        TestFeature, UpdateVersion,
                                        Version,
                                        TicketProject)
-from app.schema.campaign_schema import CampaignLight, TicketScenarioCampaign, ToBeCampaign
+from app.schema.campaign_schema import CampaignLight, ScenarioCampaign, Scenarios, \
+    TicketScenarioCampaign, \
+    ToBeCampaign
 from app.conf import mongo_string
 from enum import Enum
 
@@ -147,7 +151,35 @@ async def get_campaign(project_name: str,
 async def get_campaign_tickets(project_name: str,
                                version: str,
                                occurrence: str):
-    return db_get_campaign_tickets(project_name, version, occurrence)
+    try:
+        return db_get_campaign_tickets(project_name, version, occurrence)
+    except CampaignNotFound as cnf:
+        raise HTTPException(404, detail=" ".join(cnf.args)) from cnf
+
+
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",
+            tags=["Campaign"],
+            description="Retrieve a campaign ticket")
+async def get_campaign_ticket(project_name: str,
+                              version: str,
+                              occurrence: str,
+                              ticket_ref: str):
+    return db_get_campaign_ticket_scenarios(project_name, version, occurrence, ticket_ref)
+
+
+@router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",
+            tags=["Campaign"],
+            description="Add scenarios to a ticket")
+async def put_campaign_ticket_scenarios(project_name: str,
+                                        version: str,
+                                        occurrence: str,
+                                        ticket_ref: str,
+                                        scenarios: List[Scenarios]):
+    return db_put_campaign_ticket_scenarios(project_name,
+                                            version,
+                                            occurrence,
+                                            ticket_ref,
+                                            scenarios)
 
 
 # Retrieve scenario for specific campaign and ticket

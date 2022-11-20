@@ -219,3 +219,16 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                        "scenario": scenario,
                                        "statuses": [status.value for status in ScenarioStatusEnum],
                                        "request": request})
+
+
+@router.put("/{project_name}/campaigns/{version}/{occurrence}/"
+            "{ticket_reference}",
+            tags=["Front - Campaign"],
+            include_in_schema=False)
+async def add_scenarios_to_ticket(project_name: str,
+                                  version: str,
+                                  occurrence: str,
+                                  ticket_reference: str,
+                                  element: dict,
+                                  request: Request):
+    print(f"Add {element} to {ticket_reference}")

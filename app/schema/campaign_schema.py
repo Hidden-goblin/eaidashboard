@@ -18,6 +18,12 @@ class ScenarioCampaign(BaseModel):
     feature_filename: Optional[str]
 
 
+class Scenarios(BaseModel):
+    epic: str
+    feature_name: str
+    scenario_ids: List[str]
+
+
 class TicketScenarioCampaign(BaseModel):
     ticket_reference: str
     scenarios: Union[ScenarioCampaign, List[ScenarioCampaign]]
@@ -29,3 +35,4 @@ class CampaignLight(BaseModel):
     occurrence: int
     description: Optional[str]
     status: CampaignStatusEnum
+

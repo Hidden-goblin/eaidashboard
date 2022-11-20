@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+'skinparam maxMessageSize 10
+autonumber
+participant API
+participant FRONT
+participant back
+participant mongo
+participant postgre
+API -> back: PUT /{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}
+note right
+    {feature: str,
+     epic: str,
+      scenarios: [str]}
+end note
+back -> postgre: is_campaign_exist
+postgre --> back:
+back -> postgre: retrieve_campaign_id
+postgre -> back: campaign_id
+back -> mongo: get_ticket
+mongo --> back: ticket
+back -> postgre: insert campaign_id, ticket_ref, scenarios
+
+@enduml

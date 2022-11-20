@@ -4,12 +4,13 @@ from typing import List, Union
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import CampaignNotFound, NonUniqueError
+from app.app_exception import CampaignNotFound, NonUniqueError, TicketNotFound
+from app.database.testrepository import db_get_scenarios_id
 from app.database.tickets import get_ticket, get_tickets_by_reference
 from app.schema.campaign_field_filtering import validate_campaign_tickets_fields
-from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.project_schema import TestFeature, TestScenario
-from app.schema.campaign_schema import TicketScenarioCampaign
+from app.schema.campaign_schema import ScenarioCampaign, Scenarios, TicketScenarioCampaign
 from app.utils.pgdb import pool
 
 
@@ -254,9 +255,10 @@ def db_get_campaign_tickets(project_name,
                                     "order by cts.ticket_reference desc;",
                                     (campaign_id[0],))
         tickets = result.fetchall()
-        updated_tickets = get_tickets_by_reference(project_name,
-                                                   version,
-                                                   [ticket[0] for ticket in tickets])
+        updated_tickets = list(get_tickets_by_reference(project_name,
+                                                        version,
+                                                        [ticket[0] for ticket in tickets]))
+
         return {"project": project_name,
                 "version": version,
                 "occurrence": occurrence,
@@ -312,6 +314,41 @@ def db_get_campaign_ticket_scenario(project_name,
                                     "and sc.scenario_id = %s",
                                     (campaign_id[0], reference, scenario_id))
         return result.fetchone()
+
+
+def db_put_campaign_ticket_scenarios(project_name,
+                                     version,
+                                     occurrence,
+                                     reference,
+                                     scenarios: List[Scenarios]
+                                     ):
+    if not is_campaign_exist(project_name, version, occurrence):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+    # Check reference exists in version
+    ticket = get_ticket(project_name, version, reference)
+    if not ticket:
+        raise TicketNotFound(f"Ticket {reference} does not belong to project {project_name},"
+                             f" version {version}")
+    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        # Get scenario ids
+        scenarios_id = []
+        for scenario in scenarios:
+            scenarios_id.extend(db_get_scenarios_id(project_name,
+                                                    scenario.epic,
+                                                    scenario.feature_name,
+                                                    scenario.scenario_ids))
+            connection.execute("insert into campaign_tickets_scenarios "
+                               "(campaign_id, scenario_id, ticket_reference, status) "
+                               "SELECT %s, x, %s, %s "
+                               "FROM unnest(%s) x "
+                               "on conflict do nothing;", [campaign_id[0],
+                                                           reference,
+                                                           str(ScenarioStatusEnum.recorded),
+                                                           scenarios_id])
+        # Bulk insert scenarios
 
 
 def db_set_campaign_ticket_scenario_status(project_name,
