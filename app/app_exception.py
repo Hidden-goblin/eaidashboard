@@ -1,6 +1,10 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
+class InsertionError(Exception):
+    pass
+
+
 class ProjectNotRegistered(Exception):
     pass
 
@@ -40,10 +44,16 @@ class IncorrectTicketCount(Exception):
 class CampaignNotFound(Exception):
     pass
 
+
 class TicketNotFound(Exception):
     pass
 
+
 class NonUniqueError(Exception):
+    pass
+
+
+class UserNotFound(Exception):
     pass
 
 

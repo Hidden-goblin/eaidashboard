@@ -3,7 +3,7 @@
 
 from fastapi import (APIRouter, Response)
 
-from app.database.testrepository import db_project_epics, db_project_features, db_project_scenarios
+from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
 from app.schema.postgres_enums import RepositoryEnum
 
 router = APIRouter(

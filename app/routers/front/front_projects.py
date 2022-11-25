@@ -1,22 +1,15 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
-import urllib.parse
 
 from fastapi import APIRouter, Form, HTTPException
-from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.conf import templates
-from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
-from app.database.projects import create_project_version, get_project, get_project_results
-from app.database.settings import registered_projects
-from app.database.testrepository import db_project_epics, db_project_features
-from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
-from app.database.versions import dashboard as db_dash
-from app.schema.project_schema import RegisterVersion, UpdatedTicket
+from app.database.projects import create_project_version, get_project
+from app.database.postgre.testrepository import db_project_epics, db_project_features
+from app.schema.project_schema import RegisterVersion
 
 router = APIRouter(prefix="/front/v1/projects")
 

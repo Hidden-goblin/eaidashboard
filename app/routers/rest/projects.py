@@ -2,12 +2,11 @@
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
 from io import StringIO
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 from fastapi import (APIRouter,
                      File,
                      HTTPException,
-                     Depends,
                      Query,
                      Response,
                      Security,
@@ -22,19 +21,19 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 from app.database.projects import (create_project_version,
                                    get_project,
                                    get_project_results,
                                    insert_results)
 from app.database.settings import registered_projects
-from app.database.testrepository import add_epic, add_feature, add_scenario, \
+from app.database.postgre.testrepository import add_epic, add_feature, add_scenario, \
     clean_scenario_with_fake_id
 from app.database.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       TestFeature, UpdateVersion,
+                                       UpdateVersion,
                                        Version,
                                        TicketProject)
 from app.conf import mongo_string

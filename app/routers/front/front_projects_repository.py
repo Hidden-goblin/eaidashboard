@@ -1,17 +1,14 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
-import urllib.parse
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter
 from starlette.requests import Request
 
 from app.conf import templates
-from app.database.bugs import get_bugs
-from app.database.testcampaign import retrieve_campaign
-from app.database.testrepository import db_project_features, db_project_scenarios
-from app.routers.front.front_projects import repository_board, repository_dropdowns
+from app.database.mongo.bugs import get_bugs
+from app.database.postgre.testrepository import db_project_scenarios
+from app.routers.front.front_projects import repository_dropdowns
 from app.schema.mongo_enums import BugStatusEnum
 from app.utils.pages import page_numbering
 

@@ -6,11 +6,11 @@ from pymongo import MongoClient
 
 from app.app_exception import ProjectNotRegistered
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 from app.database.settings import registered_projects
 from app.database.versions import get_version_and_collection, get_versions
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
-from app.schema.project_schema import BugTicket, TicketType, UpdateBugTicket
+from app.schema.project_schema import BugTicket, UpdateBugTicket
 
 
 def insert_bug(project_name: str, bug_ticket: BugTicket):

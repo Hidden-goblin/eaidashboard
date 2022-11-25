@@ -1,27 +1,16 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any, List, Optional, Union
+from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Response, Security
-from pymongo.errors import DuplicateKeyError, InvalidOperation
+from fastapi import APIRouter, HTTPException, Security
+from pymongo.errors import DuplicateKeyError
 from starlette.background import BackgroundTasks
 
-from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
-                               DuplicateArchivedVersion,
-                               DuplicateFutureVersion,
-                               DuplicateInProgressVersion, VersionNotFound)
+from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.db_settings import DashCollection
-from app.database.projects import create_project_version, get_project
 from app.database.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
-from app.database.versions import get_version, move_tickets, update_version_data, \
-    update_version_status
 from app.schema.project_schema import (ErrorMessage,
-                                       Project,
-                                       RegisterVersion,
-                                       Ticket, TicketType, ToBeTicket, UpdatedTicket, UpdateVersion,
-                                       Version,
-                                       TicketProject)
+                                       Ticket, ToBeTicket, UpdatedTicket)
 
 router = APIRouter(
     prefix="/api/v1"

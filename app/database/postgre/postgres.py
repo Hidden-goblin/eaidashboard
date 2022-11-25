@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 import psycopg
 from app.conf import postgre_string, postgre_setting_string, config
-from app.database.postgre_updates import POSTGRE_UPDATES
+from app.database.postgre.postgre_updates import POSTGRE_UPDATES
 
 
 def init_postgres():

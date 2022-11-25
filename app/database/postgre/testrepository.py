@@ -109,6 +109,7 @@ def db_project_features(project: str, epic: str = None, limit: int = 100, offset
 
 def db_project_scenarios(project: str, epic: str = None, feature: str = None,
                          limit: int = 100, offset: int = 0):
+    """All scenarios for a project"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = None

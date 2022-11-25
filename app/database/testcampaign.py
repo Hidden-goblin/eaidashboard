@@ -1,16 +1,14 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Union
+from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import CampaignNotFound, NonUniqueError, TicketNotFound
-from app.database.testrepository import db_get_scenarios_id
+from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.tickets import get_ticket, get_tickets_by_reference
-from app.schema.campaign_field_filtering import validate_campaign_tickets_fields
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.project_schema import TestFeature, TestScenario
-from app.schema.campaign_schema import ScenarioCampaign, Scenarios, TicketScenarioCampaign
+from app.schema.campaign_schema import Scenarios, TicketScenarioCampaign
 from app.utils.pgdb import pool
 
 

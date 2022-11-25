@@ -1,20 +1,19 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
-import urllib.parse
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette.requests import Request
 
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.testcampaign import (db_get_campaign_ticket_scenario,
                                        db_get_campaign_ticket_scenarios,
+                                       db_put_campaign_ticket_scenarios,
                                        db_set_campaign_ticket_scenario_status,
-                                       get_campaign_content,
                                        retrieve_campaign)
-from app.database.testrepository import db_project_epics, db_project_features, db_project_scenarios
+from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
 from app.routers.rest.project_campaigns import get_campaign_tickets
+from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
 from app.utils.pages import page_numbering
 
@@ -109,7 +108,8 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                                 version: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
-                                                request: Request):
+                                                request: Request,
+                                                initiator: str = None):
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("error_message.html",
                                           {
@@ -128,7 +128,8 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                        "request": request,
                                        "ticket_reference": ticket_reference,
                                        "epics": epics,
-                                       "features": unique_features})
+                                       "features": unique_features,
+                                       "initiator": initiator})
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/{ticket_reference}/scenarios",
@@ -230,5 +231,26 @@ async def add_scenarios_to_ticket(project_name: str,
                                   occurrence: str,
                                   ticket_reference: str,
                                   element: dict,
-                                  request: Request):
-    print(f"Add {element} to {ticket_reference}")
+                                  request: Request,
+                                  initiator: str = None):
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
+    valid = "scenario_ids" in element
+    if valid and not isinstance(element["scenario_ids"], list):
+        element["scenario_ids"] = [element["scenario_ids"]]
+
+    if valid:
+        db_put_campaign_ticket_scenarios(project_name,
+                                         version,
+                                         occurrence,
+                                         ticket_reference,
+                                         [Scenarios(**element)])
+    return templates.TemplateResponse('void.html',
+                                      {"request": request},
+                                      headers={"HX-Trigger": initiator})

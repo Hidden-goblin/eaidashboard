@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from starlette.background import BackgroundTasks
 
-from app.database.bugs import compute_bugs, get_bugs as db_g_bugs, insert_bug, version_bugs
+from app.database.mongo.bugs import compute_bugs, get_bugs as db_g_bugs, insert_bug, version_bugs
 from app.database.versions import get_version_and_collection
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugTicket, TicketType

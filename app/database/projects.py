@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from app.app_exception import (DuplicateArchivedVersion, DuplicateFutureVersion,
                                DuplicateInProgressVersion, ProjectNotRegistered)
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 from app.database.settings import registered_projects
 from app.schema.project_schema import (Bugs, RegisterVersion, Statistics, StatusEnum,
                                        Version)

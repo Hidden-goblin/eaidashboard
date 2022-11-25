@@ -1,6 +1,6 @@
-<!-- Add scenario form -->
 <form>
-<div>
+     <!-- Form: Add scenario -->
+    <div>
     <label >Epics</label>
     <select name="epic" id="epic"
             hx-get="/front/v1/projects/{{project_name}}/repository/epics-features"
@@ -32,9 +32,11 @@
     </div>
 
     <div class="button">
-        <button type="Add" class="btn btn-secondary"
-        hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}" hx-ext='json-enc'
-        hx-encoding='application/json'>
+        <button type="Add" id="addScenario" class="btn btn-secondary"
+                hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}?initiator={{initiator}}"
+                hx-ext='json-enc'
+                hx-encoding='application/json'
+                hx-target="#campaignMessage">
 
             Add to ticket
         </button>

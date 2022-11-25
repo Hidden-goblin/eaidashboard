@@ -1,15 +1,12 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
-import urllib.parse
 from typing import Optional
 
 from fastapi import APIRouter
 from starlette.requests import Request
 
 from app.conf import templates
-from app.database.bugs import get_bugs
-from app.database.testcampaign import retrieve_campaign
+from app.database.mongo.bugs import get_bugs
 from app.schema.mongo_enums import BugStatusEnum
 
 router = APIRouter(prefix="/front/v1/projects")

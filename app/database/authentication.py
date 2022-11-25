@@ -52,13 +52,21 @@ def create_access_token(data: dict,
                      {"$set": {"token_date": datetime.now(timezone.utc)}},
                      upsert=True)
 
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode["exp"] = expire
+    # if expires_delta:
+    #     expire = datetime.now(timezone.utc) + expires_delta
+    # else:
+    #     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    # to_encode["exp"] = expire
     return encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
+def renew(user):
+    client = MongoClient(mongo_string)
+    db = client["settings"]
+    token = db["token"]
+    token.update_one({"username": user},
+                     {"$set": {"token_date": datetime.now(timezone.utc)}},
+                     upsert=True)
 
 def revoke(username):
     client = MongoClient(mongo_string)

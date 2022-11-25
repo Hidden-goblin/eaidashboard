@@ -1,34 +1,15 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import logging
-from datetime import datetime
-from io import StringIO
-from typing import Any, List, Optional, Union
+from typing import Any, List
 
 from fastapi import (APIRouter,
-                     File,
                      HTTPException,
-                     Depends,
-                     Query,
                      Response,
-                     Security,
-                     UploadFile)
-from pymongo import MongoClient
-from csv import DictReader
+                     Security)
 
-from starlette.background import BackgroundTasks
-
-from app.app_exception import (CampaignNotFound, NonUniqueError, ProjectNotRegistered,
-                               DuplicateArchivedVersion,
-                               DuplicateFutureVersion,
-                               DuplicateInProgressVersion, VersionNotFound)
+from app.app_exception import (CampaignNotFound, NonUniqueError, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.db_settings import DashCollection
-from app.database.projects import (create_project_version,
-                                   get_project,
-                                   get_project_results,
-                                   insert_results)
-from app.database.settings import registered_projects
 from app.database.testcampaign import (create_campaign,
                                        db_get_campaign_ticket_scenario,
                                        db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
@@ -37,22 +18,12 @@ from app.database.testcampaign import (create_campaign,
                                        is_campaign_exist,
                                        retrieve_campaign,
                                        fill_campaign as db_fill_campaign)
-from app.database.testrepository import add_epic, add_feature, add_scenario, \
-    clean_scenario_with_fake_id, db_project_epics, db_project_features, db_project_scenarios
-from app.database.versions import get_version, get_version_and_collection, update_version_data, \
-    update_version_status
-from app.schema.postgres_enums import CampaignStatusEnum, CampaignTicketEnum, ScenarioStatusEnum
-from app.schema.project_schema import (ErrorMessage,
-                                       Project,
-                                       RegisterVersion,
-                                       TestFeature, UpdateVersion,
-                                       Version,
-                                       TicketProject)
-from app.schema.campaign_schema import CampaignLight, ScenarioCampaign, Scenarios, \
+from app.database.versions import get_version_and_collection
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.project_schema import (ErrorMessage)
+from app.schema.campaign_schema import CampaignLight, Scenarios, \
     TicketScenarioCampaign, \
     ToBeCampaign
-from app.conf import mongo_string
-from enum import Enum
 
 router = APIRouter(
     prefix="/api/v1/projects"

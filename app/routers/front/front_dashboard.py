@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 import logging
 import urllib.parse
+from base64 import decode
 
 from fastapi import APIRouter, Form, HTTPException
 from starlette.background import BackgroundTasks
@@ -10,7 +11,7 @@ from starlette.responses import HTMLResponse
 
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
-from app.database.authorization import check_token_validity, is_updatable
+from app.database.authorization import is_updatable
 from app.database.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
@@ -25,13 +26,13 @@ router = APIRouter()
             include_in_schema=False,
             tags=["Front - Dashboard"])
 async def dashboard(request: Request):
-    if not check_token_validity(request):
+    if not is_updatable(request, ()):
         request.session.pop("token", None)
     projects = registered_projects()
     return templates.TemplateResponse("dashboard.html",
                                       {"request": request,
                                        "project_version": db_dash(),
-                                       "projects": projects if projects else []})
+                                       "projects": projects or []})
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
@@ -131,6 +132,7 @@ async def project_version_update_ticket(request: Request,
                                         project_name: str,
                                         project_version: str,
                                         reference: str,
+                                        body: dict,
                                         background_task: BackgroundTasks):
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("modal_error.html",
@@ -139,13 +141,11 @@ async def project_version_update_ticket(request: Request,
                                            "my_fetch": f"then fetch /{project_name}/versions/"
                                                        f"{project_version}/tickets as html "
                                                        f"put the result into #tickets "})
-    body = await request.body()
-    body_pairs = [item.split("=") for item in body.decode().split("&")]
-    jbody = {item[0]: urllib.parse.unquote_plus(item[1]) for item in body_pairs}
+    # TODO check if a refactor might enhance readability
     res = update_ticket(project_name,
                         project_version,
                         reference,
-                        UpdatedTicket(description=jbody["description"], status=jbody["status"]))
+                        UpdatedTicket(description=body["description"], status=body["status"]))
     if not res.acknowledged:
         logging.getLogger().error("No done")
     background_task.add_task(update_values, project_name, project_version)

@@ -10,7 +10,7 @@ from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
                                StatusTransitionForbidden,
                                UnknownStatusException, UpdateException)
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 from app.database.settings import registered_projects
 from app.schema.project_schema import Bugs, StatusEnum, UpdateTickets, UpdateVersion
 
