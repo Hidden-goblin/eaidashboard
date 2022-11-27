@@ -4,7 +4,7 @@ from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import CampaignNotFound, NonUniqueError, TicketNotFound
+from app.app_exception import CampaignNotFound, NonUniqueError, ScenarioNotFound, TicketNotFound
 from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.tickets import get_ticket, get_tickets_by_reference
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
@@ -126,7 +126,7 @@ def fill_campaign(project_name: str,
             scenarios = list(content.scenarios)
         errors = []
         for scenario in scenarios:
-            # Retrieve scenario id
+            # Retrieve scenario_internal_id id
             if scenario.feature_name and not scenario.feature_filename:
                 scenario_id = connection.execute("select scenarios.id "
                                                  "from scenarios "
@@ -205,7 +205,7 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
         # Accumulators
         tickets = set()
         current_ticket = {}
-        # Iter over result and dispatch between new ticket and ticket's scenario
+        # Iter over result and dispatch between new ticket and ticket's scenario_internal_id
         for row in result.fetchall():
             if row["reference"] not in tickets:
                 if current_ticket:
@@ -276,7 +276,7 @@ def db_get_campaign_ticket_scenarios(project_name,
         connection.row_factory = dict_row
         result = connection.execute("select sc.scenario_id as scenario_id, sc.name as name,"
                                     " sc.steps as steps, cts.status as status,"
-                                    " ft.name as feature_name, "
+                                    " ft.name as feature_name, sc.id as sc_internal, "
                                     "ep.name as epic_id "
                                     "from campaign_tickets_scenarios as cts "
                                     "join scenarios as sc "
@@ -331,14 +331,14 @@ def db_put_campaign_ticket_scenarios(project_name,
     campaign_id = retrieve_campaign_id(project_name, version, occurrence)
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        # Get scenario ids
+        # Get scenario_internal_id ids
         scenarios_id = []
         for scenario in scenarios:
             scenarios_id.extend(db_get_scenarios_id(project_name,
                                                     scenario.epic,
                                                     scenario.feature_name,
                                                     scenario.scenario_ids))
-            connection.execute("insert into campaign_tickets_scenarios "
+        connection.execute("insert into campaign_tickets_scenarios "
                                "(campaign_id, scenario_id, ticket_reference, status) "
                                "SELECT %s, x, %s, %s "
                                "FROM unnest(%s) x "
@@ -346,7 +346,33 @@ def db_put_campaign_ticket_scenarios(project_name,
                                                            reference,
                                                            str(ScenarioStatusEnum.recorded),
                                                            scenarios_id])
-        # Bulk insert scenarios
+
+
+def db_delete_campaign_ticket_scenario(project_name,
+                                       version,
+                                       occurrence,
+                                       reference,
+                                       scenario_internal_id):
+    if not is_campaign_exist(project_name, version, occurrence):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+    # Check reference exists in version
+    ticket = get_ticket(project_name, version, reference)
+    if not ticket:
+        raise TicketNotFound(f"Ticket {reference} does not belong to project {project_name},"
+                             f" version {version}")
+    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    if not db_is_scenario_internal_id_exist(project_name, scenario_internal_id):
+        raise ScenarioNotFound(f"No scenario with id {scenario_internal_id} "
+                               f"found in project {project_name}")
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        connection.execute("delete from campaign_tickets_scenarios "
+                           "where campaign_id = %s "
+                           "and scenario_id = %s "
+                           "and ticket_reference = %s", [campaign_id[0],
+                                                         scenario_internal_id,
+                                                         reference])
 
 
 def db_set_campaign_ticket_scenario_status(project_name,
@@ -372,3 +398,16 @@ def db_set_campaign_ticket_scenario_status(project_name,
             "returning sc.scenario_id as scenario_id, cts.status as status, "
             "cts.ticket_reference as ticket_reference;",
             (new_status, campaign_id[0], scenario_id, reference)).fetchone()
+
+
+def db_is_scenario_internal_id_exist(project_name,
+                                     scenario_internal_id):
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        rows = connection.execute("select count(sc.id) as sc_count "
+                                  "from scenarios as sc "
+                                  "join features as ft on sc.feature_id = ft.id "
+                                  "where sc.id = %s "
+                                  "and ft.project_id = %s",
+                                  [scenario_internal_id, project_name]).fetchone()
+        return rows["sc_count"] == 1

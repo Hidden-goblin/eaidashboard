@@ -9,6 +9,7 @@ from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.projects import create_project_version, get_project
 from app.database.postgre.testrepository import db_project_epics, db_project_features
+from app.database.settings import registered_projects
 from app.schema.project_schema import RegisterVersion
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -25,10 +26,12 @@ async def front_project_management(project_name: str,
         [{"value": item["version"], "status": item["status"]} for item in _versions["current"]])
     versions.extend(
         [{"value": item["version"], "status": item["status"]} for item in _versions["archived"]])
+    projects = registered_projects()
     return templates.TemplateResponse("project.html",
                                       {
                                           "request": request,
                                           "versions": versions,
+                                          "projects": projects,
                                           "project_name": project_name
                                       })
 

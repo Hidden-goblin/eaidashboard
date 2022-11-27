@@ -57,7 +57,7 @@ FK feature_id: features.id
 
 ' one epic per feature, zero more features per epic
 epics ||--o{ features
-' one feature per scenario, zero more scenarios per feature
+' one feature per scenario_internal_id, zero more scenarios per feature
 features ||--o{ scenarios
 
 ' -----------------------------------------

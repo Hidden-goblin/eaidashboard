@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import logging
-from typing import Any, List
+from typing import (Any, List)
 
 from fastapi import (APIRouter,
                      HTTPException,
@@ -19,11 +19,11 @@ from app.database.testcampaign import (create_campaign,
                                        retrieve_campaign,
                                        fill_campaign as db_fill_campaign)
 from app.database.versions import get_version_and_collection
-from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
-from app.schema.campaign_schema import CampaignLight, Scenarios, \
-    TicketScenarioCampaign, \
-    ToBeCampaign
+from app.schema.campaign_schema import (CampaignLight, Scenarios,
+                                        TicketScenarioCampaign,
+                                        ToBeCampaign)
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -145,7 +145,10 @@ async def put_campaign_ticket_scenarios(project_name: str,
                                         version: str,
                                         occurrence: str,
                                         ticket_ref: str,
-                                        scenarios: List[Scenarios]):
+                                        scenarios: List[Scenarios],
+                                        user: Any = Security(authorize_user,
+                                                             scopes=["admin", "user"])
+                                        ):
     return db_put_campaign_ticket_scenarios(project_name,
                                             version,
                                             occurrence,
@@ -153,7 +156,7 @@ async def put_campaign_ticket_scenarios(project_name: str,
                                             scenarios)
 
 
-# Retrieve scenario for specific campaign and ticket
+# Retrieve scenario_internal_id for specific campaign and ticket
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/"
             "tickets/{reference}/scenarios/{scenario_id}",
             tags=["Campaign"])

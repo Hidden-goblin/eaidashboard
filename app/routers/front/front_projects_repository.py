@@ -8,6 +8,7 @@ from starlette.requests import Request
 from app.conf import templates
 from app.database.mongo.bugs import get_bugs
 from app.database.postgre.testrepository import db_project_scenarios
+from app.database.settings import registered_projects
 from app.routers.front.front_projects import repository_dropdowns
 from app.schema.mongo_enums import BugStatusEnum
 from app.utils.pages import page_numbering
@@ -25,10 +26,11 @@ async def front_project_repository(project_name: str,
         bugs = get_bugs(project_name)
     else:
         bugs = get_bugs(project_name, status=BugStatusEnum.open)
-    print(bugs)
+    projects = registered_projects()
     return templates.TemplateResponse("repository_board.html",
                                       {
                                           "request": request,
+                                          "projects": projects,
                                           "repository": {}, # repository_board(project_name, request,                                                                         epic, feature),
                                           "display_closed": status,
                                           "project_name": project_name

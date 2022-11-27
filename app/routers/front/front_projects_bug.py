@@ -7,6 +7,7 @@ from starlette.requests import Request
 
 from app.conf import templates
 from app.database.mongo.bugs import get_bugs
+from app.database.settings import registered_projects
 from app.schema.mongo_enums import BugStatusEnum
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -23,11 +24,12 @@ async def front_project_bugs(project_name: str,
         bugs = get_bugs(project_name)
     else:
         bugs = get_bugs(project_name, status=BugStatusEnum.open)
-    print(bugs)
+    projects = registered_projects()
     return templates.TemplateResponse("bugs.html",
                                       {
                                           "request": request,
                                           "bugs": bugs,
+                                          "projects": projects,
                                           "display_closed": status,
                                           "project_name": project_name
                                       })

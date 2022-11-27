@@ -6,7 +6,9 @@ from starlette.requests import Request
 
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.testcampaign import (db_get_campaign_ticket_scenario,
+from app.database.settings import registered_projects
+from app.database.testcampaign import (db_delete_campaign_ticket_scenario,
+                                       db_get_campaign_ticket_scenario,
                                        db_get_campaign_ticket_scenarios,
                                        db_put_campaign_ticket_scenarios,
                                        db_set_campaign_ticket_scenario_status,
@@ -26,9 +28,11 @@ router = APIRouter(prefix="/front/v1/projects")
 async def front_project_management(project_name: str,
                                    request: Request):
     # campaigns,  = retrieve_campaign(project_name)
+    projects = registered_projects()
     return templates.TemplateResponse("campaign.html",
                                       {
                                           "request": request,
+                                          "projects": projects,
                                           "campaigns": True,
                                           "project_name": project_name
                                       })
@@ -91,6 +95,7 @@ async def front_get_campaign(project_name: str,
                              occurrence: str,
                              request: Request):
     campaign = await get_campaign_tickets(project_name, version, occurrence)
+
     return templates.TemplateResponse("campaign_board.html",
                                       {
                                           "request": request,
@@ -139,7 +144,8 @@ async def front_get_campaign_ticket(project_name: str,
                                     version: str,
                                     occurrence: str,
                                     ticket_reference: str,
-                                    request: Request):
+                                    request: Request,
+                                    initiator: str = None):
     scenarios = db_get_campaign_ticket_scenarios(project_name,
                                                  version,
                                                  occurrence,
@@ -151,7 +157,8 @@ async def front_get_campaign_ticket(project_name: str,
                                           "version": version,
                                           "occurrence": occurrence,
                                           "ticket_reference": ticket_reference,
-                                          "scenarios": scenarios
+                                          "scenarios": scenarios,
+                                          "initiator": initiator
                                       })
 
 
@@ -198,7 +205,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             ticket_reference: str,
                                                             scenario_id: str,
                                                             request: Request):
-    """Admin or user can update the scenario status"""
+    """Admin or user can update the scenario_internal_id status"""
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("error_message.html",
                                           {
@@ -217,9 +224,39 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                        "version": version,
                                        "occurrence": occurrence,
                                        "ticket_reference": ticket_reference,
-                                       "scenario": scenario,
+                                       "scenario_internal_id": scenario,
                                        "statuses": [status.value for status in ScenarioStatusEnum],
                                        "request": request})
+
+
+@router.delete("/{project_name}/campaigns/{version}/{occurrence}/"
+               "{ticket_reference}/scenarios/{scenario_id}",
+               tags=["Front - Campaign"],
+               include_in_schema=False)
+async def front_delete_campaign_ticket_scenario(project_name: str,
+                                                version: str,
+                                                occurrence: str,
+                                                ticket_reference: str,
+                                                scenario_id: str,
+                                                request: Request,
+                                                initiator: str = None):
+    """Admin or user can update the scenario_internal_id status"""
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
+    db_delete_campaign_ticket_scenario(project_name,
+                                       version,
+                                       occurrence,
+                                       ticket_reference,
+                                       scenario_id)
+    return templates.TemplateResponse('void.html',
+                                      {"request": request},
+                                      headers={"HX-Trigger": initiator})
 
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/"

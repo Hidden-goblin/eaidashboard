@@ -49,6 +49,10 @@ class TicketNotFound(Exception):
     pass
 
 
+class ScenarioNotFound(Exception):
+    pass
+
+
 class NonUniqueError(Exception):
     pass
 
