@@ -1,8 +1,10 @@
 <form>
     <!-- Selector: epic label selectors -->
 <div>
-    <label >Epics</label>
-    <select name="epic" id="epic"
+    <label for="epic" class="form-label">Epics</label>
+    <select class="form-select"
+            name="epic"
+            id="epic"
             hx-get="/front/v1/projects/{{project_name}}/repository/epics-features"
             hx-target="#features"
             hx-indicator=".htmx-indicator">
@@ -12,13 +14,22 @@
     </select>
 </div>
 <div>
-   <label>Features</label>
-   <select id="features" name="feature">
+   <label for="features"
+          class="form-label"  >Features</label>
+   <select class="form-select"
+           id="features"
+           name="feature">
       {% for feature in features %}
             <option value="{{feature}}">{{feature}}</option>
         {% endfor %}
    </select>
 </div>
-<button hx-post="/front/v1/projects/{{project_name}}/repository/scenarios" hx-target="#repositoryTable" hx-ext='json-enc' hx-encoding='application/json'>Filter</button>
-    <button hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit=10&skip=0" hx-target="#repositoryTable">Clear filter</button>
+    <button type="button" class="btn btn-primary"
+            hx-post="/front/v1/projects/{{project_name}}/repository/scenarios"
+            hx-target="#repositoryTable"
+            hx-ext='json-enc'
+            hx-encoding='application/json'>Filter</button>
+    <button type="button" class="btn btn-secondary"
+            hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit=10&skip=0"
+            hx-target="#repositoryTable">Clear filter</button>
 </form>

@@ -95,14 +95,15 @@ async def front_get_campaign(project_name: str,
                              occurrence: str,
                              request: Request):
     campaign = await get_campaign_tickets(project_name, version, occurrence)
-
+    projects = registered_projects()
     return templates.TemplateResponse("campaign_board.html",
                                       {
                                           "request": request,
                                           "project_name": project_name,
                                           "version": version,
                                           "occurrence": occurrence,
-                                          "campaign": campaign
+                                          "campaign": campaign,
+                                          "projects": projects
                                       })
 
 

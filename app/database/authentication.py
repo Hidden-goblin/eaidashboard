@@ -68,6 +68,7 @@ def renew(user):
                      {"$set": {"token_date": datetime.now(timezone.utc)}},
                      upsert=True)
 
+
 def revoke(username):
     client = MongoClient(mongo_string)
     db = client["settings"]
