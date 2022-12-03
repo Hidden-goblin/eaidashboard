@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from app.schema.project_schema import TestFeature, TestScenario
 from app.utils.pgdb import pool
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 
 
 def add_epic(project: str, epic_name: str):
@@ -16,6 +16,7 @@ def add_epic(project: str, epic_name: str):
 
 def add_feature(feature: TestFeature):
     with pool.connection() as connection:
+        connection.row_factory = tuple_row
         epic_id = connection.execute(
             "select id from epics"
             " where name = %s "
@@ -38,6 +39,7 @@ def add_feature(feature: TestFeature):
 
 def add_scenario(scenario: TestScenario):
     with pool.connection() as connection:
+        connection.row_factory = tuple_row
         feature_id = connection.execute(
             "select id from features where filename = %s and project_id = %s;",
             (scenario["filename"], scenario["project_name"])).fetchone()[0]

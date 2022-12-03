@@ -16,7 +16,7 @@ from csv import DictReader
 
 from starlette.background import BackgroundTasks
 
-from app.app_exception import (ProjectNotRegistered,
+from app.app_exception import (MalformedCsvFile, ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
@@ -234,6 +234,20 @@ async def upload_repository(project_name: str,
 def process_upload(csv_content, project_name):
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
+    expected_header = ("epic",
+                       "feature_filename",
+                       "feature_name",
+                       "feature_description",
+                       "feature_tags",
+                       "scenario_id",
+                       "scenario_name",
+                       "scenario_tags",
+                       "scenario_description",
+                       "scenario_steps")
+    if any(header not in rows.fieldnames for header in expected_header):
+        raise MalformedCsvFile(f"Missing header in the csv file\n\r "
+                        f"Expecting: {','.join(expected_header)}\n\r"
+                        f"Get only: {','.join(rows.fieldnames)}")
     epics = [{"project": project_name.casefold(), "epic_name": row["epic"]}
              for row in rows if not row["feature_filename"] and row["epic"]]
     epics.append({"project": project_name, "epic_name": "XXX-application-undefined-epic"})

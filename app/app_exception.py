@@ -71,3 +71,7 @@ class NotAuthorized(Exception):
 
 class IncorrectFieldsRequest(Exception):
     pass
+
+
+class MalformedCsvFile(Exception):
+    pass
