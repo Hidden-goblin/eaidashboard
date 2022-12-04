@@ -16,23 +16,12 @@
          hx-trigger="load"
          hx-get="/front/v1/projects/{{project_name}}/repository/scenarios?limit=10&skip=0">
     </div>
-    <button id="importRepository" class="btn btn-primary">Import and update repository</button>
-    <div>
-        <form hx-encoding='multipart/form-data'
-              hx-post='/front/v1/projects/{{project_name}}/repository'
-              hx-target="#repositoryMessage"
-              _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100'>
-            <input type='file' name='file' accept='text/csv'>
-            <button class="btn btn-secondary"
-                    _="on click set #progress.hidden to false">
-                Upload
-            </button>
-            <progress id='progress'
-                      value='0'
-                      max='100'
-                      hidden></progress>
-        </form>
-    </div>
+    <button id="importRepository"
+            class="btn btn-primary"
+            hx-headers='{"HX-PROJECT": "{{project_name}}"}'
+            hx-get="/front/v1/forms/importRepository"
+            hx-target="#repositoryMessage"
+            >Import and update repository</button>
   </div>
 </div>
 {% endblock %}

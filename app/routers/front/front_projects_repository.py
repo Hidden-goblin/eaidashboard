@@ -7,6 +7,7 @@ from starlette.requests import Request
 
 from app.app_exception import MalformedCsvFile
 from app.conf import templates
+from app.database.authorization import is_updatable
 from app.database.mongo.bugs import get_bugs
 from app.database.postgre.testrepository import db_project_scenarios
 from app.database.settings import registered_projects
@@ -47,7 +48,14 @@ async def post_repository(project_name: str,
                           request: Request,
                           file: UploadFile = File(),
                           ):
-    print(file.content_type)
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
     file_content = await file.read()
     try:
         process_upload(file_content.decode(), project_name)
@@ -64,6 +72,9 @@ async def post_repository(project_name: str,
                                            "highlight": "Error in the bulk import process ",
                                            "sequel": exp.args,
                                            "advise": "Please check your file."})
+    return templates.TemplateResponse("void.html",
+                                      {"request": request})
+
 
 @router.get("/{project_name}/repository/epics-features",
             tags=["Front - Repository"],

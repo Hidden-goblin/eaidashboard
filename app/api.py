@@ -12,7 +12,7 @@ from app.routers.rest import (auth, bugs, project_campaigns, project_repository,
                               settings,
                               users, version)
 from app.routers.front import (front_dashboard, front_projects, front_projects_campaign,
-                               front_projects_bug, front_projects_repository)
+                               front_projects_bug, front_projects_repository, front_forms)
 from app.utils.openapi_tags import DESCRIPTION
 from app.utils.pgdb import pool
 from app.conf import config
@@ -55,6 +55,7 @@ app.include_router(front_projects.router)
 app.include_router(front_projects_campaign.router)
 app.include_router(front_projects_bug.router)
 app.include_router(front_projects_repository.router)
+app.include_router(front_forms.router)
 
 init_user()
 init_user_token()
