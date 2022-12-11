@@ -33,7 +33,7 @@ from app.database.versions import get_version, update_version_data, update_versi
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       UpdateVersion,
+                                       TestFeature, TestScenario, UpdateVersion,
                                        Version,
                                        TicketProject)
 from app.conf import mongo_string
@@ -232,6 +232,10 @@ async def upload_repository(project_name: str,
 
 
 def process_upload(csv_content, project_name):
+    """Read a csv and prepare data for insertion
+    Feature without epic are removed
+    Scenario in removed features are removed
+    """
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
     expected_header = ("epic",
@@ -246,23 +250,46 @@ def process_upload(csv_content, project_name):
                        "scenario_steps")
     if any(header not in rows.fieldnames for header in expected_header):
         raise MalformedCsvFile(f"Missing header in the csv file\n\r "
-                        f"Expecting: {','.join(expected_header)}\n\r"
-                        f"Get only: {','.join(rows.fieldnames)}")
+                               f"Expecting: {','.join(expected_header)}\n\r"
+                               f"Get only: {','.join(rows.fieldnames)}")
+    # Spec: Epic has only a name and no filename
     epics = [{"project": project_name.casefold(), "epic_name": row["epic"]}
              for row in rows if not row["feature_filename"] and row["epic"]]
-    epics.append({"project": project_name, "epic_name": "XXX-application-undefined-epic"})
+
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
-    features = [{"epic_name": row["epic"] or "XXX-application-undefined-epic",
+    # Spec: Feature has a filename
+    # Spec: Feature must be related to an epic
+    # Spec: Feature does not have steps
+    features = [{"epic_name": row["epic"],
                  "feature_name": row["feature_name"],
                  "project_name": project_name,
                  "description": row["feature_description"],
                  "tags": row["feature_tags"],
                  "filename": row["feature_filename"]
                  }
-                for row in rows if not row["scenario_steps"] and row["feature_filename"]]
+                for row in rows if (not row["scenario_steps"]
+                                    and row["feature_filename"]
+                                    and row["epic"])]
+    # Gather feature without epic
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
+    excluded_features = [{"epic_name": row["epic"],
+                         "feature_name": row["feature_name"],
+                         "project_name": project_name,
+                         "description": row["feature_description"],
+                         "tags": row["feature_tags"],
+                         "filename": row["feature_filename"]
+                         }
+                        for row in rows if (not row["scenario_steps"]
+                                            and row["feature_filename"]
+                                            and not row["epic"])]
+    buffer = StringIO(csv_content, newline="")
+    rows = DictReader(buffer)
+    retrieved_features_filename = [item["filename"] for item in features]
+    # Spec: Scenario must have scenario_step
+    # Spec: Scenario must have an id
+    # Spec: Scenario must in an included feature
     scenarios = [{"filename": row["feature_filename"],
                   "project_name": project_name,
                   "scenario_id": row["scenario_id"],
@@ -270,13 +297,33 @@ def process_upload(csv_content, project_name):
                   "is_outline": row["scenario_is_outline"] == "True",
                   "description": row["scenario_description"],
                   "steps": row["scenario_steps"],
-                  "tags": row["scenario_tags"]} for row in rows if row["scenario_steps"]]
+                  "tags": row["scenario_tags"]}
+                 for row in rows if (row["scenario_steps"]
+                                     and row["scenario_id"]
+                                     and row[
+                                         "feature_filename"] in retrieved_features_filename)]
+    buffer = StringIO(csv_content, newline="")
+    rows = DictReader(buffer)
+    excluded_scenarios = [{"filename": row["feature_filename"],
+                           "project_name": project_name,
+                           "scenario_id": row["scenario_id"],
+                           "name": row["scenario_name"],
+                           "is_outline": row["scenario_is_outline"] == "True",
+                           "description": row["scenario_description"],
+                           "steps": row["scenario_steps"],
+                           "tags": row["scenario_tags"]}
+                          for row in rows if (row["scenario_steps"]
+                                              and (not row["scenario_id"]
+                                                   or row[
+                                                       "feature_filename"] not in
+                                                   retrieved_features_filename))]
     for epic in epics:
         add_epic(**epic)
     for feature in features:
-        add_feature(feature)
+        add_feature(TestFeature(**feature))
     clean_scenario_with_fake_id(project_name.casefold())
-    for index, scenario in enumerate(scenarios):
-        if not scenario["scenario_id"]:
-            scenario["scenario_id"] = f"XXX-application-undefined-id-{index}"
-        add_scenario(scenario)
+    for scenario in scenarios:
+        add_scenario(TestScenario(**scenario))
+
+    return {"excluded_features": excluded_features,
+            "excluded_scenarios": excluded_scenarios}

@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 from starlette.requests import Request
 
 from app.conf import templates
@@ -26,8 +26,20 @@ router = APIRouter(prefix="/front/v1/projects")
             tags=["Front - Project"],
             include_in_schema=False)
 async def front_project_management(project_name: str,
-                                   request: Request):
+                                   request: Request,
+                                   limit: int = 10,
+                                   skip: int = 0
+                                   ):
     # campaigns,  = retrieve_campaign(project_name)
+    if "eaid-request" in request.headers.keys():
+        if request.headers.get("eaid-request") == "table":
+            return front_project_table(project_name,
+                                       request,
+                                       limit,
+                                       skip)
+        if request.headers.get("eaid-request") == "form":
+            return front_new_campaign_form(project_name,
+                                           request)
     projects = registered_projects()
     return templates.TemplateResponse("campaign.html",
                                       {
@@ -38,10 +50,7 @@ async def front_project_management(project_name: str,
                                       })
 
 
-@router.get("/{project_name}/campaigns/table",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def front_project_table(project_name: str,
+def front_project_table(project_name: str,
                               request: Request,
                               limit: int = 10,
                               skip: int = 0):
@@ -59,11 +68,9 @@ async def front_project_table(project_name: str,
                                       })
 
 
-@router.get("/{project_name}/forms/campaign",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def front_new_campaign_form(project_name: str,
+def front_new_campaign_form(project_name: str,
                                   request: Request):
+
     return templates.TemplateResponse("forms/add_campaign.html",
                                       {
                                           "request": request,
@@ -71,6 +78,15 @@ async def front_new_campaign_form(project_name: str,
 
                                       })
 
+@router.post("/{project_name}/campaigns")
+async def front_new_campaign(project_name: str,
+                             request: Request,
+                             version: str = Form(...)
+                             ):
+    print(version, project_name, request.headers.get("eaid-next"))
+    return templates.TemplateResponse("void.html",
+                                      {"request": request},
+                                      headers={"hx-trigger": request.headers.get("eaid-next")})
 
 @router.post("/{project_name}/campaigns/scenarios",
              tags=["Front - Campaign"],

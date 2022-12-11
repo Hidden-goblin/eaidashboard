@@ -21,7 +21,8 @@ def add_feature(feature: TestFeature):
             "select id from epics"
             " where name = %s "
             "and project_id = %s;",
-            (feature["epic_name"].casefold(), feature["project_name"].casefold())).fetchone()[0]
+            (feature.epic_name.casefold(),
+             feature.project_name.casefold())).fetchone()[0]
         connection.execute(
             "insert into features (epic_id, name, description, filename, project_id, tags)"
             "values (%(epic)s, %(name)s, %(description)s, %(filename)s, %(project)s, %(tags)s)"
@@ -31,9 +32,12 @@ def add_feature(feature: TestFeature):
             " tags = %(tags)s"
             " where features.filename = %(filename)s "
             "and features.project_id = %(project)s ;",
-            {"epic": epic_id, "name": feature["feature_name"],
-             "description": feature["description"], "filename": feature["filename"],
-             "project": feature["project_name"], "tags": feature["tags"]})
+            {"epic": epic_id,
+             "name": feature.feature_name,
+             "description": feature.description,
+             "filename": feature.filename,
+             "project": feature.project_name,
+             "tags": feature.tags})
         connection.commit()
 
 
@@ -42,7 +46,7 @@ def add_scenario(scenario: TestScenario):
         connection.row_factory = tuple_row
         feature_id = connection.execute(
             "select id from features where filename = %s and project_id = %s;",
-            (scenario["filename"], scenario["project_name"])).fetchone()[0]
+            (scenario.filename, scenario.project_name)).fetchone()[0]
         connection.execute(
             "insert into scenarios "
             "(scenario_id, feature_id, name, description, steps, tags, isoutline, project_id)"
@@ -56,10 +60,14 @@ def add_scenario(scenario: TestScenario):
             "where scenarios.scenario_id = %(sc_id)s "
             "and scenarios.feature_id = %(ftr_id)s "
             "and scenarios.project_id = %(project)s;",
-            {"sc_id": scenario["scenario_id"], "ftr_id": feature_id, "sc_name": scenario["name"],
-             "sc_desc": scenario["description"], "sc_steps": scenario["steps"],
-             "sc_tags": scenario["tags"], "sc_outline": scenario["is_outline"],
-             "project": scenario["project_name"]}
+            {"sc_id": scenario.scenario_id,
+             "ftr_id": feature_id,
+             "sc_name": scenario.name,
+             "sc_desc": scenario.description,
+             "sc_steps": scenario.steps,
+             "sc_tags": scenario.tags,
+             "sc_outline": scenario.is_outline,
+             "project": scenario.project_name}
         )
         connection.commit()
 

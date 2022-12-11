@@ -7,23 +7,13 @@
     <button class="btn btn-primary"
             hx-get="/front/v1/projects/{{project_name}}/forms/version"
             hx-target="#dialog">Add a new version</button>
-    <div id="versions_table">
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-              <th>Version</th>
-              <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for version in versions %}
-            <tr id="version-{{version.value}}">
-              <td>{{version.value}}</td>
-              <td>{{version.status}}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div id="versionsTable"
+         hx-get="/front/v1/projects/{{project_name}}/versions"
+         hx-trigger="load">
+
+    </div>
+    <div id="versionTickets">
+
     </div>
   </div>
 

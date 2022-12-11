@@ -19,7 +19,6 @@ router = APIRouter(prefix="/front/v1/projects")
 async def front_project_bugs(project_name: str,
                              request: Request,
                              status: Optional[str] = None):
-    print(status)
     if status is not None:
         bugs = get_bugs(project_name)
     else:

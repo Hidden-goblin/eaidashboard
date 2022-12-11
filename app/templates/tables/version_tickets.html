@@ -1,0 +1,24 @@
+
+<table class="table table-bordered table-striped caption-top">
+  <caption>TIckets in version {{version}}</caption>
+  <thead>
+    <tr>
+      <th>Reference</th>
+      <th>Status</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ticket in tickets %}
+    <tr>
+      <td>{{ticket.reference}}</td>
+      <td>{{ticket.status}}</td>
+      <td>{{ticket.description}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<button class="btn btn-primary"
+        hx-delete="/clear"
+        hx-trigger="click"
+        hx-target="closest div">Close</button>

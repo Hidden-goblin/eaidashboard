@@ -10,6 +10,7 @@ from app.database.authorization import is_updatable
 from app.database.projects import create_project_version, get_project
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.settings import registered_projects
+from app.database.tickets import get_tickets
 from app.schema.project_schema import RegisterVersion
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -53,6 +54,20 @@ async def project_versions(project_name: str,
                                           "request": request,
                                           "versions": versions,
                                           "project_name": project_name
+                                      })
+
+@router.get("/{project_name}/versions/{version}",
+            tags=["Front - Project"],
+            include_in_schema=False)
+async def project_version_tickets(project_name: str,
+                                  version: str,
+                                  request: Request):
+    return templates.TemplateResponse("tables/version_tickets.html",
+                                      {
+                                          "request": request,
+                                          "version": version,
+                                          "project_name": project_name,
+                                          "tickets": get_tickets(project_name, version)
                                       })
 
 

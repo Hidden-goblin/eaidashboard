@@ -1,17 +1,20 @@
-<form hx-post="/front/v1/projects/{{project_name}}/forms/campaign" hx-swap="none">
+<form hx-post="/front/v1/projects/{{project_name}}/campaigns"
+      hx-swap="none"
+      hx-headers='{"eaid-next": "form-delete"}'>
     <!-- Form: Add Campaign -->
     <div class="mb-3">
         <label for="version" class="form-label">Version number :</label>
         <input type="text" id="version" name="version" value="" class="form-control">
     </div>
     <div class="button">
-        <button type="submit" class="btn btn-secondary"
-                _="on click wait 100ms
-                then fetch /front/v1/projects/{{project_name}}/versions
-                then put the result into #versions_table
-                then remove <form/> in #dialog">
+        <button type="submit"
+                class="btn btn-secondary"
+                >
             Add version
         </button>
-        <button class="btn btn-secondary" _="on click remove <form/> in #dialog">Close</button>
+        <button class="btn btn-secondary"
+                hx-delete="/clear"
+                hx-target="#campaign-form"
+                hx-trigger="click, form-delete from:body">Close</button>
     </div>
 </form>
