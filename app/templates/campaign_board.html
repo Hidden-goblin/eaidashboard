@@ -17,17 +17,22 @@
                         aria-expanded="false"
                         aria-controls="collapse{{loop.index}}"
                         hx-trigger="click once"
-                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}/scenarios?initiator=add-scenario-{{loop.index}}"
+                        hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
+                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}/scenarios"
                         hx-target="#accordion-body{{loop.index}}"
                 >
                     {{ticket.reference}}: {{ticket.description}}
                 </button>
             </h2>
-            <div id="collapse{{loop.index}}" class="accordion-collapse collapse" aria-labelledby="heading{{loop.index}}" data-bs-parent="#campaignTickets">
+            <div id="collapse{{loop.index}}"
+                 class="accordion-collapse collapse"
+                 aria-labelledby="heading{{loop.index}}"
+                 data-bs-parent="#campaignTickets">
                 <div>
                     <button class="btn"
                             hx-trigger="click"
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}?initiator=add-scenario-{{loop.index}}"
+                            hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}"
                             hx-target="#campaignMessage"
                             >Add scenarios</button>
                     <button class="btn"

@@ -22,11 +22,13 @@
             <td><button class="btn btn-danger"
                         hx-trigger="click"
                         hx-target="#campaignMessage"
-                        hx-delete="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}/scenarios/{{scenario.sc_internal}}?initiator={{initiator}}">Delete</button>
+                        hx-headers='{"eaid-next":"{{initiator}}"}'
+                        hx-delete="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}/scenarios/{{scenario.sc_internal}}">Delete</button>
             </td>
             <td><button class="btn btn-primary"
                         hx-trigger="click"
                         hx-target="#campaignMessage"
+                        hx-headers='{"eaid-next":"{{initiator}}"}'
                         hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}">Update</button></td>
         </tr>
     {% endfor %}

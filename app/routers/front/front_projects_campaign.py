@@ -86,7 +86,7 @@ async def front_new_campaign(project_name: str,
     print(version, project_name, request.headers.get("eaid-next"))
     return templates.TemplateResponse("void.html",
                                       {"request": request},
-                                      headers={"hx-trigger": request.headers.get("eaid-next")})
+                                      headers={"hx-trigger": request.headers.get("eaid-next", "")})
 
 @router.post("/{project_name}/campaigns/scenarios",
              tags=["Front - Campaign"],
@@ -151,7 +151,7 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                        "ticket_reference": ticket_reference,
                                        "epics": epics,
                                        "features": unique_features,
-                                       "initiator": initiator})
+                                       "initiator": request.headers.get('eaid-next', '')})
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/{ticket_reference}/scenarios",
@@ -161,8 +161,7 @@ async def front_get_campaign_ticket(project_name: str,
                                     version: str,
                                     occurrence: str,
                                     ticket_reference: str,
-                                    request: Request,
-                                    initiator: str = None):
+                                    request: Request):
     scenarios = db_get_campaign_ticket_scenarios(project_name,
                                                  version,
                                                  occurrence,
@@ -175,7 +174,7 @@ async def front_get_campaign_ticket(project_name: str,
                                           "occurrence": occurrence,
                                           "ticket_reference": ticket_reference,
                                           "scenarios": scenarios,
-                                          "initiator": initiator
+                                          "initiator": request.headers.get('eaid-next', "")
                                       })
 
 
@@ -273,7 +272,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                        scenario_id)
     return templates.TemplateResponse('void.html',
                                       {"request": request},
-                                      headers={"HX-Trigger": initiator})
+                                      headers={"HX-Trigger": request.headers.get('eaid-next', "")})
 
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/"
@@ -307,4 +306,4 @@ async def add_scenarios_to_ticket(project_name: str,
                                          [Scenarios(**element)])
     return templates.TemplateResponse('void.html',
                                       {"request": request},
-                                      headers={"HX-Trigger": initiator})
+                                      headers={"HX-Trigger": request.headers.get('eaid-next',"")})
