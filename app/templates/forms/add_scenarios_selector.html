@@ -1,0 +1,12 @@
+{% for scenario in scenarios %}
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" value="{{scenario.scenario_id}}" id="check{{loop.index}}" name="scenario_ids">
+        <label class="form-check-label" for="check{{loop.index}}">
+            {{scenario.scenario_id}}: {{scenario.name}}
+            <p>{{scenario.steps}}</p>
+        </label>
+    </div>
+{% endfor %}
+<!-- Add Scenarios -->
+<input type="hidden" name="epic" value="{{epic}}"/>
+<input type="hidden" name="feature_name" value="{{feature}}"/>

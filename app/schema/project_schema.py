@@ -4,7 +4,12 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel
+from bson import ObjectId
+
+from pydantic import BaseModel, Field
+
+from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+from app.schema.py_objectid import PyObjectId
 
 
 class StatusEnum(Enum):
@@ -92,16 +97,53 @@ class BugTicket(BaseModel):
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
     url: str
-    status: str
+    status: BugStatusEnum
+    criticality: BugCriticalityEnum
+
+
+class BugTicketResponse(BaseModel):
+    internal_id: PyObjectId = Field(default_factory=PyObjectId)
+    version: str
+    title: str
+    description: str
+    created: datetime
+    updated: datetime
+    url: str
+    status: BugStatusEnum
+    criticality: BugCriticalityEnum
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+        # schema_extra = {
+        #     "example": {
+        #         "name": "Jane Doe",
+        #         "email": "jdoe@example.com",
+        #         "course": "Experiments, Science, and Fashion in Nanophotonics",
+        #         "gpa": "3.0",
+        #     }
+        # }
 
 
 class UpdateBugTicket(BaseModel):
-    version: str
     title: Optional[str]
+    version: Optional[str]
     description: Optional[str]
     updated: datetime = datetime.now()
     url: Optional[str]
-    status: Optional[str]
+    status: Optional[BugStatusEnum]
+    criticality: Optional[BugCriticalityEnum]
+
+    def to_dict(self):
+        temp = {"title": self.title,
+                "description": self.description,
+                "updated": self.updated,
+                "url": self.url,
+                "status": self.status,
+                "criticality": self.criticality,
+                "version": self.version}
+        return {key: value for key, value in temp.items() if value is not None}
 
 
 class Version(BaseModel):

@@ -1,9 +1,9 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
+import os
 from fastapi.templating import Jinja2Templates
 from dotenv import dotenv_values
-import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,3 +26,7 @@ postgre_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} user={c
 postgre_setting_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} "
                           f"user={config['PG_USR']}"
                           f" password={config['PG_PWD']} dbname=postgres")
+
+SECRET_KEY = None
+PUBLIC_KEY = None
+ALGORITHM = None

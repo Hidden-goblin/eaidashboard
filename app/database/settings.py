@@ -3,7 +3,7 @@
 from pymongo import MongoClient
 
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 
 
 def registered_projects():

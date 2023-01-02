@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -11,12 +11,22 @@ class ToBeCampaign(BaseModel):
     version: str
 
 
-class TicketScenarioCampaign(BaseModel):
-    ticket_reference: str
+class ScenarioCampaign(BaseModel):
     scenario_id: str
     epic: str
     feature_name: str
     feature_filename: Optional[str]
+
+
+class Scenarios(BaseModel):
+    epic: str
+    feature_name: str
+    scenario_ids: List[str]
+
+
+class TicketScenarioCampaign(BaseModel):
+    ticket_reference: str
+    scenarios: Union[ScenarioCampaign, List[ScenarioCampaign]]
 
 
 class CampaignLight(BaseModel):
@@ -25,3 +35,4 @@ class CampaignLight(BaseModel):
     occurrence: int
     description: Optional[str]
     status: CampaignStatusEnum
+

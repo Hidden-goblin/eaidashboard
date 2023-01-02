@@ -10,7 +10,7 @@ from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
                                StatusTransitionForbidden,
                                UnknownStatusException, UpdateException)
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
+from app.database.mongo.db_settings import DashCollection
 from app.database.settings import registered_projects
 from app.schema.project_schema import Bugs, StatusEnum, UpdateTickets, UpdateVersion
 
@@ -62,6 +62,24 @@ def get_version(project_name: str, version: str):
     client = MongoClient(mongo_string)
     db = client[project_name]
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
+
+
+def get_versions(project_name: str) -> list:
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    current = db[DashCollection.CURRENT.value]
+    future = db[DashCollection.FUTURE.value]
+    archived = db[DashCollection.ARCHIVED.value]
+    result = [elem["version"] for elem in future.find({},
+                                                      projection={"_id": False,
+                                                                  "version": True})]
+    result.extend([elem["version"] for elem in current.find({},
+                                                            projection={"_id": False,
+                                                                        "version": True})])
+    result.extend(elem["version"] for elem in archived.find({},
+                                                            projection={"_id": False,
+                                                                        "version": True}))
+    return result
 
 
 def update_version_status(project_name: str, version: str, to_be_status: str):

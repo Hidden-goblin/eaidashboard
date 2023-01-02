@@ -1,0 +1,32 @@
+{% extends "base_project.html" %}
+<!-- Project data. -->
+{% block project %}
+  <h1>Project: {{project_name}} Campaigns</h1>
+  <!-- bugs -->
+  <div id="dialog"></div>
+  <div class="col-auto">
+    <button class="btn btn-primary"
+            hx-get="/front/v1/projects/{{project_name}}/bugs"
+            hx-target="#dialog"
+            hx-headers='{"eaid-request":"FORM"}'
+    >Record a new defect</button>
+  <div class="form-check form-switch">
+      <input class="form-check-input"
+             type="checkbox"
+             role="switch"
+             id="flexSwitchCheckDefault"
+             name="display_all"
+             hx-get="/front/v1/projects/{{project_name}}/bugs"
+             hx-params="display_all"
+             hx-include="[name='display_all']"
+             hx-headers='{"eaid-request":"TABLE"}'
+             hx-trigger="click, load, form-refresh from:body"
+             hx-target="#{{project_name}}-bugs">
+      <label class="form-check-label" for="flexSwitchCheckDefault">Display closed</label>
+    </div>
+  </div>
+  <div id="{{project_name}}-bugs" class="container">
+
+  </div>
+
+{% endblock %}

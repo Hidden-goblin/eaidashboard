@@ -1,28 +1,24 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
-import urllib.parse
 
 from fastapi import APIRouter, Form, HTTPException
-from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.conf import templates
-from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
-from app.database.projects import create_project_version, get_project, get_project_results
+from app.database.projects import create_project_version, get_project
+from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.settings import registered_projects
-from app.database.testrepository import db_project_epics, db_project_features
-from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
-from app.database.versions import dashboard as db_dash
-from app.schema.project_schema import RegisterVersion, UpdatedTicket
+from app.database.tickets import get_tickets
+from app.schema.project_schema import RegisterVersion
 
 router = APIRouter(prefix="/front/v1/projects")
 
 
 @router.get("/{project_name}",
-            tags=["Front - Project"])
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def front_project_management(project_name: str,
                                    request: Request):
     _versions = get_project(project_name, None)
@@ -31,16 +27,19 @@ async def front_project_management(project_name: str,
         [{"value": item["version"], "status": item["status"]} for item in _versions["current"]])
     versions.extend(
         [{"value": item["version"], "status": item["status"]} for item in _versions["archived"]])
+    projects = registered_projects()
     return templates.TemplateResponse("project.html",
                                       {
                                           "request": request,
                                           "versions": versions,
+                                          "projects": projects,
                                           "project_name": project_name
                                       })
 
 
 @router.get("/{project_name}/versions",
-            tags=["Front - Project"])
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def project_versions(project_name: str,
                            request: Request):
     _versions = get_project(project_name, None)
@@ -57,9 +56,24 @@ async def project_versions(project_name: str,
                                           "project_name": project_name
                                       })
 
+@router.get("/{project_name}/versions/{version}",
+            tags=["Front - Project"],
+            include_in_schema=False)
+async def project_version_tickets(project_name: str,
+                                  version: str,
+                                  request: Request):
+    return templates.TemplateResponse("tables/version_tickets.html",
+                                      {
+                                          "request": request,
+                                          "version": version,
+                                          "project_name": project_name,
+                                          "tickets": get_tickets(project_name, version)
+                                      })
 
-@router.get("/{project_name}/form/versions",
-            tags=["Front - Project"])
+
+@router.get("/{project_name}/forms/version",
+            tags=["Front - Project"],
+            include_in_schema=False)
 async def form_version(project_name: str,
                        request: Request):
     return templates.TemplateResponse("forms/add_version.html",
@@ -69,8 +83,9 @@ async def form_version(project_name: str,
                                       })
 
 
-@router.post("/{project_name}/form/versions",
-             tags=["Front - Project"])
+@router.post("/{project_name}/forms/version",
+             tags=["Front - Project"],
+             include_in_schema=False)
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...)
@@ -79,18 +94,6 @@ async def add_version(project_name: str,
         raise HTTPException(status_code=403, detail="Not authorized")
     create_project_version(project_name, RegisterVersion(version=version))
     return HTMLResponse("")
-
-
-@router.get("/{project_name}/repository",
-            tags=["Front - RepositoryEnum"])
-async def get_repository(project_name: str,
-                         request: Request,
-                         epic: str = None,
-                         feature: str = None,
-                         is_board: bool = False):
-    if is_board:
-        return await repository_board(project_name, request, epic, feature)
-    return await repository_dropdowns(project_name, request, epic, feature)
 
 
 async def repository_dropdowns(project_name: str, request: Request, epic: str, feature: str):
@@ -114,5 +117,6 @@ async def repository_dropdowns(project_name: str, request: Request, epic: str, f
                                           })
 
 
-async def repository_board(project_name, request, epic, feature):
+async def repository_board(project_name, request, epic, feature, limit, skip):
+
     pass

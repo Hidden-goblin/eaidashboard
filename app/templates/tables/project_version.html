@@ -1,8 +1,10 @@
     <table class="table table-bordered table-striped">
+        <!-- Tables: Project version -->
       <thead>
         <tr>
             <th>Version</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -10,6 +12,10 @@
           <tr id="version-{{version.value}}">
             <td>{{version.value}}</td>
             <td>{{version.status}}</td>
+            <td><button class="btn btn-primary"
+                        hx-get="/front/v1/projects/{{project_name}}/versions/{{version.value}}"
+                        hx-trigger="click"
+                        hx-target="#versionTickets">Tickets</button></td>
           </tr>
         {% endfor %}
       </tbody>

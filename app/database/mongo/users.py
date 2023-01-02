@@ -2,6 +2,8 @@
 # -*- Author: E.Aivayan -*-
 from pymongo import MongoClient
 from datetime import datetime
+
+from app.app_exception import IncorrectFieldsRequest, InsertionError, UserNotFound
 from app.conf import mongo_string
 from app.database.authentication import authenticate_user, get_password_hash, revoke
 
@@ -26,23 +28,26 @@ def create_user(username, password, scopes):
                                   "password": get_password_hash(password),
                                   "scopes": scopes})
     if not user.acknowledged:
-        raise Exception("User not created")
+        raise InsertionError("User not created")
 
     return user
 
 
-def user_exist(username):
+def get_user(username):
     client = MongoClient(mongo_string)
     db = client["settings"]
     collection = db["users"]
-    user = collection.find_one({"username": username})
-    return user is not None
+    return collection.find_one({"username": username})
+
+
+def user_exist(username):
+    return get_user(username) is not None
 
 
 def self_update_user(username, password, new_password):
     user, scope = authenticate_user(username, password)
     if user is None:
-        raise Exception("Unrecognized credentials")
+        raise UserNotFound("Unrecognized credentials")
     result = update_user(username, new_password)
     revoke(username)
     return result
@@ -60,7 +65,7 @@ def update_user(username, password=None, scopes=None):
     upsert = user_exist(username)
 
     if not upsert and (password is None or not password):
-        raise Exception("Cannot create user without password")
+        raise IncorrectFieldsRequest("Cannot create user without password")
 
     to_update = {key: value for key, value in param.items() if value is not None}
 

@@ -19,7 +19,7 @@ DESCRIPTION = [
         "name": "Tickets"
     },
     {
-        "name": "RepositoryEnum",
+        "name": "Repository",
         "description": "All API operations concerning a project's test repository."
     },
     {
@@ -33,26 +33,26 @@ DESCRIPTION = [
     {
         "name": "Users"
     },
-    {
-        "name": "Front - Dashboard",
-        "description": "Front api"
-    },
-    {
-        "name": "Front - Login",
-        "description": "Front api"
-    },
-    {
-        "name": "Front - Project"
-    },
-    {
-        "name": "Front - Tickets"
-    },
-    {
-        "name": "Front - Campaign"
-    },
-    {
-        "name": "Front - RepositoryEnum"
-    }
+    # {
+    #     "name": "Front - Dashboard",
+    #     "description": "Front api"
+    # },
+    # {
+    #     "name": "Front - Login",
+    #     "description": "Front api"
+    # },
+    # {
+    #     "name": "Front - Project"
+    # },
+    # {
+    #     "name": "Front - Tickets"
+    # },
+    # {
+    #     "name": "Front - Campaign"
+    # },
+    # {
+    #     "name": "Front - Repository"
+    # }
 ]
 # https://fastapi.tiangolo.com/tutorial/metadata/?h=tag+desc#metadata-for-tags
 

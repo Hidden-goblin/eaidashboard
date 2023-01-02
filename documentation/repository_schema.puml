@@ -1,0 +1,14 @@
+@startjson
+[
+{
+"epic": "epic name",
+"feature_name": "feature name",
+"filename": "feature and scenario filename",
+"scenario_tech_id": "scenario technical id for action",
+"scenario_id": "scenario id",
+"name": "scenario name",
+"tags": "scenario tags",
+"steps": "scenario steps"
+}
+]
+@endjson

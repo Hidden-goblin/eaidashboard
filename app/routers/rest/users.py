@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Security
 
 from app.database.authorization import authorize_user
-from app.database.users import self_update_user, update_user
+from app.database.mongo.users import self_update_user, update_user
 from app.schema.users import UpdateMe, UpdateUser
 
 router = APIRouter(

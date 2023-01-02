@@ -1,7 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import logging
-import urllib.parse
 
 from fastapi import APIRouter, Form, HTTPException
 from starlette.background import BackgroundTasks
@@ -10,11 +9,11 @@ from starlette.responses import HTMLResponse
 
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
-from app.database.authorization import check_token_validity, is_updatable
+from app.database.authorization import is_updatable
 from app.database.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
-from app.database.versions import dashboard as db_dash
+from app.database.mongo.versions import dashboard as db_dash
 from app.schema.project_schema import UpdatedTicket
 
 router = APIRouter()
@@ -22,20 +21,22 @@ router = APIRouter()
 
 @router.get("/",
             response_class=HTMLResponse,
+            include_in_schema=False,
             tags=["Front - Dashboard"])
 async def dashboard(request: Request):
-    if not check_token_validity(request):
+    if not is_updatable(request, ()):
         request.session.pop("token", None)
     projects = registered_projects()
     return templates.TemplateResponse("dashboard.html",
                                       {"request": request,
                                        "project_version": db_dash(),
-                                       "projects": projects if projects else []})
+                                       "projects": projects or []})
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
             response_class=HTMLResponse,
-            tags=["Front - Utils"])
+            tags=["Front - Utils"],
+            include_in_schema=False)
 async def project_version_tickets(request: Request, project_name, project_version):
 
     return templates.TemplateResponse("ticket_view.html",
@@ -47,14 +48,20 @@ async def project_version_tickets(request: Request, project_name, project_versio
 
 @router.delete("/clear",
                response_class=HTMLResponse,
-               tags=["Front - Utils"])
-async def return_void():
-    return HTMLResponse("")
+               tags=["Front - Utils"],
+               include_in_schema=False)
+async def return_void(request: Request):
+    return templates.TemplateResponse("void.html",
+                                      {"request": request},
+                                      headers={
+                                          "HX-Trigger": request.headers.get('eaid-next', "")
+                                      })
 
 
 @router.get("/login",
             response_class=HTMLResponse,
-            tags=["Front - Login"]
+            tags=["Front - Login"],
+            include_in_schema=False
             )
 async def login(request: Request):
     return templates.TemplateResponse("login_modal.html",
@@ -63,7 +70,8 @@ async def login(request: Request):
 
 @router.post("/login",
              response_class=HTMLResponse,
-             tags=["Front - Login"])
+             tags=["Front - Login"],
+             include_in_schema=False)
 async def post_login(request: Request,
                      username: str = Form(...),
                      password: str = Form(...)
@@ -79,8 +87,9 @@ async def post_login(request: Request,
 
 
 @router.delete("/login",
-             response_class=HTMLResponse,
-             tags=["Front - Login"])
+               response_class=HTMLResponse,
+               tags=["Front - Login"],
+               include_in_schema=False)
 async def logout(request: Request):
     if is_updatable(request, ("admin", "user")):
         invalidate_token(request.session["token"])
@@ -91,7 +100,8 @@ async def logout(request: Request):
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}/edit",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row_edit.html",
                                       {"request": request,
@@ -104,7 +114,8 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_ticket(request: Request, project_name, project_version, reference):
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
@@ -117,11 +128,13 @@ async def project_version_ticket(request: Request, project_name, project_version
 
 @router.put("/{project_name}/versions/{project_version}/tickets/{reference}",
             response_class=HTMLResponse,
-            tags=["Front - Tickets"])
+            tags=["Front - Tickets"],
+            include_in_schema=False)
 async def project_version_update_ticket(request: Request,
                                         project_name: str,
                                         project_version: str,
                                         reference: str,
+                                        body: dict,
                                         background_task: BackgroundTasks):
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("modal_error.html",
@@ -130,13 +143,11 @@ async def project_version_update_ticket(request: Request,
                                            "my_fetch": f"then fetch /{project_name}/versions/"
                                                        f"{project_version}/tickets as html "
                                                        f"put the result into #tickets "})
-    body = await request.body()
-    body_pairs = [item.split("=") for item in body.decode().split("&")]
-    jbody = {item[0]: urllib.parse.unquote_plus(item[1]) for item in body_pairs}
+    # TODO check if a refactor might enhance readability
     res = update_ticket(project_name,
                         project_version,
                         reference,
-                        UpdatedTicket(description=jbody["description"], status=jbody["status"]))
+                        UpdatedTicket(description=body["description"], status=body["status"]))
     if not res.acknowledged:
         logging.getLogger().error("No done")
     background_task.add_task(update_values, project_name, project_version)
@@ -151,7 +162,8 @@ async def project_version_update_ticket(request: Request,
 
 @router.get("/testResults",
             response_class=HTMLResponse,
-            tags=["Front - Campaign"])
+            tags=["Front - Campaign"],
+            include_in_schema=False)
 async def get_test_results(request: Request):
     projects = registered_projects()
     result = {project: get_project_results(project) for project in projects}

@@ -1,0 +1,22 @@
+{% extends "base_project.html" %}
+{% block project %}
+  <h1>Project: {{project_name}} Campaigns</h1>
+  <!-- Project data. -->
+  <div id="{{project_name}}-campaigns" class="container">
+    <div id="dialog"></div>
+    <button id="{{project_name}}-new" class="btn btn-primary"
+            hx-trigger="click"
+            hx-target="#campaign-form"
+            hx-headers='{"eaid-request":"form"}'
+            hx-get="/front/v1/projects/{{project_name}}/campaigns"
+    >Create new</button>
+    <div id="campaign_table"
+         hx-trigger="load"
+         hx-target="#campaign_table"
+         hx-headers='{"eaid-request":"table"}'
+         hx-get="/front/v1/projects/{{project_name}}/campaigns?limit=10&skip=0"
+         class="container">
+  </div>
+  <div id="campaign-form" class="container"></div>
+
+{% endblock %}

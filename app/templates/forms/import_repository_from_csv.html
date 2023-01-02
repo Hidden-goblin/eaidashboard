@@ -1,0 +1,17 @@
+<div id="importForm" >
+  <form hx-encoding='multipart/form-data'
+        hx-post='/front/v1/projects/{{project_name}}/repository'
+        hx-target="#repositoryMessage"
+        _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100'>
+        <input type='file' name='file' accept='text/csv'>
+        <button class="btn btn-secondary"
+                _="on click set #progress.hidden to false">Upload
+        </button>
+        <progress id='progress'
+                  value="0"
+                  max="100"
+                  class="progressbar"
+                  role="progressbar"
+                  hidden></progress>
+        </form>
+</div>

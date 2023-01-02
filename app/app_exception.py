@@ -1,6 +1,10 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
+class InsertionError(Exception):
+    pass
+
+
 class ProjectNotRegistered(Exception):
     pass
 
@@ -41,7 +45,19 @@ class CampaignNotFound(Exception):
     pass
 
 
+class TicketNotFound(Exception):
+    pass
+
+
+class ScenarioNotFound(Exception):
+    pass
+
+
 class NonUniqueError(Exception):
+    pass
+
+
+class UserNotFound(Exception):
     pass
 
 
@@ -54,4 +70,8 @@ class NotAuthorized(Exception):
 
 
 class IncorrectFieldsRequest(Exception):
+    pass
+
+
+class MalformedCsvFile(Exception):
     pass

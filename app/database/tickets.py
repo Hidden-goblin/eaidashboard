@@ -1,14 +1,14 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any, List, Union
+from typing import List, Union
 
 from pymongo import MongoClient
 
 from app.app_exception import VersionNotFound
 from app.conf import mongo_string
-from app.database.db_settings import DashCollection
-from app.database.versions import get_version_and_collection
-from app.schema.project_schema import Statistics, Ticket, TicketType, ToBeTicket, UpdatedTicket
+from app.database.mongo.db_settings import DashCollection
+from app.database.mongo.versions import get_version_and_collection
+from app.schema.project_schema import Statistics, TicketType, ToBeTicket, UpdatedTicket
 
 
 def update_values(project_name, project_version):
