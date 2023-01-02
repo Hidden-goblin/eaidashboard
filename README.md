@@ -32,3 +32,23 @@ PG_DB=<the postgres db name>
 By default, an admin is created. Its name is `admin@admin.fr` and its password is `admin`. Please mind updating its password :)
 
 http://localhost:8081/openapi.json
+
+# Version history
+
+## Current: 1.5
+
+## History
+
+- 1.5
+  - Add front bug management
+  - Remove rsa key dependency
+  - Add rsa key automatic generation and renewal
+- 1.4
+  - Add test repository management
+- 1.2
+  - Add JWT generation using asymmetric key
+- 1.1
+  - Fix API issues
+  - Move MongoDb collection naming from string to enum
+- 1.0
+  - First API release
