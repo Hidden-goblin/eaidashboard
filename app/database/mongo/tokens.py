@@ -5,16 +5,16 @@ from datetime import datetime, timezone
 from jwt import decode
 from pymongo import MongoClient
 from app.conf import mongo_string
-from app.database.authentication import ALGORITHM, PUBLIC_KEY
+from app import conf
 
 
 def token_user(token):
-    payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
     return payload.get("sub")
 
 
 def token_scope(token):
-    payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
     return payload.get("scopes", [])
 
 

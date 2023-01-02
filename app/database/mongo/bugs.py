@@ -9,7 +9,7 @@ from app.app_exception import ProjectNotRegistered
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
 from app.database.settings import registered_projects
-from app.database.versions import get_version_and_collection, get_versions
+from app.database.mongo.versions import get_version_and_collection, get_versions
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugTicket, UpdateBugTicket
 
@@ -43,6 +43,14 @@ def get_bugs(project_name: str,
 def _bugs_rewriting(bug: dict):
     return {key.replace("_id", "internal_id"): value for key, value in bug.items()}
 
+
+def db_get_bug(project_name: str,
+               internal_id: str) -> dict:
+    if project_name not in registered_projects():
+        raise ProjectNotRegistered("Project not found")
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    return _bugs_rewriting(db[str(DashCollection.BUGS)].find_one({"_id": ObjectId(internal_id)}))
 
 def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
     client = MongoClient(mongo_string)

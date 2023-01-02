@@ -1,0 +1,37 @@
+<table class="table table-bordered table-striped">
+    <!-- tables bug table -->
+      <thead>
+       <tr>
+        <th>Version</th>
+        <th>Titre</th>
+        <th>Criticality</th>
+        <th>Status</th>
+        <th></th>
+        <th>Created</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for bug in bugs %}
+      <tr>
+        <td>{{bug.version}}</td>
+        <td hx-get="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
+            hx-trigger="click"
+            hx-target="#dialog"><a class="link-primary">{{bug.title}}</a></td>
+        <td>{{bug.criticality}}</td>
+          <td>{{bug.status}}</td>
+          <td><button class="btn btn-secondary"
+                      hx-ext="json-enc"
+                                   hx-confirm="Are you sure you want to {%if bug.status == 'open'%}close{%else%}reopen{%endif%} the defect?"
+                                   hx-patch="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
+                                   hx-include='[id=bug-{{bug.internal_id}}]'
+                                   hx-params="status"
+                                   hx-swap="none"
+                                   hx-headers='{"eaid-next": "form-refresh"}'
+                                   hx-trigger="click">{%if bug.status == "open"%}Close{%else%}Reopen{%endif%}</button>
+              <input type="hidden" id="bug-{{bug.internal_id}}" name="status" value={%if bug.status == "open"%}"closed"{%else%}"open"{%endif%}]/>
+          </td>
+        <td>{{bug.created.strftime('%Y-%m-%d')}}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>

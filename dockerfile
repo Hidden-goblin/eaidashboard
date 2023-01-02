@@ -8,6 +8,6 @@ WORKDIR /usr/src/dashboard
 COPY Pipfile main.py ./
 COPY app app/
 
-RUN pipenv install && mkdir .ssh/
+RUN pipenv install
 
 CMD pipenv run python main.py

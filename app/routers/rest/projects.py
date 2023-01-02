@@ -11,7 +11,6 @@ from fastapi import (APIRouter,
                      Response,
                      Security,
                      UploadFile)
-from pymongo import MongoClient
 from csv import DictReader
 
 from starlette.background import BackgroundTasks
@@ -21,7 +20,7 @@ from app.app_exception import (MalformedCsvFile, ProjectNotRegistered,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-from app.database.mongo.db_settings import DashCollection
+from app.database.mongo.projects import get_projects
 from app.database.projects import (create_project_version,
                                    get_project,
                                    get_project_results,
@@ -29,14 +28,13 @@ from app.database.projects import (create_project_version,
 from app.database.settings import registered_projects
 from app.database.postgre.testrepository import add_epic, add_feature, add_scenario, \
     clean_scenario_with_fake_id
-from app.database.versions import get_version, update_version_data, update_version_status
+from app.database.mongo.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
                                        TestFeature, TestScenario, UpdateVersion,
                                        Version,
                                        TicketProject)
-from app.conf import mongo_string
 
 router = APIRouter(
     prefix="/api/v1"
@@ -50,23 +48,8 @@ router = APIRouter(
 async def projects(response: Response,
                    skip: int = 0,
                    limit: int = 100):
-    client = MongoClient(mongo_string)
-    db_names = client.list_database_names()
-    db_names.pop(db_names.index("admin")) if 'admin' in db_names else None
-    db_names.pop(db_names.index("config")) if 'config' in db_names else None
-    db_names.pop(db_names.index("local")) if 'local' in db_names else None
-    db_names.pop(db_names.index("settings")) if 'settings' in db_names else None
 
-    db_names.sort()
-    db_names = db_names[skip:limit]
-    return [{"name": db_name,
-             DashCollection.CURRENT.value: client[db_name][
-                 DashCollection.CURRENT.value].count_documents({}),
-             DashCollection.FUTURE.value: client[db_name][
-                 DashCollection.FUTURE.value].count_documents({}),
-             DashCollection.ARCHIVED.value: client[db_name][
-                 DashCollection.ARCHIVED.value].count_documents({})}
-            for db_name in db_names]
+    return get_projects(skip, limit)
 
 
 @router.get("/projects/{project_name}",

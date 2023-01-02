@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from app.app_exception import VersionNotFound
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
-from app.database.versions import get_version_and_collection
+from app.database.mongo.versions import get_version_and_collection
 from app.schema.project_schema import Statistics, TicketType, ToBeTicket, UpdatedTicket
 
 

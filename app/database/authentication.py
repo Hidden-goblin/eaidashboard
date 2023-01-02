@@ -4,22 +4,17 @@ from datetime import timezone
 from typing import Optional
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-from jwt import encode, decode, PyJWTError
+from jwt import encode, decode
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
 from passlib.context import CryptContext
 
 from app.conf import mongo_string, config
+from app import conf
 
 
-ALGORITHM = config["ALGORITHM"]
 ACCESS_TOKEN_EXPIRE_MINUTES = timedelta(minutes=int(config["TIMEDELTA"]))
-
-private_key = open(config["DASH_PRIVATE"], 'r').read()
-SECRET_KEY = serialization.load_ssh_private_key(private_key.encode(), password=b'')
-
-public_key = open(config["DASH_PUBLIC"], 'r').read()
-PUBLIC_KEY = serialization.load_ssh_public_key(public_key.encode())
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -48,16 +43,13 @@ def create_access_token(data: dict,
     client = MongoClient(mongo_string)
     db = client["settings"]
     token = db["token"]
+    if token.count_documents({}) == 0:
+        generate_keys()
     token.update_one({"username": data["sub"]},
                      {"$set": {"token_date": datetime.now(timezone.utc)}},
                      upsert=True)
 
-    # if expires_delta:
-    #     expire = datetime.now(timezone.utc) + expires_delta
-    # else:
-    #     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    # to_encode["exp"] = expire
-    return encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encode(to_encode, conf.SECRET_KEY, algorithm=conf.ALGORITHM)
 
 
 def renew(user):
@@ -77,8 +69,28 @@ def revoke(username):
 
 
 def invalidate_token(token):
-    payload = decode(token, PUBLIC_KEY, algorithms=[ALGORITHM])
+    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
     revoke(payload.get("sub"))
+
+
+def generate_keys():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+    private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM,
+                                            format=serialization.PrivateFormat.TraditionalOpenSSL,
+                                            encryption_algorithm=serialization.NoEncryption())
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    conf.SECRET_KEY = serialization.load_pem_private_key(private_pem,
+                                                     password=None,
+                                                     backend=default_backend())
+    conf.PUBLIC_KEY = serialization.load_pem_public_key(public_pem,
+                                                   backend=default_backend())
+    conf.ALGORITHM = "RS256"
 
 
 def init_user_token():
@@ -86,3 +98,4 @@ def init_user_token():
     db = client["settings"]
     token = db["token"]
     token.create_index("token_date", expireAfterSeconds=int(config["TIMEDELTA"]) * 60)
+    generate_keys()

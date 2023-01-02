@@ -26,3 +26,7 @@ postgre_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} user={c
 postgre_setting_string = (f"hostaddr={config['PG_URL']} port={config['PG_PORT']} "
                           f"user={config['PG_USR']}"
                           f" password={config['PG_PWD']} dbname=postgres")
+
+SECRET_KEY = None
+PUBLIC_KEY = None
+ALGORITHM = None

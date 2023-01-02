@@ -128,10 +128,11 @@ class BugTicketResponse(BaseModel):
 
 class UpdateBugTicket(BaseModel):
     title: Optional[str]
+    version: Optional[str]
     description: Optional[str]
     updated: datetime = datetime.now()
     url: Optional[str]
-    status: Optional[StatusEnum]
+    status: Optional[BugStatusEnum]
     criticality: Optional[BugCriticalityEnum]
 
     def to_dict(self):
@@ -139,7 +140,9 @@ class UpdateBugTicket(BaseModel):
                 "description": self.description,
                 "updated": self.updated,
                 "url": self.url,
-                "status": self.status}
+                "status": self.status,
+                "criticality": self.criticality,
+                "version": self.version}
         return {key: value for key, value in temp.items() if value is not None}
 
 

@@ -10,9 +10,7 @@ from starlette import status
 from starlette.requests import Request
 from logging import getLogger
 
-from app.app_exception import NotAuthorized, NotConnected, UserNotFound
-from app.conf import mongo_string
-from app.database.authentication import ALGORITHM, PUBLIC_KEY
+
 from app.database.mongo.tokens import get_token_date, renew_token_date, token_scope, token_user
 from app.database.mongo.users import get_user
 from app.schema.authentication import TokenData

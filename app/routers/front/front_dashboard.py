@@ -1,8 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import logging
-import urllib.parse
-from base64 import decode
 
 from fastapi import APIRouter, Form, HTTPException
 from starlette.background import BackgroundTasks
@@ -15,7 +13,7 @@ from app.database.authorization import is_updatable
 from app.database.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
-from app.database.versions import dashboard as db_dash
+from app.database.mongo.versions import dashboard as db_dash
 from app.schema.project_schema import UpdatedTicket
 
 router = APIRouter()
@@ -52,8 +50,12 @@ async def project_version_tickets(request: Request, project_name, project_versio
                response_class=HTMLResponse,
                tags=["Front - Utils"],
                include_in_schema=False)
-async def return_void():
-    return HTMLResponse("")
+async def return_void(request: Request):
+    return templates.TemplateResponse("void.html",
+                                      {"request": request},
+                                      headers={
+                                          "HX-Trigger": request.headers.get('eaid-next', "")
+                                      })
 
 
 @router.get("/login",

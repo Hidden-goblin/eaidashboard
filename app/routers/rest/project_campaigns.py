@@ -18,7 +18,7 @@ from app.database.testcampaign import (create_campaign,
                                        is_campaign_exist,
                                        retrieve_campaign,
                                        fill_campaign as db_fill_campaign)
-from app.database.versions import get_version_and_collection
+from app.database.mongo.versions import get_version_and_collection
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.campaign_schema import (CampaignLight, Scenarios,
