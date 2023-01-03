@@ -25,6 +25,7 @@ PG_PORT=<the postgres db port>
 PG_USR=<the postgres db user>
 PG_PWD=<the postgres db user password>
 PG_DB=<the postgres db name>
+SESSION_KEY=<the session key>
 ```
 
 ## First start app
@@ -35,10 +36,13 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 1.5
+## Current: 1.6
 
 ## History
-
+- 1.6
+  - Fix postgresql connection issue with docker-compose
+  - Fix unsecure sql request
+  - Add SESSION_KEY parameter
 - 1.5
   - Add front bug management
   - Remove rsa key dependency

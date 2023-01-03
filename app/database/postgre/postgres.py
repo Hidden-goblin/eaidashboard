@@ -8,7 +8,7 @@ from app.database.postgre.postgre_updates import POSTGRE_UPDATES
 def init_postgres():
     conn = psycopg.connect(postgre_setting_string, autocommit=True)
     cur = conn.cursor()
-    cur.execute(f"select * from pg_database where datname = '{config['PG_DB']}'")
+    cur.execute("select * from pg_database where datname =  %s" ,(config['PG_DB'],))
     if not cur.fetchall():
         cur.execute(f"create database {config['PG_DB']}")
 
