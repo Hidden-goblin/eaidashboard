@@ -1,0 +1,26 @@
+<form   hx-post="/front/v1/projects/{{project_name}}/versions/{{version}}"
+        hx-ext="json-enc">
+     <div class="mb-3">
+        <label for="reference" class="form-label">Ticket reference:</label>
+        <input type="text" id="reference" name="reference" value="" class="form-control"/>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Ticket description:</label>
+        <input type="text" id="description" name="description" value="" class="form-control"/>
+    </div>
+    <div class="mb-3">
+        <label for="status" class="form-label">Seen in version:</label>
+        <select class="form-select" aria-label="creation status" id="status" name="status">
+            {%for stat in status%}
+            <option value="{{stat}}" {%if stat=="open"%} selected{%endif%}>{{stat}}</option>
+            {%endfor%}
+        </select>
+    </div>
+    <button class="btn btn-primary"
+            type="submit">Submit</button>
+<button class="btn btn-secondary"
+                hx-delete="/clear"
+                hx-target="#ticket"
+        >Dismiss</button>
+
+</form>

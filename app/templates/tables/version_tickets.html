@@ -1,6 +1,7 @@
 
 <table class="table table-bordered table-striped caption-top">
-  <caption>TIckets in version {{version}}</caption>
+  <!-- Table version tickets -->
+  <caption>Tickets in version {{version}}</caption>
   <thead>
     <tr>
       <th>Reference</th>
@@ -18,6 +19,12 @@
     {% endfor %}
   </tbody>
 </table>
+<button class="btn btn-primary"
+        hx-get="/front/v1/projects/{{project_name}}/versions/{{version}}"
+        hx-headers='{"eaid-request": "FORM"}'
+        hx-target="#ticket">
+  Add a new ticket
+</button>
 <button class="btn btn-primary"
         hx-delete="/clear"
         hx-trigger="click"

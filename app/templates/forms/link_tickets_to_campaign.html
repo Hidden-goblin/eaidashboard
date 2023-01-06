@@ -1,0 +1,16 @@
+<form hx-post="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets"
+      hx-ext="json-enc">
+    <div>Link tickets</div>
+    {% for ticket in tickets %}
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="{{ticket}}" id="check{{loop.index}}" name="ticket_references">
+        <label class="form-check-label" for="check{{loop.index}}">
+            {{ticket}}
+        </label>
+    </div>
+    {% endfor %}
+    <button class="btn btn-primary">Link to campaign</button>
+    <button class="btn btn-secondary"
+            hx-delete="/clear"
+            hx-target="#addTickets">Close</button>
+</form>

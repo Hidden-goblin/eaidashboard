@@ -2,6 +2,7 @@
 <!-- Project data. -->
 {% block project %}
   <h1>Project: {{project_name}}</h1>
+<!-- project -->
   <div id="{{project_name}}-versions" class="container">
     <div id="dialog"></div>
     <button class="btn btn-primary"
@@ -10,10 +11,10 @@
     <div id="versionsTable"
          hx-get="/front/v1/projects/{{project_name}}/versions"
          hx-trigger="load">
-
     </div>
     <div id="versionTickets">
-
+    </div>
+    <div id="ticket">
     </div>
   </div>
 

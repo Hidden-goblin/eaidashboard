@@ -15,17 +15,18 @@ from app.database.settings import registered_projects
 from app.schema.project_schema import Bugs, StatusEnum, UpdateTickets, UpdateVersion
 
 
-def clean_update_version(body: UpdateVersion) -> dict:
+async def clean_update_version(body: UpdateVersion) -> dict:
     _body = {key: value for key, value in body.dict().items() if (key in ["tickets",
                                                                           "bugs",
                                                                           "started",
                                                                           "end_forecast"] and
                                                                   value is not None)}
-    if isinstance(body.tickets, UpdateTickets):
-        _body["tickets"] = {key: value for key, value in body.tickets.dict().items()
-                            if value is not None}
-    if isinstance(body.bugs, Bugs):
-        _body["bugs"] = {key: value for key, value in body.bugs.dict().items() if value is not None}
+    # TODO Check what the commented code is for
+    # if isinstance(body.tickets, UpdateTickets):
+    #     _body["tickets"] = {key: value for key, value in body.tickets.dict().items()
+    #                         if value is not None}
+    # if isinstance(body.bugs, Bugs):
+    #     _body["bugs"] = {key: value for key, value in body.bugs.dict().items() if value is not None}
 
     if "started" in _body:
         _body["started"] = datetime.strptime(_body["started"], "%Y-%m-%d")
@@ -35,8 +36,8 @@ def clean_update_version(body: UpdateVersion) -> dict:
     return _body
 
 
-def get_version_and_collection(project_name: str, version: str):
-    if project_name.casefold() not in registered_projects():
+async def get_version_and_collection(project_name: str, version: str):
+    if project_name.casefold() not in await registered_projects():
         raise ProjectNotRegistered("Project not found")
 
     client = MongoClient(mongo_string)
@@ -55,8 +56,8 @@ def get_version_and_collection(project_name: str, version: str):
     return None, None
 
 
-def get_version(project_name: str, version: str):
-    _version, _collection = get_version_and_collection(project_name, version)
+async def get_version(project_name: str, version: str):
+    _version, _collection = await get_version_and_collection(project_name, version)
     if _version is None:
         return {}
     client = MongoClient(mongo_string)
@@ -64,7 +65,7 @@ def get_version(project_name: str, version: str):
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
 
 
-def get_versions(project_name: str) -> list:
+async def get_versions(project_name: str) -> list:
     client = MongoClient(mongo_string)
     db = client[project_name]
     current = db[DashCollection.CURRENT.value]
@@ -82,8 +83,8 @@ def get_versions(project_name: str) -> list:
     return result
 
 
-def update_version_status(project_name: str, version: str, to_be_status: str):
-    _version, _collection = get_version_and_collection(project_name, version)
+async def update_version_status(project_name: str, version: str, to_be_status: str):
+    _version, _collection = await get_version_and_collection(project_name, version)
     accepted_status = [StatusEnum.RECORDED, StatusEnum.ARCHIVED, StatusEnum.CAMPAIGN_STARTED,
                        StatusEnum.CAMPAIGN_ENDED,
                        StatusEnum.TEST_PLAN_WRITING,
@@ -176,8 +177,8 @@ def update_version_status(project_name: str, version: str, to_be_status: str):
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
 
 
-def update_version_data(project_name: str, version: str, body: UpdateVersion):
-    _version, _collection = get_version_and_collection(project_name, version)
+async def update_version_data(project_name: str, version: str, body: UpdateVersion):
+    _version, _collection = await get_version_and_collection(project_name, version)
     client = MongoClient(mongo_string)
     db = client[project_name]
     document = db[_collection].find_one({"version": _version}, projection={"_id": False,
@@ -185,7 +186,7 @@ def update_version_data(project_name: str, version: str, body: UpdateVersion):
                                                                            "updated": False,
                                                                            "version": False,
                                                                            "status": False})
-    document = dp_merge(document, clean_update_version(body), flags=dpath.util.MERGE_REPLACE)
+    document = dp_merge(document, await clean_update_version(body), flags=dpath.MergeType.REPLACE)
     result = db[_collection].update_one({"version": _version},
                                         {"$set": {**document,
                                                   "updated": datetime.now()}})
@@ -195,8 +196,8 @@ def update_version_data(project_name: str, version: str, body: UpdateVersion):
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
 
 
-def dashboard():
-    projects = registered_projects()
+async def dashboard():
+    projects = await registered_projects()
     client = MongoClient(mongo_string)
     result = []
     for project in projects:
@@ -211,7 +212,8 @@ def dashboard():
     return result
 
 
-def move_tickets(project_name, version, ticket_type, ticket_dispatch):
+async def move_tickets(project_name, version, ticket_type, ticket_dispatch):
+    # TODO implement the move in mongo
     _version = get_version(project_name, version)
     _base_type = _version["tickets"][ticket_type.value]
     to_subtract = sum(

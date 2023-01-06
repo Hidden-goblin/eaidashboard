@@ -8,7 +8,7 @@ from starlette.background import BackgroundTasks
 
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
+from app.database.mongo.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
 from app.schema.project_schema import (ErrorMessage,
                                        Ticket, ToBeTicket, UpdatedTicket)
 
@@ -59,7 +59,7 @@ async def create_ticket(project_name: str,
                         background_task: BackgroundTasks,
                         user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
-        result = add_ticket(project_name, version, ticket)
+        result = await add_ticket(project_name, version, ticket)
         background_task.add_task(update_values, project_name, version)
         return str(result.inserted_id)
     except DuplicateKeyError as invalid:
@@ -85,7 +85,7 @@ async def create_ticket(project_name: str,
             description="Retrieve all tickets in a version")
 async def router_get_tickets(project_name, version):
     try:
-        return get_tickets(project_name, version)
+        return await get_tickets(project_name, version)
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
@@ -105,7 +105,7 @@ async def router_get_tickets(project_name, version):
             description="Retrieve one ticket of a version")
 async def get_one_ticket(project_name: str, version: str, reference: str):
     try:
-        return get_ticket(project_name, version, reference)
+        return await get_ticket(project_name, version, reference)
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
@@ -142,7 +142,7 @@ async def update_one_ticket(project_name: str,
                             background_task: BackgroundTasks,
                             user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
-        res = update_ticket(project_name, version, reference, ticket)
+        res = await update_ticket(project_name, version, reference, ticket)
         if not res.acknowledged:
             raise Exception("update not made")
         background_task.add_task(update_values, project_name, version)

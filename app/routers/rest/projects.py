@@ -47,7 +47,7 @@ async def projects(response: Response,
                    skip: int = 0,
                    limit: int = 100):
 
-    return get_projects(skip, limit)
+    return await get_projects(skip, limit)
 
 
 @router.get("/projects/{project_name}",
@@ -71,7 +71,7 @@ denoting the project's version you want to retrieve.
 async def one_project(project_name: str,
                       sections: Union[List[str], None] = Query(default=None)):
     try:
-        return get_project(project_name.casefold(), sections)
+        return await get_project(project_name.casefold(), sections)
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
 
@@ -91,7 +91,7 @@ async def post_projects(project_name: str,
                         project: RegisterVersion,
                         user: Any = Security(authorize_user, scopes=["admin"])):
     try:
-        result = create_project_version(project_name,project)
+        result = await create_project_version(project_name,project)
         return str(result.inserted_id)
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
@@ -114,7 +114,7 @@ async def post_projects(project_name: str,
 async def version_details(project_name: str,
                           version: str):
     try:
-        return get_version(project_name.casefold(), version.casefold())
+        return await get_version(project_name.casefold(), version.casefold())
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
 
@@ -152,10 +152,10 @@ async def update_version(project_name: str,
                          user: Any = Security(authorize_user, scopes=["admin", "user"])):
     result = None
     if "status" in body.dict() and body.dict()["status"] is not None:
-        result = update_version_status(project_name, version, body.dict()["status"])
+        result = await update_version_status(project_name, version, body.dict()["status"])
     # Check it's ok :/
 
-    return update_version_data(project_name.casefold(), version.casefold(), body)
+    return await update_version_data(project_name.casefold(), version.casefold(), body)
 
 
 @router.post("/projects/{project_name}/results")
@@ -169,13 +169,13 @@ async def upload_results(project_name: str,
     buffer = StringIO(decoded)
     rows = DictReader(buffer)
     results = [{**row, "date": datetime.strptime(result_date, "%Y%m%dT%H:%M")} for row in rows]
-    insert_results(project_name, results)
+    await insert_results(project_name, results)
     return {"result": "ok"}
 
 
 @router.get("/projects/{project_name}/results")
 async def get_results(project_name: str):
-    return get_project_results(project_name)
+    return await get_project_results(project_name)
 
 
 @router.post("/projects/{project_name}/repository",
@@ -195,7 +195,7 @@ async def upload_repository(project_name: str,
                             background_task: BackgroundTasks,
                             file: UploadFile = File(),
                             user: Any = Security(authorize_user, scopes=["admin", "user"])):
-    if project_name.casefold() not in registered_projects():
+    if project_name.casefold() not in await registered_projects():
         raise HTTPException(404, detail=f"Project '{project_name}' not found")
     contents = await file.read()
     decoded = contents.decode()

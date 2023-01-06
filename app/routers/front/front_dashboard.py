@@ -12,7 +12,7 @@ from app.database.authentication import authenticate_user, create_access_token, 
 from app.database.authorization import is_updatable
 from app.database.mongo.projects import get_project_results
 from app.database.settings import registered_projects
-from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
+from app.database.mongo.tickets import get_ticket, get_tickets, update_ticket, update_values
 from app.database.mongo.versions import dashboard as db_dash
 from app.schema.project_schema import UpdatedTicket
 
@@ -26,10 +26,10 @@ router = APIRouter()
 async def dashboard(request: Request):
     if not is_updatable(request, ()):
         request.session.pop("token", None)
-    projects = registered_projects()
+    projects = await registered_projects()
     return templates.TemplateResponse("dashboard.html",
                                       {"request": request,
-                                       "project_version": db_dash(),
+                                       "project_version": await db_dash(),
                                        "projects": projects or []})
 
 
@@ -38,10 +38,17 @@ async def dashboard(request: Request):
             tags=["Front - Utils"],
             include_in_schema=False)
 async def project_version_tickets(request: Request, project_name, project_version):
-
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
     return templates.TemplateResponse("ticket_view.html",
                                       {"request": request,
-                                       "tickets": get_tickets(project_name, project_version),
+                                       "tickets": await get_tickets(project_name, project_version),
                                        "project_name": project_name,
                                        "project_version": project_version})
 
@@ -103,9 +110,17 @@ async def logout(request: Request):
             tags=["Front - Tickets"],
             include_in_schema=False)
 async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
     return templates.TemplateResponse("ticket_row_edit.html",
                                       {"request": request,
-                                       "ticket": get_ticket(project_name,
+                                       "ticket": await get_ticket(project_name,
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
@@ -117,9 +132,17 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
             tags=["Front - Tickets"],
             include_in_schema=False)
 async def project_version_ticket(request: Request, project_name, project_version, reference):
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
-                                       "ticket": get_ticket(project_name,
+                                       "ticket": await get_ticket(project_name,
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
@@ -144,7 +167,7 @@ async def project_version_update_ticket(request: Request,
                                                        f"{project_version}/tickets as html "
                                                        f"put the result into #tickets "})
     # TODO check if a refactor might enhance readability
-    res = update_ticket(project_name,
+    res = await update_ticket(project_name,
                         project_version,
                         reference,
                         UpdatedTicket(description=body["description"], status=body["status"]))
@@ -153,7 +176,7 @@ async def project_version_update_ticket(request: Request,
     background_task.add_task(update_values, project_name, project_version)
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
-                                       "ticket": get_ticket(project_name,
+                                       "ticket": await get_ticket(project_name,
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
@@ -165,8 +188,16 @@ async def project_version_update_ticket(request: Request,
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def get_test_results(request: Request):
-    projects = registered_projects()
-    result = {project: get_project_results(project) for project in projects}
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
+    projects = await registered_projects()
+    result = {project: await get_project_results(project) for project in projects}
     return templates.TemplateResponse("test_results.html",
                                       {"request": request,
                                        "results": result})

@@ -28,7 +28,7 @@ async def get_bugs(project_name: str,
                    ):
 
     background_task.add_task(compute_bugs, project_name)
-    return db_g_bugs(project_name, status)
+    return await db_g_bugs(project_name, status)
 
 
 @router.get("/{project_name}/versions/{version}/bugs",
@@ -43,12 +43,12 @@ async def get_bugs_for_version(project_name: str,
                                background_task: BackgroundTasks,
                                status: Optional[BugStatusEnum] = None,
                                criticality: Optional[BugCriticalityEnum] = None):
-    _version, __ = get_version_and_collection(project_name, version)
+    _version, __ = await get_version_and_collection(project_name, version)
     if not _version:
         raise HTTPException(404,
                             detail=f"Version {version} is not found for project {project_name}")
     background_task.add_task(version_bugs, project_name, version)
-    return db_g_bugs(project_name, status, criticality, version)
+    return await db_g_bugs(project_name, status, criticality, version)
 
 
 @router.post("/{project_name}/bugs",
@@ -57,7 +57,7 @@ async def create_bugs(project_name: str,
                       bug: BugTicket,
                       background_task: BackgroundTasks,
                       user: Any = Security(authorize_user, scopes=["admin", "user"])):
-    res = insert_bug(project_name, bug)
+    res = await insert_bug(project_name, bug)
     background_task.add_task(version_bugs, project_name, bug.version)
     return res
 
@@ -71,5 +71,5 @@ async def update_bugs(project_name: str,
                       background_task: BackgroundTasks,
                       user: Any = Security(authorize_user, scopes=["admin", "user"])):
     background_task.add_task(version_bugs, project_name, "")
-    return db_update_bugs(project_name, bug_internal_id, body)
+    return await db_update_bugs(project_name, bug_internal_id, body)
 

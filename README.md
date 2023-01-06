@@ -36,9 +36,14 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 2.0
+## Current: 2.1
 
 ## History
+- 2.1
+  - Add Front capability to add a ticket to a version
+  - Async/await on nearly all methods. Prepare for move ticket from one version to another.
+  - Fix bug count update
+  - SPEC: Ticket cannot be deleted.
 - 2.0
   - Breaking change in database structure
   - Allow to add ticket to campaign without scenarios

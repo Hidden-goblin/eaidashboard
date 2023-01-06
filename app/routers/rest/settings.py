@@ -22,7 +22,7 @@ router = APIRouter(
 async def post_register_projets(project: RegisterProject,
                                 background_task: BackgroundTasks,
                                 user: Any = Security(authorize_user, scopes=["admin"])):
-    _project_name = settings.register_project(project.dict()["name"])
+    _project_name = await settings.register_project(project.dict()["name"])
     background_task.add_task(set_index, _project_name)
     return {"name": _project_name}
 
@@ -33,4 +33,4 @@ async def post_register_projets(project: RegisterProject,
             description="""Register a new project. Only admin can do so."""
             )
 async def get_registered_projects():
-    return settings.registered_projects()
+    return await settings.registered_projects()

@@ -6,7 +6,7 @@ from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
 
 
-def registered_projects():
+async def registered_projects():
     client = MongoClient(mongo_string)
     db = client["settings"]
     collection = db["projects"]
@@ -14,8 +14,8 @@ def registered_projects():
     return [doc['name'] for doc in cursor]
 
 
-def register_project(project_name: str):
-    if project_name.casefold() not in registered_projects():
+async def register_project(project_name: str):
+    if project_name.casefold() not in await registered_projects():
         client = MongoClient(mongo_string)
         db = client.settings
         collection = db.projects
@@ -23,7 +23,7 @@ def register_project(project_name: str):
     return project_name.casefold()
 
 
-def set_index(project_name: str):
+async def set_index(project_name: str):
     client = MongoClient(mongo_string)
     db = client[project_name]
     if "version" not in db[DashCollection.ARCHIVED.value].index_information():

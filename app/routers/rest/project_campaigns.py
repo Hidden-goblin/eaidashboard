@@ -10,14 +10,14 @@ from fastapi import (APIRouter,
 
 from app.app_exception import (CampaignNotFound, NonUniqueError, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.postgre.testcampaign import (create_campaign,
-                                               db_get_campaign_ticket_scenario,
+from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status, get_campaign_content,
-                                               is_campaign_exist,
-                                               retrieve_campaign,
+
                                                fill_campaign as db_fill_campaign)
+from app.database.postgre.pg_campaigns_management import create_campaign, is_campaign_exist, \
+    retrieve_campaign
 from app.database.mongo.versions import get_version_and_collection
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
@@ -53,10 +53,7 @@ async def create_campaigns(project_name: str,
                            user: Any = Security(authorize_user, scopes=["admin"])):
     try:
         log.info("api: create_campaigns")
-        _version, __ = get_version_and_collection(project_name, campaign.version)
-        if _version is None:
-            raise VersionNotFound(f"{campaign.version} does not belong to {project_name}.")
-        return create_campaign(project_name, _version)
+        return await create_campaign(project_name, campaign.version)
 
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
@@ -72,15 +69,7 @@ async def fill_campaign(project_name: str,
                         content: TicketScenarioCampaign,
                         user: Any = Security(authorize_user, scopes=["admin"])):
     try:
-        # Check version exist
-        _version, __ = get_version_and_collection(project_name, version)
-        if _version is None:
-            raise VersionNotFound(f"{version} does not belong to {project_name}.")
-        # Check the campaign exist
-        if not is_campaign_exist(project_name, version, occurrence):
-            raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                                   f"for project {project_name} in version {version} not found")
-        res = db_fill_campaign(project_name, version, occurrence, content)
+        res = await db_fill_campaign(project_name, version, occurrence, content)
 
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
@@ -100,7 +89,7 @@ async def get_campaigns(project_name: str,
                         status: CampaignStatusEnum = None,
                         limit: int = 10,
                         skip: int = 0):
-    campaigns, count = retrieve_campaign(project_name, version, status, limit=limit, skip=skip)
+    campaigns, count = await retrieve_campaign(project_name, version, status, limit=limit, skip=skip)
     response.headers["X-total-count"] = str(count)  # TODO check reason it don't work
     return campaigns
 
@@ -112,7 +101,7 @@ async def get_campaigns(project_name: str,
 async def get_campaign(project_name: str,
                        version: str,
                        occurrence: str):
-    return get_campaign_content(project_name, version, occurrence)
+    return await get_campaign_content(project_name, version, occurrence)
 
 
 # Retrieve scenarios for project-version-campaign-ticket
@@ -123,7 +112,7 @@ async def get_campaign_tickets(project_name: str,
                                version: str,
                                occurrence: str):
     try:
-        return db_get_campaign_tickets(project_name, version, occurrence)
+        return await db_get_campaign_tickets(project_name, version, occurrence)
     except CampaignNotFound as cnf:
         raise HTTPException(404, detail=" ".join(cnf.args)) from cnf
 
@@ -135,7 +124,7 @@ async def get_campaign_ticket(project_name: str,
                               version: str,
                               occurrence: str,
                               ticket_ref: str):
-    return db_get_campaign_ticket_scenarios(project_name, version, occurrence, ticket_ref)
+    return await db_get_campaign_ticket_scenarios(project_name, version, occurrence, ticket_ref)
 
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",
@@ -149,7 +138,7 @@ async def put_campaign_ticket_scenarios(project_name: str,
                                         user: Any = Security(authorize_user,
                                                              scopes=["admin", "user"])
                                         ):
-    return db_put_campaign_ticket_scenarios(project_name,
+    return await db_put_campaign_ticket_scenarios(project_name,
                                             version,
                                             occurrence,
                                             ticket_ref,
@@ -165,7 +154,7 @@ async def get_campaign_ticket_scenario(project_name: str,
                                        occurrence: str,
                                        reference: str,
                                        scenario_id: str):
-    return db_get_campaign_ticket_scenario(project_name,
+    return await db_get_campaign_ticket_scenario(project_name,
                                            version,
                                            occurrence,
                                            reference,
@@ -183,7 +172,7 @@ async def update_campaign_ticket_scenario_status(project_name: str,
                                                  new_status: ScenarioStatusEnum,
                                                  user: Any = Security(authorize_user,
                                                                       scopes=["admin", "user"])):
-    return db_set_campaign_ticket_scenario_status(project_name,
+    return await db_set_campaign_ticket_scenario_status(project_name,
                                                   version,
                                                   occurrence,
                                                   reference,

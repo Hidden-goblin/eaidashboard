@@ -6,15 +6,18 @@ from starlette.requests import Request
 
 from app.conf import templates
 from app.database.authorization import is_updatable
+from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
 from app.database.settings import registered_projects
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios,
+                                               db_get_campaign_tickets,
                                                db_put_campaign_ticket_scenarios,
-                                               db_set_campaign_ticket_scenario_status,
-                                               retrieve_campaign)
+                                               db_set_campaign_ticket_scenario_status)
+from app.database.postgre.pg_campaigns_management import retrieve_campaign
 from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
-from app.routers.rest.project_campaigns import get_campaign_tickets
+
+from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
 from app.utils.pages import page_numbering
@@ -30,17 +33,25 @@ async def front_project_management(project_name: str,
                                    limit: int = 10,
                                    skip: int = 0
                                    ):
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
     # campaigns,  = retrieve_campaign(project_name)
     if "eaid-request" in request.headers.keys():
         if request.headers.get("eaid-request") == "table":
-            return front_project_table(project_name,
+            return await front_project_table(project_name,
                                        request,
                                        limit,
                                        skip)
         if request.headers.get("eaid-request") == "form":
             return front_new_campaign_form(project_name,
                                            request)
-    projects = registered_projects()
+    projects = await registered_projects()
     return templates.TemplateResponse("campaign.html",
                                       {
                                           "request": request,
@@ -50,12 +61,12 @@ async def front_project_management(project_name: str,
                                       })
 
 
-def front_project_table(project_name: str,
+async def front_project_table(project_name: str,
                               request: Request,
                               limit: int = 10,
                               skip: int = 0):
 
-    campaigns, count = retrieve_campaign(project_name, limit=limit, skip=skip)
+    campaigns, count = await retrieve_campaign(project_name, limit=limit, skip=skip)
     pages, current_page = page_numbering(count, limit, skip)
     return templates.TemplateResponse("tables/campaign_table.html",
                                       {
@@ -83,7 +94,14 @@ async def front_new_campaign(project_name: str,
                              request: Request,
                              version: str = Form(...)
                              ):
-    print(version, project_name, request.headers.get("eaid-next"))
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
     return templates.TemplateResponse("void.html",
                                       {"request": request},
                                       headers={"hx-trigger": request.headers.get("eaid-next", "")})
@@ -94,7 +112,15 @@ async def front_new_campaign(project_name: str,
 async def front_scenarios_selector(project_name: str,
                                    body: dict,
                                    request: Request):
-    scenarios, count = db_project_scenarios(project_name, body["epic"], body["feature"])
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
+    scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
     return templates.TemplateResponse("forms/add_scenarios_selector.html",
                                       {"project_name": project_name,
                                        "epic": body["epic"],
@@ -110,8 +136,16 @@ async def front_get_campaign(project_name: str,
                              version: str,
                              occurrence: str,
                              request: Request):
-    campaign = await get_campaign_tickets(project_name, version, occurrence)
-    projects = registered_projects()
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
+    campaign = await db_get_campaign_tickets(project_name, version, occurrence)
+    projects = await registered_projects()
     return templates.TemplateResponse("campaign_board.html",
                                       {
                                           "request": request,
@@ -123,7 +157,7 @@ async def front_get_campaign(project_name: str,
                                       })
 
 
-@router.get("/{project_name}/campaigns/{version}/{occurrence}/{ticket_reference}",
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}",
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def front_get_campaign_ticket_update_form(project_name: str,
@@ -140,8 +174,8 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
                                           })
-    epics = db_project_epics(project_name)
-    features = db_project_features(project_name, epics[0])
+    epics = await db_project_epics(project_name)
+    features = await db_project_features(project_name, epics[0])
     unique_features = {feature["name"] for feature in features}
     return templates.TemplateResponse("forms/add_scenarios.html",
                                       {"project_name": project_name,
@@ -154,7 +188,7 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                        "initiator": request.headers.get('eaid-next', '')})
 
 
-@router.get("/{project_name}/campaigns/{version}/{occurrence}/{ticket_reference}/scenarios",
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios",
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def front_get_campaign_ticket(project_name: str,
@@ -162,7 +196,15 @@ async def front_get_campaign_ticket(project_name: str,
                                     occurrence: str,
                                     ticket_reference: str,
                                     request: Request):
-    scenarios = db_get_campaign_ticket_scenarios(project_name,
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
+    scenarios = await db_get_campaign_ticket_scenarios(project_name,
                                                  version,
                                                  occurrence,
                                                  ticket_reference)
@@ -178,7 +220,7 @@ async def front_get_campaign_ticket(project_name: str,
                                       })
 
 
-@router.put("/{project_name}/campaigns/{version}/{occurrence}/"
+@router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
             "{ticket_reference}/scenarios/{scenario_id}",
             tags=["Front - Campaign"],
             include_in_schema=False)
@@ -197,7 +239,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
                                           })
-    result = db_set_campaign_ticket_scenario_status(project_name,
+    result = await db_set_campaign_ticket_scenario_status(project_name,
                                                     version,
                                                     occurrence,
                                                     ticket_reference,
@@ -209,7 +251,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                       headers={"hx-trigger": request.headers.get("eaid-next", "")})
 
 
-@router.get("/{project_name}/campaigns/{version}/{occurrence}/"
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
             "{ticket_reference}/scenarios/{scenario_id}",
             tags=["Front - Campaign"],
             include_in_schema=False)
@@ -220,7 +262,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             scenario_id: str,
                                                             request: Request):
     """Admin or user can update the scenario_internal_id status"""
-    if not is_updatable(request, ("admin", "user")):
+    if not is_updatable(request,tuple()):
         return templates.TemplateResponse("error_message.html",
                                           {
                                               "request": request,
@@ -228,7 +270,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
                                           })
-    scenario = db_get_campaign_ticket_scenario(project_name,
+    scenario = await db_get_campaign_ticket_scenario(project_name,
                                                version,
                                                occurrence,
                                                ticket_reference,
@@ -244,7 +286,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                        "request": request})
 
 
-@router.delete("/{project_name}/campaigns/{version}/{occurrence}/"
+@router.delete("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
                "{ticket_reference}/scenarios/{scenario_id}",
                tags=["Front - Campaign"],
                include_in_schema=False)
@@ -253,8 +295,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
                                                 scenario_id: str,
-                                                request: Request,
-                                                initiator: str = None):
+                                                request: Request):
     """Admin or user can update the scenario_internal_id status"""
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("error_message.html",
@@ -264,7 +305,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
                                           })
-    db_delete_campaign_ticket_scenario(project_name,
+    await db_delete_campaign_ticket_scenario(project_name,
                                        version,
                                        occurrence,
                                        ticket_reference,
@@ -274,8 +315,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                       headers={"HX-Trigger": request.headers.get('eaid-next', "")})
 
 
-@router.put("/{project_name}/campaigns/{version}/{occurrence}/"
-            "{ticket_reference}",
+@router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}",
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def add_scenarios_to_ticket(project_name: str,
@@ -283,8 +323,7 @@ async def add_scenarios_to_ticket(project_name: str,
                                   occurrence: str,
                                   ticket_reference: str,
                                   element: dict,
-                                  request: Request,
-                                  initiator: str = None):
+                                  request: Request):
     if not is_updatable(request, ("admin", "user")):
         return templates.TemplateResponse("error_message.html",
                                           {
@@ -298,7 +337,7 @@ async def add_scenarios_to_ticket(project_name: str,
         element["scenario_ids"] = [element["scenario_ids"]]
 
     if valid:
-        db_put_campaign_ticket_scenarios(project_name,
+        await db_put_campaign_ticket_scenarios(project_name,
                                          version,
                                          occurrence,
                                          ticket_reference,
@@ -306,3 +345,57 @@ async def add_scenarios_to_ticket(project_name: str,
     return templates.TemplateResponse('void.html',
                                       {"request": request},
                                       headers={"HX-Trigger": request.headers.get('eaid-next',"")})
+
+
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets")
+async def front_campaign_version_tickets(project_name,
+                                         version,
+                                         occurrence,
+                                         request: Request):
+    if not is_updatable(request, tuple()):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again."
+                                          })
+    requested = request.headers.get("eaid-request", "")
+    if requested == "FORM":
+        tickets = await get_tickets_not_in_campaign(project_name, version, occurrence)
+        return templates.TemplateResponse("forms/link_tickets_to_campaign.html",
+                                          {
+                                              "request":request,
+                                              "project_name": project_name,
+                                              "version": version,
+                                              "occurrence": occurrence,
+                                              "tickets": tickets
+                                          })
+    else:
+        # TODO: return the accordion table for the campaign (ease the refresh process)
+        pass
+
+@router.post("/{project_name}/campaigns/{version}/{occurrence}/tickets")
+async def front_campaign_add_tickets(project_name,
+                                     version,
+                                     occurrence,
+                                     request: Request,
+                                     body: dict):
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          })
+    await add_tickets_to_campaign(project_name, version, occurrence, body)
+    return templates.TemplateResponse("error_message.html",
+                                      {
+                                          "request": request,
+                                          "highlight": "Reload the page",
+                                          "sequel": " to see your updates.",
+                                          "advise": ("Reload the page as auto-reloading feature has"
+                                                     " not been implemented yet.")
+                                      },
+                                      headers={"HX-Trigger": ""})

@@ -1,0 +1,39 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor User
+participant API
+database MONGO
+database PG
+autonumber
+
+User -> API: Move ticket T\n from version X to version Y
+API -> MONGO: exist version Y?
+alt status 200
+MONGO -> API: Ok exist
+
+API -> MONGO: ticket T exist in version X
+API -> PG: ticket T in a campaign for version X
+activate PG
+PG -> API: list of campaign_ticket_id
+deactivate PG
+API -> PG: exist campaign for version Y
+
+group all exist
+API -> PG: add ticket T in last campaign for version Y
+PG -> API: campaign_ticket_id
+API -> PG: update ticket T in campaign for version X\n to be in campaign for version Y\n
+API -> PG: remove ticket T in campaign for version X
+API -> MONGO: add ticket T in version Y
+API -> MONGO: remove ticket T in version X
+end
+else Version Y Not found
+MONGO -> API: version Y not found
+API -> User: Cannot move ticket T
+
+else ticket T not in version X
+MONGO -> API: ticket T not found
+API -> User: ticket T not found
+end
+
+@enduml

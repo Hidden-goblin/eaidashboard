@@ -14,7 +14,7 @@ from app.database.settings import registered_projects
 from app.schema.project_schema import Bugs, RegisterVersion, Statistics, StatusEnum, Version
 
 
-def get_projects(skip:int, limit: int):
+async def get_projects(skip:int, limit: int):
     client = MongoClient(mongo_string)
     db_names = client.list_database_names()
     db_names.pop(db_names.index("admin")) if 'admin' in db_names else None
@@ -34,8 +34,8 @@ def get_projects(skip:int, limit: int):
             for db_name in db_names]
 
 
-def create_project_version(project_name: str, project: RegisterVersion):
-    if project_name not in registered_projects():
+async def create_project_version(project_name: str, project: RegisterVersion):
+    if project_name not in await registered_projects():
         raise ProjectNotRegistered(f"{project_name} is not a registered one."
                                    f" Please check the spelling")
     client = MongoClient(mongo_string)
@@ -64,9 +64,9 @@ def create_project_version(project_name: str, project: RegisterVersion):
                                                               bugs=Bugs()).dict())
 
 
-def get_project(project_name: str, sections: Optional[List[str]]):
+async def get_project(project_name: str, sections: Optional[List[str]]):
     client = MongoClient(mongo_string)
-    if project_name not in registered_projects():
+    if project_name not in await registered_projects():
         raise ProjectNotRegistered("Project not found")
     db = client[project_name]
     _sections = [sec.casefold() for sec in sections] if sections is not None else []
@@ -86,8 +86,8 @@ def get_project(project_name: str, sections: Optional[List[str]]):
     return result
 
 
-def insert_results(project_name: str, result: List[dict]):
-    if project_name not in registered_projects():
+async def insert_results(project_name: str, result: List[dict]):
+    if project_name not in await registered_projects():
         raise ProjectNotRegistered("Project not found")
     client = MongoClient(mongo_string)
     db = client[project_name]
@@ -97,8 +97,8 @@ def insert_results(project_name: str, result: List[dict]):
     return True
 
 
-def get_project_results(project_name: str):
-    if project_name not in registered_projects():
+async def get_project_results(project_name: str):
+    if project_name not in await registered_projects():
         raise ProjectNotRegistered("Project not found")
     client = MongoClient(mongo_string)
     db = client[project_name]
