@@ -7,12 +7,12 @@ from starlette.requests import Request
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.settings import registered_projects
-from app.database.testcampaign import (db_delete_campaign_ticket_scenario,
-                                       db_get_campaign_ticket_scenario,
-                                       db_get_campaign_ticket_scenarios,
-                                       db_put_campaign_ticket_scenarios,
-                                       db_set_campaign_ticket_scenario_status,
-                                       retrieve_campaign)
+from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
+                                               db_get_campaign_ticket_scenario,
+                                               db_get_campaign_ticket_scenarios,
+                                               db_put_campaign_ticket_scenarios,
+                                               db_set_campaign_ticket_scenario_status,
+                                               retrieve_campaign)
 from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
 from app.routers.rest.project_campaigns import get_campaign_tickets
 from app.schema.campaign_schema import Scenarios
@@ -204,11 +204,9 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                     scenario_id,
                                                     updated_status["new_status"])
 
-    return templates.TemplateResponse("error_message.html",
-                                      {"request": request,
-                                       "highlight": "",
-                                       "sequel": "Update done",
-                                       "advise": "Please reload the table to see the update."})
+    return templates.TemplateResponse("void.html",
+                                      {"request": request},
+                                      headers={"hx-trigger": request.headers.get("eaid-next", "")})
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/"
@@ -240,7 +238,8 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                        "version": version,
                                        "occurrence": occurrence,
                                        "ticket_reference": ticket_reference,
-                                       "scenario_internal_id": scenario,
+                                       "next": request.headers.get('eaid-next', ""),
+                                       "scenario": scenario,
                                        "statuses": [status.value for status in ScenarioStatusEnum],
                                        "request": request})
 

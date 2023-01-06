@@ -20,11 +20,9 @@ from app.app_exception import (MalformedCsvFile, ProjectNotRegistered,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-from app.database.mongo.projects import get_projects
-from app.database.projects import (create_project_version,
-                                   get_project,
-                                   get_project_results,
-                                   insert_results)
+from app.database.mongo.projects import create_project_version, get_project, get_project_results, \
+    get_projects, \
+    insert_results
 from app.database.settings import registered_projects
 from app.database.postgre.testrepository import add_epic, add_feature, add_scenario, \
     clean_scenario_with_fake_id

@@ -26,7 +26,7 @@ class Scenarios(BaseModel):
 
 class TicketScenarioCampaign(BaseModel):
     ticket_reference: str
-    scenarios: Union[ScenarioCampaign, List[ScenarioCampaign]]
+    scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]]
 
 
 class CampaignLight(BaseModel):
