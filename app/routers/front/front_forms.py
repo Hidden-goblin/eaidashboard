@@ -6,7 +6,7 @@ from starlette.responses import HTMLResponse
 
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.projects import create_project_version, get_project
+from app.database.mongo.projects import create_project_version, get_project
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.settings import registered_projects
 from app.schema.project_schema import RegisterVersion

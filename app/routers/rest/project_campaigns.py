@@ -10,14 +10,14 @@ from fastapi import (APIRouter,
 
 from app.app_exception import (CampaignNotFound, NonUniqueError, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.testcampaign import (create_campaign,
-                                       db_get_campaign_ticket_scenario,
-                                       db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
-                                       db_put_campaign_ticket_scenarios,
-                                       db_set_campaign_ticket_scenario_status, get_campaign_content,
-                                       is_campaign_exist,
-                                       retrieve_campaign,
-                                       fill_campaign as db_fill_campaign)
+from app.database.postgre.testcampaign import (create_campaign,
+                                               db_get_campaign_ticket_scenario,
+                                               db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
+                                               db_put_campaign_ticket_scenarios,
+                                               db_set_campaign_ticket_scenario_status, get_campaign_content,
+                                               is_campaign_exist,
+                                               retrieve_campaign,
+                                               fill_campaign as db_fill_campaign)
 from app.database.mongo.versions import get_version_and_collection
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)

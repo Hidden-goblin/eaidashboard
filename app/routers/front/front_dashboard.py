@@ -10,7 +10,7 @@ from starlette.responses import HTMLResponse
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
-from app.database.projects import get_project_results
+from app.database.mongo.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.tickets import get_ticket, get_tickets, update_ticket, update_values
 from app.database.mongo.versions import dashboard as db_dash

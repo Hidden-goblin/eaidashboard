@@ -76,20 +76,31 @@ status: text
 unique (project_id, version, occurrence)
 }
 
-entity campaign_tickets_scenarios {
-id: int autoincrement
---
+' link between campaign and ticket
+entity campaign_tickets{
+id: autoincrement
+---
 campaign_id: int FK
-scenario_id: int FK
 ticket_reference: text
-status: str
---
-unique (campaign_id, scenario_id, ticket_reference)
+---
+unique(campaign_id, ticket_reference)
 FK campaign_id: campaigns.id
-FK scenario_id: scenarios.id
 }
 
-campaign_tickets_scenarios ||--|| campaigns
-campaign_tickets_scenarios ||--|| scenarios
+' link between campaign-ticket and scenario
+entity campaign_ticket_scenarios {
+id: int autoincrement
+--
+campaign_ticket_id: int FK
+scenario_id: int FK
+status: str
+--
+unique (campaign_ticket_id, scenario_id)
+FK campaign_ticket_id: campaign_tickets.id
+FK scenario_id: scenarios.id
+}
+campaign_tickets ||--|| campaigns
+campaign_ticket_scenarios ||--|| campaign_tickets
+campaign_ticket_scenarios ||--|| scenarios
 
 @enduml

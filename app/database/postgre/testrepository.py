@@ -223,17 +223,37 @@ def db_project_scenarios(project: str, epic: str = None, feature: str = None,
         return list(cursor), count.fetchone()["total"]
 
 
-def db_get_scenarios_id(project_name, epic_name, feature_name, scenarios_ref):
+def db_get_scenarios_id(project_name,
+                        epic_name,
+                        feature_name,
+                        scenarios_ref: list,
+                        feature_filename=None):
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        cursor = connection.execute("select sc.id from scenarios as sc "
-                                    "join features as ft on sc.feature_id = ft.id "
-                                    "join epics as epc on epc.id = ft.epic_id "
-                                    "where sc.project_id like %s "
-                                    "and epc.name like %s "
-                                    "and ft.name like  %s "
-                                    "and sc.scenario_id =Any(%s);", [project_name,
-                                                                     epic_name,
-                                                                     feature_name,
-                                                                     scenarios_ref])
+        if feature_filename is None:
+            cursor = connection.execute("select sc.id "
+                                        "from scenarios as sc "
+                                        "join features as ft on sc.feature_id = ft.id "
+                                        "join epics as epc on epc.id = ft.epic_id "
+                                        "where sc.project_id like %s "
+                                        "and epc.name like %s "
+                                        "and ft.name like  %s "
+                                        "and sc.scenario_id =Any(%s);", [project_name,
+                                                                         epic_name,
+                                                                         feature_name,
+                                                                         scenarios_ref])
+        else:
+            cursor = connection.execute("select sc.id "
+                                        "from scenarios as sc "
+                                        "join features as ft on sc.feature_id = ft.id "
+                                        "join epics as epc on epc.id = ft.epic_id "
+                                        "where sc.project_id like %s "
+                                        "and epc.name like %s "
+                                        "and ft.name like  %s "
+                                        "and ft.filename like %s "
+                                        "and sc.scenario_id =Any(%s);", [project_name,
+                                                                         epic_name,
+                                                                         feature_name,
+                                                                         feature_filename,
+                                                                         scenarios_ref])
         return [row["id"] for row in cursor]

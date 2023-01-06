@@ -36,9 +36,12 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 1.6
+## Current: 2.0
 
 ## History
+- 2.0
+  - Breaking change in database structure
+  - Allow to add ticket to campaign without scenarios
 - 1.6
   - Fix postgresql connection issue with docker-compose
   - Fix unsecure sql request

@@ -13,6 +13,7 @@ from app.utils.pgdb import pool
 
 
 def create_campaign(project_name, version):
+    """Insert into campaign a new empty occurrence"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         conn = connection.execute("insert into campaigns (project_id, version, status) "
@@ -32,6 +33,7 @@ def retrieve_campaign(project_name,
                       status: str = None,
                       limit: int = 10,
                       skip: int = 0):
+    """Get raw campaign with version, occurrence, description and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if version is None and status is None:
@@ -85,6 +87,7 @@ def retrieve_campaign(project_name,
 
 
 def retrieve_campaign_id(project_name: str, version: str, occurrence: str):
+    """get campaign internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         return connection.execute("select id, status"
@@ -96,6 +99,7 @@ def retrieve_campaign_id(project_name: str, version: str, occurrence: str):
 
 
 def is_campaign_exist(project_name: str, version: str, occurrence: str):
+    """Check if campaign exist"""
     return bool(retrieve_campaign_id(project_name, version, occurrence))
 
 
@@ -103,74 +107,85 @@ def fill_campaign(project_name: str,
                   version: str,
                   occurrence: str,
                   content: TicketScenarioCampaign):
+    """Attach ticket to campaign
+    Attach scenarios to campaign"""
     # Check ticket existence
     ticket = get_ticket(project_name, version, content.ticket_reference)
     if ticket is None:
         raise NonUniqueError(f"Found no ticket for project {project_name} in version {version} "
                              f"with reference {content.ticket_reference}.")
 
+    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+
+    if not bool(campaign_id):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+
     with pool.connection() as connection:
-        campaign_id = connection.execute("select id "
-                                         "from campaigns "
-                                         "where project_id = %s "
-                                         "and version = %s "
-                                         "and occurrence = %s;",
-                                         (project_name, version, occurrence)).fetchone()
-        if not bool(campaign_id):
-            raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                                   f"for project {project_name} in version {version} not found")
+        result = connection.execute("insert into campaign_tickets "
+                                    "(campaign_id, ticket_reference) "
+                                    "values (%s, %s) "
+                                    "on conflict (campaign_id, ticket_reference) do nothing;",
+                                    (campaign_id[0], ticket["reference"]))
 
         if isinstance(content.scenarios, list):
             scenarios = content.scenarios
-        else:
+        elif isinstance(content.scenarios, dict):
             scenarios = list(content.scenarios)
+        else:
+            return
+        result = connection.execute("select id from campaign_tickets "
+                                    "where campaign_id = %s "
+                                    "and ticket_reference = %s;",
+                                    (campaign_id[0], ticket["reference"])).fetchone()
+        campaign_ticket_id = result[0]
         errors = []
         for scenario in scenarios:
             # Retrieve scenario_internal_id id
-            if scenario.feature_name and not scenario.feature_filename:
-                scenario_id = connection.execute("select scenarios.id "
-                                                 "from scenarios "
-                                                 "join features on features.id = scenarios.feature_id "
-                                                 "join epics on epics.id = features.epic_id "
-                                                 "where epics.project_id = %s "
-                                                 "and epics.name = %s "
-                                                 "and features.name = %s "
-                                                 "and scenarios.scenario_id = %s;",
-                                                 (project_name,
-                                                  scenario.epic,
-                                                  scenario.feature_name,
-                                                  scenario.scenario_id)).fetchall()
-            else:
-                scenario_id = connection.execute("select scenarios.id "
-                                                 "from scenarios "
-                                                 "join features on features.id = scenarios.feature_id "
-                                                 "join epics on epics.id = features.epic_id "
-                                                 "where epics.project_id = %s "
-                                                 "and epics.name = %s "
-                                                 "and features.name = %s "
-                                                 "and features.filename like %s "
-                                                 "and scenarios.scenario_id = %s;",
-                                                 (project_name,
-                                                  scenario.epic,
-                                                  scenario.feature_name,
-                                                  scenario.feature_filename,
-                                                  scenario.scenario_id)).fetchall()
+            scenario_id = db_get_scenarios_id(project_name,
+                                              scenario.epic,
+                                              scenario.feature_name,
+                                              scenario.scenario_id,
+                                              scenario.feature_filename)
+
             if not scenario_id or len(scenario_id) > 1:
                 errors.append(f"Found {len(scenario_id)} scenarios while expecting one and"
-                                     f" only one.\n"
-                                     f"Search criteria was {scenario}")
+                              f" only one.\n"
+                              f"Search criteria was {scenario}")
                 break
 
-            result = connection.execute("insert into campaign_tickets_scenarios "
-                                        "(campaign_id, scenario_id, ticket_reference, status) "
-                                        "values (%s, %s, %s, %s) "
-                                        "on conflict (campaign_id, scenario_id, ticket_reference) "
+            result = connection.execute("insert into campaign_ticket_scenarios "
+                                        "(campaign_ticket_id, scenario_id,status) "
+                                        "values (%s, %s, %s) "
+                                        "on conflict (campaign_ticket_id, scenario_id) "
                                         "do nothing;",
-                                        (campaign_id[0], scenario_id[0][0],
-                                         content.ticket_reference,
+                                        (campaign_ticket_id, scenario_id[0],
                                          CampaignStatusEnum.recorded))
 
         # I must do something with it
+
+
+def retrieve_campaign_ticket_id(project_name: str,
+                                version: str,
+                                occurrence: str,
+                                ticket_reference: str):
+    if not is_campaign_exist(project_name, version, occurrence):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+
+    ticket = get_ticket(project_name, version, ticket_reference)
+    if not ticket:
+        raise TicketNotFound(f"Ticket {ticket_reference} does not belong to project {project_name},"
+                             f" version {version}")
+
+    with pool.connection() as connection:
+        connection.row_factory = tuple_row
+        return connection.execute("select id "
+                                  "from campaign_tickets "
+                                  "where campaign_id = %s "
+                                  "and ticket_reference = %s;",
+                                  (campaign_id[0], ticket_reference)).fetchone()
 
 
 def get_campaign_content(project_name: str, version: str, occurrence: str):
@@ -182,19 +197,11 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # Select all sql data related to the campaign
-        result = connection.execute("select ticket_reference as reference, status as status,"
-                                    " sc.scenario_id as scenario_id, sc.name as name,"
-                                    " sc.steps as steps, ft.name as feature_name, "
-                                    "ep.name as epic_id "
-                                    "from campaign_tickets_scenarios as cts "
-                                    "join scenarios as sc "
-                                    "   on sc.id = cts.scenario_id "
-                                    "join features as ft "
-                                    "   on sc.feature_id = ft.id "
-                                    "join epics as ep "
-                                    "   on ft.epic_id = ep.id "
-                                    "where campaign_id = %s "
-                                    "order by cts.ticket_reference desc;",
+        result = connection.execute("select ct.ticket_reference as reference, "
+                                    "ct.id as campaign_ticket_id "
+                                    "from campaign_tickets as ct "
+                                    "where ct.campaign_id = %s "
+                                    "order by ct.ticket_reference desc;",
                                     (campaign_id[0],))
         # Prepare the result
         camp = {"project": project_name,
@@ -213,15 +220,8 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
                 tickets.add(row['reference'])
                 current_ticket = {"reference": row['reference'],
                                   "summary": None,
-                                  "scenarios": []}
-            current_ticket["scenarios"].append({
-                "epic_id": row["epic_id"],
-                "feature_id": row["feature_name"],
-                "scenario_id": row["scenario_id"],
-                "name": row["name"],
-                "steps": row["steps"],
-                "status": row["status"]
-            })
+                                  "scenarios": db_get_campaign_scenarios(
+                                      row["campaign_ticket_id"])}
         # Add the last ticket
         camp["tickets"].append(current_ticket)
 
@@ -236,6 +236,23 @@ def get_campaign_content(project_name: str, version: str, occurrence: str):
         return camp
 
 
+def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[dict]:
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        result = connection.execute("select ep.name as epic_id ,"
+                                    " ft.name as feature_id, "
+                                    " sc.scenario_id as scenario_id,"
+                                    " sc.name as name,"
+                                    " sc.steps as steps,"
+                                    " cts.status as status "
+                                    "from campaign_ticket_scenarios as cts "
+                                    "join scenarios as sc on sc.id = cts.scenario_id "
+                                    "join features as ft on sc.feature_id = ft.id "
+                                    "join epics as ep on ft.epic_id = ep.id "
+                                    "where cts.campaign_ticket_id = %s", (campaign_ticket_id,))
+        return list(result.fetchall())
+
+
 def db_get_campaign_tickets(project_name,
                             version,
                             occurrence):
@@ -248,9 +265,9 @@ def db_get_campaign_tickets(project_name,
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         result = connection.execute("select distinct ticket_reference "
-                                    "from campaign_tickets_scenarios as cts "
+                                    "from campaign_tickets as ct "
                                     "where campaign_id = %s "
-                                    "order by cts.ticket_reference desc;",
+                                    "order by ct.ticket_reference desc;",
                                     (campaign_id[0],))
         tickets = result.fetchall()
         updated_tickets = list(get_tickets_by_reference(project_name,
@@ -264,29 +281,35 @@ def db_get_campaign_tickets(project_name,
                 "tickets": updated_tickets}
 
 
-def db_get_campaign_ticket_scenarios(project_name,
-                                     version,
-                                     occurrence,
-                                     reference):
+def db_get_campaign_ticket_scenarios(project_name: str,
+                                     version: str,
+                                     occurrence: str,
+                                     reference: str):
+    """Retrieve scenarios associated to a ticket in a campaign"""
     if not is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
                                f"for project {project_name} in version {version} not found")
     campaign_id = retrieve_campaign_id(project_name, version, occurrence)
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        result = connection.execute("select sc.scenario_id as scenario_id, sc.name as name,"
-                                    " sc.steps as steps, cts.status as status,"
-                                    " ft.name as feature_name, sc.id as sc_internal, "
+        result = connection.execute("select sc.scenario_id as scenario_id,"
+                                    " sc.name as name,"
+                                    " sc.steps as steps,"
+                                    " cts.status as status,"
+                                    " ft.name as feature_name,"
+                                    " sc.id as sc_internal, "
                                     "ep.name as epic_id "
-                                    "from campaign_tickets_scenarios as cts "
-                                    "join scenarios as sc "
+                                    "from campaign_tickets as ct "
+                                    "inner join campaign_ticket_scenarios as cts "
+                                    " on ct.id = cts.campaign_ticket_id "
+                                    "inner join scenarios as sc "
                                     "   on sc.id = cts.scenario_id "
-                                    "join features as ft "
+                                    "inner join features as ft "
                                     "   on sc.feature_id = ft.id "
-                                    "join epics as ep "
+                                    "inner join epics as ep "
                                     "   on ft.epic_id = ep.id "
-                                    "where cts.campaign_id = %s "
-                                    "and cts.ticket_reference = %s ",
+                                    "where ct.campaign_id = %s "
+                                    "and ct.ticket_reference = %s ",
                                     (campaign_id[0], reference))
         return result.fetchall()
 
@@ -299,18 +322,17 @@ def db_get_campaign_ticket_scenario(project_name,
     if not is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
                                f"for project {project_name} in version {version} not found")
-    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    campaign_ticket_id = retrieve_campaign_ticket_id(project_name, version, occurrence, reference)
     with pool.connection() as connection:
         connection.row_factory = dict_row
         result = connection.execute("select sc.scenario_id as scenario_id, sc.name as name,"
                                     " sc.steps as steps, cts.status as status "
-                                    "from campaign_tickets_scenarios as cts "
+                                    "from campaign_ticket_scenarios as cts "
                                     "join scenarios as sc "
                                     "   on sc.id = cts.scenario_id "
-                                    "where cts.campaign_id = %s "
-                                    "and cts.ticket_reference = %s "
+                                    "where cts.campaign_ticket_id = %s "
                                     "and sc.scenario_id = %s",
-                                    (campaign_id[0], reference, scenario_id))
+                                    (campaign_ticket_id[0], scenario_id))
         return result.fetchone()
 
 
@@ -320,15 +342,10 @@ def db_put_campaign_ticket_scenarios(project_name,
                                      reference,
                                      scenarios: List[Scenarios]
                                      ):
-    if not is_campaign_exist(project_name, version, occurrence):
-        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                               f"for project {project_name} in version {version} not found")
-    # Check reference exists in version
-    ticket = get_ticket(project_name, version, reference)
-    if not ticket:
-        raise TicketNotFound(f"Ticket {reference} does not belong to project {project_name},"
-                             f" version {version}")
-    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    campaign_ticket_id = retrieve_campaign_ticket_id(project_name,
+                                                     version,
+                                                     occurrence,
+                                                     reference)
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # Get scenario_internal_id ids
@@ -338,14 +355,13 @@ def db_put_campaign_ticket_scenarios(project_name,
                                                     scenario.epic,
                                                     scenario.feature_name,
                                                     scenario.scenario_ids))
-        connection.execute("insert into campaign_tickets_scenarios "
-                               "(campaign_id, scenario_id, ticket_reference, status) "
-                               "SELECT %s, x, %s, %s "
-                               "FROM unnest(%s) x "
-                               "on conflict do nothing;", [campaign_id[0],
-                                                           reference,
-                                                           str(ScenarioStatusEnum.recorded),
-                                                           scenarios_id])
+        connection.execute("insert into campaign_ticket_scenarios "
+                           "(campaign_ticket_id, scenario_id, status) "
+                           "SELECT %s, x, %s "
+                           "FROM unnest(%s) x "
+                           "on conflict do nothing;", (campaign_ticket_id[0],
+                                                       ScenarioStatusEnum.recorded.value,
+                                                       scenarios_id))
 
 
 def db_delete_campaign_ticket_scenario(project_name,
@@ -353,26 +369,18 @@ def db_delete_campaign_ticket_scenario(project_name,
                                        occurrence,
                                        reference,
                                        scenario_internal_id):
-    if not is_campaign_exist(project_name, version, occurrence):
-        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                               f"for project {project_name} in version {version} not found")
-    # Check reference exists in version
-    ticket = get_ticket(project_name, version, reference)
-    if not ticket:
-        raise TicketNotFound(f"Ticket {reference} does not belong to project {project_name},"
-                             f" version {version}")
-    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    """Delete scenario from campaign_ticket"""
+    campaign_ticket_id = retrieve_campaign_ticket_id(project_name, version, occurrence, reference)
     if not db_is_scenario_internal_id_exist(project_name, scenario_internal_id):
         raise ScenarioNotFound(f"No scenario with id {scenario_internal_id} "
                                f"found in project {project_name}")
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        connection.execute("delete from campaign_tickets_scenarios "
-                           "where campaign_id = %s "
-                           "and scenario_id = %s "
-                           "and ticket_reference = %s", [campaign_id[0],
-                                                         scenario_internal_id,
-                                                         reference])
+        connection.execute("delete from campaign_ticket_scenarios "
+                           "where campaign_ticket_id = %s "
+                           "and scenario_id = %s ",
+                           (campaign_ticket_id[0],
+                            scenario_internal_id))
 
 
 def db_set_campaign_ticket_scenario_status(project_name,
@@ -381,23 +389,18 @@ def db_set_campaign_ticket_scenario_status(project_name,
                                            reference,
                                            scenario_id,
                                            new_status):
-    if not is_campaign_exist(project_name, version, occurrence):
-        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                               f"for project {project_name} in version {version} not found")
-    campaign_id = retrieve_campaign_id(project_name, version, occurrence)
+    campaign_ticket_id = retrieve_campaign_ticket_id(project_name, version, occurrence, reference)
     with pool.connection() as connection:
         connection.row_factory = dict_row
         return connection.execute(
-            "update campaign_tickets_scenarios as cts "
+            "update campaign_ticket_scenarios as cts "
             "set status = %s "
             "from scenarios as sc "
-            "where cts.campaign_id = %s "
+            "where cts.campaign_ticket_id = %s "
             " and sc.scenario_id = %s "
             " and cts.scenario_id = sc.id "
-            " and cts.ticket_reference = %s "
-            "returning sc.scenario_id as scenario_id, cts.status as status, "
-            "cts.ticket_reference as ticket_reference;",
-            (new_status, campaign_id[0], scenario_id, reference)).fetchone()
+            "returning sc.scenario_id as scenario_id, cts.status as status;",
+            (new_status, campaign_ticket_id[0], scenario_id)).fetchone()
 
 
 def db_is_scenario_internal_id_exist(project_name,
