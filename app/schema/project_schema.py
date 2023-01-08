@@ -49,6 +49,13 @@ class Statistics(BaseModel):
     in_progress: int
     done: int
 
+class BugsStatistics(BaseModel):
+    open_blocking: int = 0
+    open_major: int = 0
+    open_minor: int = 0
+    closed_blocking: int = 0
+    closed_major: int = 0
+    closed_minor: int = 0
 
 class Ticket(BaseModel):
     status: str

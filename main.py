@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import logging
 from os import makedirs
 
 import uvicorn

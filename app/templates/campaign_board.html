@@ -18,7 +18,7 @@
                         aria-controls="collapse{{loop.index}}"
                         hx-trigger="click once"
                         hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}/scenarios"
+                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios"
                         hx-target="#accordion-body{{loop.index}}"
                 >
                     {{ticket.reference}}: {{ticket.description}}
@@ -32,13 +32,13 @@
                     <button class="btn"
                             hx-trigger="click"
                             hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}"
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}"
                             hx-target="#campaignMessage"
                             >Add scenarios</button>
                     <button class="btn"
                             hx-trigger="click, add-scenario-{{loop.index}} from:body"
                             hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket.reference}}/scenarios?initiator=add-scenario-{{loop.index}}"
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios?initiator=add-scenario-{{loop.index}}"
                             hx-target="#accordion-body{{loop.index}}">
                         <img src="/assets/reload.svg"
                                  alt="reload"
@@ -53,5 +53,10 @@
           </div>
         {% endfor %}
     </div>
+    <button class="btn btn-primary"
+            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets"
+            hx-headers='{"eaid-request": "FORM"}'
+            hx-target="#addTickets">Add ticket to campaign</button>
+    <div id="addTickets"></div>
 </div>
 {% endblock %}
