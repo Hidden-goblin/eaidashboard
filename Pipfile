@@ -19,6 +19,7 @@ pyjwt = {extras = ["crypto"], version = "*"}
 psycopg = {extras = ["binary", "pool"], version = "*"}
 
 [dev-packages]
+pydeps = "*"
 
 [requires]
 python_version = "3.11"

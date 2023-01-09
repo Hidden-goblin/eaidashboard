@@ -36,9 +36,11 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 2.1
+## Current: 2.1 patch 1
 
 ## History
+- 2.1 patch 1
+  - Fix missing file content
 - 2.1
   - Add Front capability to add a ticket to a version
   - Async/await on nearly all methods. Prepare for move ticket from one version to another.
