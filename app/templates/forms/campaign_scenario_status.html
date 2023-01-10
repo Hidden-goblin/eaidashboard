@@ -7,7 +7,7 @@
         {% endfor %}
     </select>
     <button class="btn btn-primary"
-            hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}"
+            hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}"
             hx-ext="json-enc"
             hx-headers='{"eaid-next":"{{next}}"}'
             hx-enc="application/json"

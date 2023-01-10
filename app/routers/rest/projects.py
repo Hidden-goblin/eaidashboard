@@ -212,7 +212,7 @@ async def upload_repository(project_name: str,
         raise HTTPException(400, detail="Missing or bad csv header")
 
 
-def process_upload(csv_content, project_name):
+async def process_upload(csv_content, project_name):
     """Read a csv and prepare data for insertion
     Feature without epic are removed
     Scenario in removed features are removed
@@ -299,12 +299,12 @@ def process_upload(csv_content, project_name):
                                                        "feature_filename"] not in
                                                    retrieved_features_filename))]
     for epic in epics:
-        add_epic(**epic)
+        await add_epic(**epic)
     for feature in features:
-        add_feature(TestFeature(**feature))
-    clean_scenario_with_fake_id(project_name.casefold())
+        await add_feature(TestFeature(**feature))
+    await clean_scenario_with_fake_id(project_name.casefold())
     for scenario in scenarios:
-        add_scenario(TestScenario(**scenario))
+        await add_scenario(TestScenario(**scenario))
 
     return {"excluded_features": excluded_features,
             "excluded_scenarios": excluded_scenarios}

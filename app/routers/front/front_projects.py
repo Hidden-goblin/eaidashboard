@@ -167,8 +167,12 @@ async def add_version(project_name: str,
 
 async def repository_dropdowns(project_name: str, request: Request, epic: str, feature: str):
     if epic is None and feature is None:
-        epics = db_project_epics(project_name)
-        features = {feature["name"] for feature in db_project_features(project_name, epics[0])}
+        epics = await db_project_epics(project_name)
+        if epics:
+            features = {feature["name"] for feature in await db_project_features(project_name,
+                                                                                 epics[0])}
+        else:
+            features = set()
         return templates.TemplateResponse("selectors/epic_label_selectors.html",
                                           {
                                               "request": request,
@@ -177,7 +181,7 @@ async def repository_dropdowns(project_name: str, request: Request, epic: str, f
                                               "features": features
                                           })
     if epic is not None and feature is None:
-        features = {feature["name"] for feature in db_project_features(project_name, epic)}
+        features = {feature["name"] for feature in await db_project_features(project_name, epic)}
         return templates.TemplateResponse("selectors/feature_label_selectors.html",
                                           {
                                               "request": request,

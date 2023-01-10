@@ -5,7 +5,7 @@ from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
 
 
-def add_epic(project: str, epic_name: str):
+async def add_epic(project: str, epic_name: str):
     with pool.connection() as connection:
         connection.execute("insert into epics (name, project_id) "
                            "values (%s, %s)"
@@ -14,7 +14,7 @@ def add_epic(project: str, epic_name: str):
         connection.commit()
 
 
-def add_feature(feature: TestFeature):
+async def add_feature(feature: TestFeature):
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         epic_id = connection.execute(
@@ -41,7 +41,7 @@ def add_feature(feature: TestFeature):
         connection.commit()
 
 
-def add_scenario(scenario: TestScenario):
+async def add_scenario(scenario: TestScenario):
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         feature_id = connection.execute(
@@ -72,7 +72,7 @@ def add_scenario(scenario: TestScenario):
         connection.commit()
 
 
-def clean_scenario_with_fake_id(project: str):
+async def clean_scenario_with_fake_id(project: str):
     with pool.connection() as connection:
         connection.execute(
             "delete from scenarios "
@@ -83,7 +83,7 @@ def clean_scenario_with_fake_id(project: str):
         connection.commit()
 
 
-def db_project_epics(project: str, limit: int = 100, offset: int = 0):
+async def db_project_epics(project: str, limit: int = 100, offset: int = 0):
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = connection.execute(
@@ -95,7 +95,7 @@ def db_project_epics(project: str, limit: int = 100, offset: int = 0):
         return [row["name"] for row in cursor]
 
 
-def db_project_features(project: str, epic: str = None, limit: int = 100, offset: int = 0):
+async def db_project_features(project: str, epic: str = None, limit: int = 100, offset: int = 0):
     with pool.connection() as connection:
         cursor = None
         connection.row_factory = dict_row
@@ -117,7 +117,7 @@ def db_project_features(project: str, epic: str = None, limit: int = 100, offset
         return list(cursor)
 
 
-def db_project_scenarios(project: str, epic: str = None, feature: str = None,
+async def db_project_scenarios(project: str, epic: str = None, feature: str = None,
                          limit: int = 100, offset: int = 0):
     """All scenarios for a project"""
     with pool.connection() as connection:
@@ -223,7 +223,7 @@ def db_project_scenarios(project: str, epic: str = None, feature: str = None,
         return list(cursor), count.fetchone()["total"]
 
 
-def db_get_scenarios_id(project_name,
+async def db_get_scenarios_id(project_name,
                         epic_name,
                         feature_name,
                         scenarios_ref: list,

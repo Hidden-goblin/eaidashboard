@@ -7,6 +7,7 @@ from app.app_exception import IncorrectFieldsRequest, InsertionError, UserNotFou
 from app.conf import mongo_string
 from app.database.authentication import authenticate_user, get_password_hash, revoke
 
+# Leave methods synchron
 
 def init_user():
     client = MongoClient(mongo_string)
@@ -20,7 +21,7 @@ def init_user():
         create_user("admin@admin.fr", "admin", ["admin"])
 
 
-def create_user(username, password, scopes):
+async def create_user(username, password, scopes):
     client = MongoClient(mongo_string)
     db = client["settings"]
     collection = db["users"]
