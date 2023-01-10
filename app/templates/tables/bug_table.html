@@ -19,16 +19,19 @@
             hx-target="#dialog"><a class="link-primary">{{bug.title}}</a></td>
         <td>{{bug.criticality}}</td>
           <td>{{bug.status}}</td>
-          <td><button class="btn btn-secondary"
+          <td><form>
+              <button class="btn btn-secondary"
                       hx-ext="json-enc"
                                    hx-confirm="Are you sure you want to {%if bug.status == 'open'%}close{%else%}reopen{%endif%} the defect?"
                                    hx-patch="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
-                                   hx-include='[id=bug-{{bug.internal_id}}]'
-                                   hx-params="status"
+                                   hx-include='#bug-{{bug.internal_id}}, #bug-version-{{bug.internal_id}}'
+                                   hx-params="status,version"
                                    hx-swap="none"
                                    hx-headers='{"eaid-next": "form-refresh"}'
                                    hx-trigger="click">{%if bug.status == "open"%}Close{%else%}Reopen{%endif%}</button>
-              <input type="hidden" id="bug-{{bug.internal_id}}" name="status" value={%if bug.status == "open"%}"closed"{%else%}"open"{%endif%}]/>
+              <input type="hidden" id="bug-{{bug.internal_id}}" name="status" value={%if bug.status == "open"%}"closed"{%else%}"open"{%endif%}/>
+              <input type="hidden" id="bug-version-{{bug.internal_id}}" name="version" value="{{bug.version}}"/>
+              </form>
           </td>
         <td>{{bug.created.strftime('%Y-%m-%d')}}</td>
       </tr>
