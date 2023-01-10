@@ -36,9 +36,11 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 2.2
+## Current: 2.3
 
 ## History
+- 2.3
+  - Fix button & input in html table_bug to include version on patch
 - 2.2
   - Fix asyncio behaviour across project
 - 2.1 patch 1
