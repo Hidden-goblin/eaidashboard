@@ -36,9 +36,11 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 2.1 patch 1
+## Current: 2.2
 
 ## History
+- 2.2
+  - Fix asyncio behaviour across project
 - 2.1 patch 1
   - Fix missing file content
 - 2.1

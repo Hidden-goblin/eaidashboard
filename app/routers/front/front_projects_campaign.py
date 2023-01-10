@@ -14,7 +14,7 @@ from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenari
                                                db_get_campaign_tickets,
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status)
-from app.database.postgre.pg_campaigns_management import retrieve_campaign
+from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
 from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
 
 from app.database.utils.ticket_management import add_tickets_to_campaign
@@ -42,15 +42,15 @@ async def front_project_management(project_name: str,
                                               "advise": "Try to log again."
                                           })
     # campaigns,  = retrieve_campaign(project_name)
-    if "eaid-request" in request.headers.keys():
-        if request.headers.get("eaid-request") == "table":
-            return await front_project_table(project_name,
-                                       request,
-                                       limit,
-                                       skip)
-        if request.headers.get("eaid-request") == "form":
-            return front_new_campaign_form(project_name,
-                                           request)
+
+    if request.headers.get("eaid-request", "") == "table":
+        return await front_project_table(project_name,
+                                   request,
+                                   limit,
+                                   skip)
+    if request.headers.get("eaid-request", "") == "form":
+        return front_new_campaign_form(project_name,
+                                       request)
     projects = await registered_projects()
     return templates.TemplateResponse("campaign.html",
                                       {
@@ -102,6 +102,7 @@ async def front_new_campaign(project_name: str,
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
                                           })
+    await create_campaign(project_name, version)
     return templates.TemplateResponse("void.html",
                                       {"request": request},
                                       headers={"hx-trigger": request.headers.get("eaid-next", "")})
@@ -160,7 +161,7 @@ async def front_get_campaign(project_name: str,
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}",
             tags=["Front - Campaign"],
             include_in_schema=False)
-async def front_get_campaign_ticket_update_form(project_name: str,
+async def front_get_campaign_ticket_add_scenario(project_name: str,
                                                 version: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
@@ -175,8 +176,11 @@ async def front_get_campaign_ticket_update_form(project_name: str,
                                               "advise": "Try to log again"
                                           })
     epics = await db_project_epics(project_name)
-    features = await db_project_features(project_name, epics[0])
-    unique_features = {feature["name"] for feature in features}
+    if epics:
+        features = await db_project_features(project_name, epics[0])
+        unique_features = {feature["name"] for feature in features}
+    else:
+        unique_features = set()
     return templates.TemplateResponse("forms/add_scenarios.html",
                                       {"project_name": project_name,
                                        "version": version,

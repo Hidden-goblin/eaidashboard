@@ -39,7 +39,7 @@
         <button type="Add"
                 id="addScenario"
                 class="btn btn-primary"
-                hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/{{ticket_reference}}"
+                hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}"
                 hx-ext='json-enc'
                 hx-headers='{"eaid-next":"{{initiator}}"}'
                 hx-encoding='application/json'

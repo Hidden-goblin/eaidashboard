@@ -66,7 +66,7 @@ async def post_repository(project_name: str,
                                           })
     file_content = await file.read()
     try:
-        process_upload(file_content.decode(), project_name)
+        await process_upload(file_content.decode(), project_name)
     except MalformedCsvFile as exp:
         message = ','.join(exp.args)
         return templates.TemplateResponse("error_message.html",
