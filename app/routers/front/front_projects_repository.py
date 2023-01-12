@@ -12,7 +12,7 @@ from app.database.mongo.bugs import get_bugs
 from app.database.postgre.testrepository import db_project_scenarios
 from app.database.settings import registered_projects
 from app.routers.front.front_projects import repository_dropdowns
-from app.routers.rest.projects import process_upload
+from app.routers.rest.project_repository import process_upload
 from app.schema.mongo_enums import BugStatusEnum
 from app.utils.pages import page_numbering
 
@@ -32,7 +32,14 @@ async def front_project_repository(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
+    if request.headers.get("eaid-request", "") == "REDIRECT":
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={"HX-Redirect": f"/front/v1/projects/{project_name}/repository"})
     if status is not None:
         bugs = await get_bugs(project_name)
     else:
@@ -63,7 +70,8 @@ async def post_repository(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     file_content = await file.read()
     try:
         await process_upload(file_content.decode(), project_name)
@@ -79,7 +87,8 @@ async def post_repository(project_name: str,
                                           {"request": request,
                                            "highlight": "Error in the bulk import process ",
                                            "sequel": exp.args,
-                                           "advise": "Please check your file."})
+                                           "advise": "Please check your file."},
+                                          headers={"HX-Retarget": "#messageBox"})
     return templates.TemplateResponse("void.html",
                                       {"request": request})
 
@@ -98,7 +107,8 @@ async def get_repository(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     return await repository_dropdowns(project_name, request, epic, feature)
 
 
@@ -118,7 +128,8 @@ async def get_scenario(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     scenarios, count = await db_project_scenarios(project_name, epic, feature, limit=limit, offset=skip)
     pages, current_page = page_numbering(count, limit=limit, skip=skip)
     _filter = f"&epic={epic}&feature={feature}" if epic is not None and feature is not None else ""
@@ -148,7 +159,8 @@ async def filter_repository(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"], limit=10)
     pages, current_page = page_numbering(count, limit=10, skip=0)
     return templates.TemplateResponse("tables/scenario_table.html",

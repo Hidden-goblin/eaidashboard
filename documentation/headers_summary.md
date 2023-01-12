@@ -4,6 +4,7 @@
 - `eaid-request` contains the request's type of object 
     - FORM
     - TABLE
+    - REDIRECT
 
 # Headers sent
 

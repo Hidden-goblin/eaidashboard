@@ -29,7 +29,7 @@
                  aria-labelledby="heading{{loop.index}}"
                  data-bs-parent="#campaignTickets">
                 <div>
-                    <button class="btn"
+                    <button class="btn btn-secondary"
                             hx-trigger="click"
                             hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
                             hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}"
@@ -53,10 +53,15 @@
           </div>
         {% endfor %}
     </div>
+    <div class="hstack">
     <button class="btn btn-primary"
             hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets"
             hx-headers='{"eaid-request": "FORM"}'
             hx-target="#addTickets">Add ticket to campaign</button>
+    <button class="btn btn-secondary"
+            hx-get="/front/v1/projects/{{project_name}}/campaigns"
+            hx-headers='{"eaid-request": "REDIRECT"}'>Return to campaigns board</button>
+    </div>
     <div id="addTickets"></div>
 </div>
 {% endblock %}

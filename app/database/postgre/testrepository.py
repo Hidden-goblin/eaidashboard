@@ -1,6 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from app.schema.project_schema import TestFeature, TestScenario
+from typing import List, Tuple
+
+from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
 from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
 
@@ -83,7 +85,9 @@ async def clean_scenario_with_fake_id(project: str):
         connection.commit()
 
 
-async def db_project_epics(project: str, limit: int = 100, offset: int = 0):
+async def db_project_epics(project: str,
+                           limit: int = 100,
+                           offset: int = 0) -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = connection.execute(
@@ -95,7 +99,10 @@ async def db_project_epics(project: str, limit: int = 100, offset: int = 0):
         return [row["name"] for row in cursor]
 
 
-async def db_project_features(project: str, epic: str = None, limit: int = 100, offset: int = 0):
+async def db_project_features(project: str,
+                              epic: str = None,
+                              limit: int = 100,
+                              offset: int = 0) -> List[Feature]:
     with pool.connection() as connection:
         cursor = None
         connection.row_factory = dict_row
@@ -114,11 +121,14 @@ async def db_project_features(project: str, epic: str = None, limit: int = 100, 
                 "order by name "
                 "limit %s  offset %s", (project.casefold(), limit, offset)
             )
-        return list(cursor)
+        return [Feature(**cur) for cur in cursor]
 
 
-async def db_project_scenarios(project: str, epic: str = None, feature: str = None,
-                         limit: int = 100, offset: int = 0):
+async def db_project_scenarios(project: str,
+                               epic: str = None,
+                               feature: str = None,
+                               limit: int = 100,
+                               offset: int = 0) -> Tuple[List[Scenario], int]:
     """All scenarios for a project"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -204,7 +214,8 @@ async def db_project_scenarios(project: str, epic: str = None, feature: str = No
                 "features.filename as filename, scenarios.id as scenario_tech_id,"
                 " scenarios.scenario_id as scenario_id,"
                 " scenarios.name as name, scenarios.tags as tags, "
-                "scenarios.steps as steps from scenarios "
+                "scenarios.steps as steps"
+                " from scenarios "
                 "full join features on features.id = scenarios.feature_id "
                 "full join epics on epics.id = features.epic_id "
                 "where scenarios.project_id = %s "
@@ -220,14 +231,14 @@ async def db_project_scenarios(project: str, epic: str = None, feature: str = No
                 "full join epics on epics.id = features.epic_id "
                 "where scenarios.project_id = %s ",
                 (project.casefold(),))
-        return list(cursor), count.fetchone()["total"]
+        return [Scenario(**cur) for cur in cursor], count.fetchone()["total"]
 
 
 async def db_get_scenarios_id(project_name,
                         epic_name,
                         feature_name,
                         scenarios_ref: list,
-                        feature_filename=None):
+                        feature_filename=None) -> List[int]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if feature_filename is None:

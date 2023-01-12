@@ -7,6 +7,7 @@
       <th>Reference</th>
       <th>Status</th>
       <th>Description</th>
+      <th>Found in campaign occurrences</th>
     </tr>
   </thead>
   <tbody>
@@ -15,6 +16,15 @@
       <td>{{ticket.reference}}</td>
       <td>{{ticket.status}}</td>
       <td>{{ticket.description}}</td>
+      <td class="vstack">
+        {%for occurrence in ticket.campaign_occurrences %}
+        <button class="btn btn-secondary btn-sm"
+                hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
+                hx-headers='{"eaid-request": "REDIRECT"}'
+                >{{occurrence}}</button>
+        {%endfor%}
+      </td>
+
     </tr>
     {% endfor %}
   </tbody>

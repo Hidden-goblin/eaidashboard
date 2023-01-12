@@ -10,7 +10,7 @@
     <script src="/assets/json-enc.js"></script>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light hstack">
     <div class="container-fluid">
         <ul class="navbar-nav mr-auto">
             {%if not request.session["token"]%}
@@ -40,7 +40,10 @@
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
               {% for project in projects %}
-                <li><a class="dropdown-item" _="on click go to url /front/v1/projects/{{project}}">{{project}}</a></li>
+                <li><a class="dropdown-item"
+                       hx-trigger="click"
+                       hx-get="/front/v1/projects/{{project}}"
+                       hx-headers='{"eaid-request":"REDIRECT"}'>{{project}}</a></li>
               {% endfor %}
               <li><hr class="dropdown-divider"></li>
               <li>Use <a _="on click go to url /docs">API docs</a> to create new project </li>
@@ -50,11 +53,11 @@
 <!--            <li>-->
 <!--                <a href="/testResults"  class="btn btn-primary" role="button">Test results</a>-->
 <!--            </li>-->
-        <li>
-            <button class="btn btn-secondary" _="on click go to url /">Back to main</button>
-        </li>
         </ul>
     </div>
+
+            <button class="btn btn-secondary ms-auto text-nowrap" _="on click go to url /">Back to main</button>
+
 </nav>
 
 <div id="modals-here">
@@ -65,8 +68,10 @@
 
     {% block contenu %}Mon contenu{% endblock %}
 </div>
-<footer>
+<footer class="sticky-bottom">
+<div class="container" id="messageBox">
 
+</div>
 </footer>
 </body>
 </html>

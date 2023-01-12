@@ -14,7 +14,7 @@ from app.database.mongo.projects import get_project_results
 from app.database.settings import registered_projects
 from app.database.mongo.tickets import get_ticket, get_tickets, update_ticket, update_values
 from app.database.mongo.versions import dashboard as db_dash
-from app.schema.project_schema import UpdatedTicket
+from app.schema.ticket_schema import UpdatedTicket
 
 router = APIRouter()
 
@@ -45,7 +45,8 @@ async def project_version_tickets(request: Request, project_name, project_versio
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     return templates.TemplateResponse("ticket_view.html",
                                       {"request": request,
                                        "tickets": await get_tickets(project_name, project_version),
@@ -117,7 +118,8 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     return templates.TemplateResponse("ticket_row_edit.html",
                                       {"request": request,
                                        "ticket": await get_ticket(project_name,
@@ -139,7 +141,8 @@ async def project_version_ticket(request: Request, project_name, project_version
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     return templates.TemplateResponse("ticket_row.html",
                                       {"request": request,
                                        "ticket": await get_ticket(project_name,
@@ -160,6 +163,7 @@ async def project_version_update_ticket(request: Request,
                                         body: dict,
                                         background_task: BackgroundTasks):
     if not is_updatable(request, ("admin", "user")):
+        # TODO unify to the error_message template
         return templates.TemplateResponse("modal_error.html",
                                           {"request": request,
                                            "message": "You're not authorized",
@@ -195,7 +199,8 @@ async def get_test_results(request: Request):
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     projects = await registered_projects()
     result = {project: await get_project_results(project) for project in projects}
     return templates.TemplateResponse("test_results.html",

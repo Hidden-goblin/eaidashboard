@@ -8,7 +8,8 @@ from app.app_exception import VersionNotFound
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.versions import get_version_and_collection
-from app.schema.project_schema import Statistics, TicketType, ToBeTicket, UpdatedTicket
+from app.schema.project_schema import Statistics, TicketType
+from app.schema.ticket_schema import Ticket, ToBeTicket, UpdatedTicket
 
 
 async def update_values(project_name, project_version):
@@ -46,13 +47,14 @@ async def add_ticket(project_name, project_version, ticket: ToBeTicket):
     return db[DashCollection.TICKETS.value].insert_one({"version": _version, **ticket.dict()})
 
 
-async def get_tickets(project_name, project_version):
+async def get_tickets(project_name, project_version) -> List[Ticket]:
     _version, _collection = await get_version_and_collection(project_name, project_version)
     if _version is None:
         raise VersionNotFound(f"Version {project_version} does not exist")
     client = MongoClient(mongo_string)
     db = client[project_name]
-    return list(db[DashCollection.TICKETS.value].find({"version": _version}, {"_id": False}))
+    return [Ticket(**_ticket) for _ticket in db[DashCollection.TICKETS.value].find(
+        {"version": _version}, {"_id": False})]
 
 
 async def update_ticket(project_name: str,

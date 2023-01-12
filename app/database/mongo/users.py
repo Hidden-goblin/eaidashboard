@@ -21,7 +21,7 @@ def init_user():
         create_user("admin@admin.fr", "admin", ["admin"])
 
 
-async def create_user(username, password, scopes):
+def create_user(username, password, scopes):
     client = MongoClient(mongo_string)
     db = client["settings"]
     collection = db["users"]

@@ -9,8 +9,10 @@ from starlette.background import BackgroundTasks
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
 from app.database.mongo.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
-from app.schema.project_schema import (ErrorMessage,
-                                       Ticket, ToBeTicket, UpdatedTicket)
+
+from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
+from app.schema.project_schema import (ErrorMessage)
+from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
 
 router = APIRouter(
     prefix="/api/v1"
@@ -73,7 +75,7 @@ async def create_ticket(project_name: str,
 
 
 @router.get("/projects/{project_name}/versions/{version}/tickets/",
-            response_model=List[Ticket],
+            response_model=List[EnrichedTicket],
             responses={
                 400: {"model": ErrorMessage,
                       "description": "Mal"},
@@ -85,7 +87,9 @@ async def create_ticket(project_name: str,
             description="Retrieve all tickets in a version")
 async def router_get_tickets(project_name, version):
     try:
-        return await get_tickets(project_name, version)
+        tickets = await get_tickets(project_name, version)
+        tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
+        return tickets
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:

@@ -9,10 +9,12 @@ from starlette.responses import HTMLResponse
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.mongo.projects import create_project_version, get_project
+from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.settings import registered_projects
 from app.database.mongo.tickets import add_ticket, get_tickets, update_values
-from app.schema.project_schema import RegisterVersion, TicketType, ToBeTicket
+from app.schema.project_schema import RegisterVersion, TicketType
+from app.schema.ticket_schema import ToBeTicket
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -29,7 +31,15 @@ async def front_project_management(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
+    if request.headers.get("eaid-request", "") == "REDIRECT":
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={
+                                              "HX-Redirect": f"/front/v1/projects/{project_name}"})
     _versions = await get_project(project_name, None)
     versions = [{"value": item["version"], "status": item["status"]} for item in _versions["future"]]
     versions.extend(
@@ -58,7 +68,8 @@ async def project_versions(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     _versions = await get_project(project_name, None)
     versions = [{"value": item["version"], "status": item["status"]} for item in
                 _versions["future"]]
@@ -86,7 +97,8 @@ async def project_version_tickets(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     if request.headers.get("eaid-request", "")  == "FORM":
         return templates.TemplateResponse("forms/add_ticket.html",
                                           {
@@ -95,13 +107,14 @@ async def project_version_tickets(project_name: str,
                                               "version": version,
                                               "status": [status.value for status in TicketType]
                                           })
-
+    tickets = await get_tickets(project_name, version)
+    tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
     return templates.TemplateResponse("tables/version_tickets.html",
                                   {
                                       "request": request,
                                       "version": version,
                                       "project_name": project_name,
-                                      "tickets": await get_tickets(project_name, version)
+                                      "tickets": tickets
                                   })
 
 
@@ -120,7 +133,8 @@ async def add_ticket_to_version(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     result = await add_ticket(project_name,version, ToBeTicket(**body))
     if not result.inserted_id:
         return "error"
@@ -144,7 +158,8 @@ async def form_version(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     return templates.TemplateResponse("forms/add_version.html",
                                       {
                                           "request": request,
