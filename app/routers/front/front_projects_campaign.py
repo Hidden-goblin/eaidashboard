@@ -40,7 +40,8 @@ async def front_project_management(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     # campaigns,  = retrieve_campaign(project_name)
 
     if request.headers.get("eaid-request", "") == "table":
@@ -51,6 +52,12 @@ async def front_project_management(project_name: str,
     if request.headers.get("eaid-request", "") == "form":
         return front_new_campaign_form(project_name,
                                        request)
+    if request.headers.get("eaid-request", "") == "REDIRECT":
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={"HX-Redirect": f"/front/v1/projects/{project_name}/campaigns"})
     projects = await registered_projects()
     return templates.TemplateResponse("campaign.html",
                                       {
@@ -101,7 +108,8 @@ async def front_new_campaign(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     await create_campaign(project_name, version)
     return templates.TemplateResponse("void.html",
                                       {"request": request},
@@ -120,7 +128,8 @@ async def front_scenarios_selector(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
     return templates.TemplateResponse("forms/add_scenarios_selector.html",
                                       {"project_name": project_name,
@@ -144,7 +153,17 @@ async def front_get_campaign(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox",
+                                                   "HX-Reswap": "innerHTML"})
+    if request.headers.get("eaid-request", "") == "REDIRECT":
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={
+                                              "HX-Redirect": f"/front/v1/projects/{project_name}"
+                                                             f"/campaigns/{version}/{occurrence}"})
     campaign = await db_get_campaign_tickets(project_name, version, occurrence)
     projects = await registered_projects()
     return templates.TemplateResponse("campaign_board.html",
@@ -174,7 +193,8 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     epics = await db_project_epics(project_name)
     if epics:
         features = await db_project_features(project_name, epics[0])
@@ -207,7 +227,8 @@ async def front_get_campaign_ticket(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     scenarios = await db_get_campaign_ticket_scenarios(project_name,
                                                  version,
                                                  occurrence,
@@ -242,7 +263,8 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     result = await db_set_campaign_ticket_scenario_status(project_name,
                                                     version,
                                                     occurrence,
@@ -273,7 +295,8 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     scenario = await db_get_campaign_ticket_scenario(project_name,
                                                version,
                                                occurrence,
@@ -308,7 +331,8 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     await db_delete_campaign_ticket_scenario(project_name,
                                        version,
                                        occurrence,
@@ -335,7 +359,8 @@ async def add_scenarios_to_ticket(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     valid = "scenario_ids" in element
     if valid and not isinstance(element["scenario_ids"], list):
         element["scenario_ids"] = [element["scenario_ids"]]
@@ -363,7 +388,8 @@ async def front_campaign_version_tickets(project_name,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again."
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     requested = request.headers.get("eaid-request", "")
     if requested == "FORM":
         tickets = await get_tickets_not_in_campaign(project_name, version, occurrence)
@@ -392,7 +418,8 @@ async def front_campaign_add_tickets(project_name,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     await add_tickets_to_campaign(project_name, version, occurrence, body)
     return templates.TemplateResponse("error_message.html",
                                       {
@@ -402,4 +429,4 @@ async def front_campaign_add_tickets(project_name,
                                           "advise": ("Reload the page as auto-reloading feature has"
                                                      " not been implemented yet.")
                                       },
-                                      headers={"HX-Trigger": ""})
+                                          headers={"HX-Retarget": "#messageBox"})

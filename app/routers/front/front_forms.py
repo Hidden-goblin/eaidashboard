@@ -29,4 +29,5 @@ async def get_import_repository_form(request: Request):
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})

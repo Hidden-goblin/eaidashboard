@@ -1,10 +1,13 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from typing import List
+
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import VersionNotFound
 from app.database.mongo.versions import get_version_and_collection
 from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
 
 
@@ -111,3 +114,26 @@ async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
 async def is_campaign_exist(project_name: str, version: str, occurrence: str):
     """Check if campaign exist"""
     return bool(await retrieve_campaign_id(project_name, version, occurrence))
+
+
+async def enrich_tickets_with_campaigns(project_name: str,
+                                        version: str,
+                                        tickets: List[Ticket]) -> List[EnrichedTicket]:
+    """Add to ticket campaigns data"""
+    _tickets = []
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        for ticket in tickets:
+            rows = connection.execute("select cp.occurrence as occurrence "
+                                      "from campaigns as cp "
+                                      "inner join campaign_tickets as cpt "
+                                      " on cpt.campaign_id = cp.id "
+                                      " where cp.version = %s "
+                                      " and cp.project_id = %s "
+                                      " and cpt.ticket_reference = %s",
+                                      (version, project_name, ticket.reference))
+            _tickets.append(EnrichedTicket(**{**ticket.dict(),
+                                           "campaign_occurrences": [row['occurrence'] for row in rows]}))
+
+    return _tickets
+

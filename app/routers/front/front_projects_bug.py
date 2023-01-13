@@ -25,6 +25,12 @@ async def front_project_bugs(project_name: str,
                              display_all: Optional[str] = None):
     allowed = is_updatable(request, tuple())
     requested_item = request.headers.get("eaid-request", None)
+    if request.headers.get("eaid-request", "") == "REDIRECT":
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={"HX-Redirect": f"/front/v1/projects/{project_name}/bugs"})
     if requested_item is None:
         projects = await registered_projects()
         return templates.TemplateResponse("bugs.html",
@@ -140,7 +146,8 @@ async def front_update_bug(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     bug = UpdateBugTicket(**body)
     res = await db_update_bugs(project_name, internal_id, bug)
     background_task.add_task(version_bugs, project_name, body["version"])
@@ -168,7 +175,8 @@ async def front_update_bug_patch(project_name: str,
                                               "highlight": "You are not authorized",
                                               "sequel": " to perform this action.",
                                               "advise": "Try to log again"
-                                          })
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
     res = await db_update_bugs(project_name, internal_id, UpdateBugTicket(**body))
     background_task.add_task(version_bugs, project_name, body["version"])
     return templates.TemplateResponse("void.html",

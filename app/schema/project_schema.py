@@ -57,36 +57,6 @@ class BugsStatistics(BaseModel):
     closed_major: int = 0
     closed_minor: int = 0
 
-class Ticket(BaseModel):
-    status: str
-    reference: str
-    description: str
-    created: datetime
-    updated: datetime
-
-
-class ToBeTicket(BaseModel):
-    reference: str
-    description: str
-    status: str = TicketType.OPEN.value
-    created: datetime = datetime.now()
-    updated: datetime = datetime.now()
-
-
-class UpdatedTicket(BaseModel):
-    description: Optional[str]
-    status: Optional[str]
-    version: Optional[str]
-    updated: datetime = datetime.now()
-
-
-class UpdateTickets(BaseModel):
-    open: Optional[int]
-    cancelled: Optional[int]
-    blocked: Optional[int]
-    in_progress: Optional[int]
-    done: Optional[int]
-
 
 class Bugs(BaseModel):
     open_blocking: Optional[int]
@@ -203,23 +173,3 @@ class RegisterProject(BaseModel):
 
 class ErrorMessage(BaseModel):
     detail: str
-
-
-class TestFeature(BaseModel):
-    epic_name: str
-    feature_name: str
-    project_name: str
-    description: str
-    filename: str
-    tags: str
-
-
-class TestScenario(BaseModel):
-    filename: str
-    project_name: str
-    scenario_id: str
-    name: str
-    is_outline: bool
-    description: str
-    steps: str
-    tags: str

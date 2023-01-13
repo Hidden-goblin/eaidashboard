@@ -36,9 +36,16 @@ http://localhost:8081/openapi.json
 
 # Version history
 
-## Current: 2.3
+## Current: 2.4
 
 ## History
+- 2.4
+  - Fix first start async issue on create_user
+  - Messages are sent to the footer
+    - Add container
+    - Remove hyperscript go to url
+    - Add htmx retarget and redirect mechanism
+  - API add response model to some endpoint (TBC)
 - 2.3
   - Fix button & input in html table_bug to include version on patch
 - 2.2
