@@ -69,16 +69,70 @@ POSTGRE_UPDATES = [
         add constraint campaign_ticket_id_fkey foreign key (campaign_ticket_id) references campaign_tickets(id) match full, 
         add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
         "description": "Add constraints to campaign_ticket_scenarios"
+    },
+    {
+        "request": """create table if not exists test_scenario_results (
+        id serial primary key,
+        run_date timestamp not null,
+        project_id varchar (50) not null,
+        version varchar (50) not null,
+        campaign_id int not null,
+        epic_id int not null,
+        feature_id int not null,
+        scenario_id int not null,
+        status varchar (50) not null,
+        is_partial boolean default false);
+        """,
+        "description": "Create table test_scenario_results"
+    },
+    {
+        "request": """alter table test_scenario_results 
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full,
+        add constraint feature_id_fkey foreign key (feature_id) references features(id) match full,
+        add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
+        "description": "Add foreign key constraints on test_scenario_results table."
+    },
+{
+        "request": """create table if not exists test_feature_results (
+        id serial primary key,
+        run_date timestamp not null,
+        project_id varchar (50) not null,
+        version varchar (50) not null,
+        campaign_id int not null,
+        epic_id int not null,
+        feature_id int not null,
+        status varchar (50) not null,
+        is_partial boolean default false);
+        """,
+        "description": "Create table test_feature_results"
+    },
+    {
+        "request": """alter table test_feature_results 
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full,
+        add constraint feature_id_fkey foreign key (feature_id) references features(id) match full;""",
+        "description": "Add foreign key constraints on test_feature_results table."
+    },
+{
+        "request": """create table if not exists test_epic_results (
+        id serial primary key,
+        run_date timestamp not null,
+        project_id varchar (50) not null,
+        version varchar (50) not null,
+        campaign_id int not null,
+        epic_id int not null,
+        status varchar (50) not null,
+        is_partial boolean default false);
+        """,
+        "description": "Create table test_epic_results"
+    },
+    {
+        "request": """alter table test_epic_results 
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full;""",
+        "description": "Add foreign key constraints on test_epic_results table."
     }
-    # {
-    #     "request": """create materialized view campaign_scenario_ticket as
-    #     select cp.status, ct.ticket_reference, cts.status, sc.scenario_id, sc.feature_id
-    #     from campaigns as cp
-    #     inner join campaign_tickets as ct on cp.id = ct.campaign_id
-    #     inner join campaign_ticket_scenarios as cts on ct.id = cts.campaign_ticket_id
-    #     inner join scenarios as sc on sc.id = cts.scenario_id
-    #
-    #     """
-    # }
+
 
 ]

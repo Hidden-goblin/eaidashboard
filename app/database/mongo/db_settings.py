@@ -9,7 +9,7 @@ class DashCollection(Enum):
     CURRENT = "current"
     FUTURE = "future"
     BUGS = "bugs"
-    RESULTS = "results"
+    RESULTS = "testResults"
 
     def __str__(self):
         return self.value

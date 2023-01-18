@@ -103,4 +103,65 @@ campaign_tickets ||--|| campaigns
 campaign_ticket_scenarios ||--|| campaign_tickets
 campaign_ticket_scenarios ||--|| scenarios
 
+' -----------------------------------------
+' Test result
+' -----------------------------------------
+
+entity test_scenario_results {
+id: int autoincrement
+--
+run_date: datetime
+project_id: text
+version: text
+campaign_id: int
+epic_id: int
+feature_id: int
+scenario_id: int
+status: text
+is_partial: boolean
+--
+FK campaign_id: campaigns.id
+FK epic_id: epics.id
+FK feature_id: features.id
+FK scenario_id: scenarios.id
+}
+test_scenario_results }o--|| scenarios
+test_scenario_results }o--|| epics
+test_scenario_results }o--|| features
+
+entity test_feature_results {
+id: int autoincrement
+--
+run_date: datetime
+project_id: text
+version: text
+campaign_id: int
+epic_id: int
+feature_id: int
+status: text
+is_partial: boolean
+--
+FK campaign_id: campaigns.id
+FK epic_id: epics.id
+FK feature_id: features.id
+}
+
+test_feature_results }o--|| epics
+test_feature_results }o--|| features
+
+entity test_epic_results {
+id: int autoincrement
+--
+run_date: datetime
+project_id: text
+version: text
+campaign_id: int
+epic_id: int
+status: text
+is_partial: boolean
+--
+FK campaign_id: campaigns.id
+FK epic_id: epics.id
+}
+test_epic_results }o--|| epics
 @enduml

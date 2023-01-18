@@ -7,7 +7,7 @@ from starlette.requests import Request
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
-from app.database.settings import registered_projects
+from app.database.mongo.projects import registered_projects
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios,

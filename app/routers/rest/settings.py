@@ -6,10 +6,11 @@ from typing import Any, List
 from fastapi import APIRouter, HTTPException, Depends, Response, Security, BackgroundTasks
 from pymongo import MongoClient
 
-from app.database import settings
+import app.database.mongo.projects
+
 from app.database.authorization import authorize_user
 from app.schema.project_schema import Project, RegisterProject
-from app.database.settings import set_index
+from app.database.mongo.projects import set_index
 
 router = APIRouter(
     prefix="/api/v1/settings"
@@ -22,7 +23,7 @@ router = APIRouter(
 async def post_register_projets(project: RegisterProject,
                                 background_task: BackgroundTasks,
                                 user: Any = Security(authorize_user, scopes=["admin"])):
-    _project_name = await settings.register_project(project.dict()["name"])
+    _project_name = await app.database.mongo.projects.register_project(project.dict()["name"])
     background_task.add_task(set_index, _project_name)
     return {"name": _project_name}
 
@@ -33,4 +34,4 @@ async def post_register_projets(project: RegisterProject,
             description="""Register a new project. Only admin can do so."""
             )
 async def get_registered_projects():
-    return await settings.registered_projects()
+    return await app.database.mongo.projects.registered_projects()
