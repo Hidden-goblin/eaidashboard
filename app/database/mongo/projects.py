@@ -10,7 +10,6 @@ from app.app_exception import DuplicateArchivedVersion, DuplicateFutureVersion, 
     ProjectNotRegistered
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
-from app.database.settings import registered_projects
 from app.schema.project_schema import Bugs, RegisterVersion, Statistics, StatusEnum, Version
 
 
@@ -86,48 +85,80 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
     return result
 
 
-async def insert_results(project_name: str, result: List[dict]):
-    if project_name not in await registered_projects():
-        raise ProjectNotRegistered("Project not found")
-    client = MongoClient(mongo_string)
-    db = client[project_name]
-    _result = db[DashCollection.RESULTS.value].insert_many(result)
-    if not _result.acknowledged:
-        raise Exception("Insertion error")
-    return True
+# async def insert_results(project_name: str, result: List[dict]):
+#     if project_name not in await registered_projects():
+#         raise ProjectNotRegistered("Project not found")
+#     client = MongoClient(mongo_string)
+#     db = client[project_name]
+#     _result = db[DashCollection.RESULTS.value].insert_many(result)
+#     if not _result.acknowledged:
+#         raise Exception("Insertion error")
+#     return True
 
 
-async def get_project_results(project_name: str):
-    if project_name not in await registered_projects():
-        raise ProjectNotRegistered("Project not found")
-    client = MongoClient(mongo_string)
-    db = client[project_name]
-    pipeline = [{"$project": {
-        "myDate": {"$dateToString": {"format": "%Y%m%dT%H:%M", "date": "$date"}},
-        "myStatus": "$status"
-    }},
-                {"$group": {
-                    "_id": {"date": "$myDate", "status": "$myStatus"},
-                    "mycount": {"$sum": 1}
-                }},
-        {"$sort": {"myDate": 1}},
-        {"$group": {
-            "_id": "$_id.date",
-            "res": {
-                "$push": {
-                    "k": "$_id.status",
-                    "v": "$mycount"
-                }
-            }
-        }}
-    ]
-    res = db[DashCollection.RESULTS.value].aggregate(pipeline)
-    result = []
-    for item in list(res):
-        tmp = {"date": item["_id"]}
-        for sub in item["res"]:
-            tmp[sub["k"]] = sub["v"]
-        result.append(tmp)
-    return result
+# async def get_project_results(project_name: str):
+#     if project_name not in await registered_projects():
+#         raise ProjectNotRegistered("Project not found")
+#     client = MongoClient(mongo_string)
+#     db = client[project_name]
+#     pipeline = [{"$project": {
+#         "myDate": {"$dateToString": {"format": "%Y%m%dT%H:%M", "date": "$date"}},
+#         "myStatus": "$status"
+#     }},
+#                 {"$group": {
+#                     "_id": {"date": "$myDate", "status": "$myStatus"},
+#                     "mycount": {"$sum": 1}
+#                 }},
+#         {"$sort": {"myDate": 1}},
+#         {"$group": {
+#             "_id": "$_id.date",
+#             "res": {
+#                 "$push": {
+#                     "k": "$_id.status",
+#                     "v": "$mycount"
+#                 }
+#             }
+#         }}
+#     ]
+#     res = db[DashCollection.RESULTS.value].aggregate(pipeline)
+#     result = []
+#     for item in list(res):
+#         tmp = {"date": item["_id"]}
+#         for sub in item["res"]:
+#             tmp[sub["k"]] = sub["v"]
+#         result.append(tmp)
+#     return result
     # res = db.command("aggregate", DashCollection.RESULTS.value, pipeline=pipeline, explain=True)
     # return res
+
+
+async def register_project(project_name: str):
+    if project_name.casefold() not in await registered_projects():
+        client = MongoClient(mongo_string)
+        db = client.settings
+        collection = db.projects
+        collection.insert_one({"name": project_name.casefold()})
+    return project_name.casefold()
+
+
+async def registered_projects():
+    client = MongoClient(mongo_string)
+    db = client["settings"]
+    collection = db["projects"]
+    cursor = collection.find()
+    return [doc['name'] for doc in cursor]
+
+
+async def set_index(project_name: str):
+    client = MongoClient(mongo_string)
+    db = client[project_name]
+    if "version" not in db[DashCollection.ARCHIVED.value].index_information():
+        db[DashCollection.ARCHIVED.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.CURRENT.value].index_information():
+        db[DashCollection.CURRENT.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.FUTURE.value].index_information():
+        db[DashCollection.FUTURE.value].create_index("version", name="version", unique=True)
+    if "version" not in db[DashCollection.TICKETS.value].index_information():
+        db[DashCollection.TICKETS.value].create_index([("version", 1), ("reference", 1)],
+                                                      name="version",
+                                                      unique=True)

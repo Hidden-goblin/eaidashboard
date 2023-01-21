@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
 from psycopg.rows import tuple_row
 
 from app.database.mongo.tickets import get_tickets

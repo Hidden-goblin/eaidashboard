@@ -10,7 +10,7 @@ from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.mongo.bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug, version_bugs
 from app.database.mongo.versions import get_versions
-from app.database.settings import registered_projects
+from app.database.mongo.projects import registered_projects
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugTicket, UpdateBugTicket
 

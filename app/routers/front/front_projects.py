@@ -8,10 +8,9 @@ from starlette.responses import HTMLResponse
 
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.mongo.projects import create_project_version, get_project
+from app.database.mongo.projects import create_project_version, get_project, registered_projects
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
-from app.database.settings import registered_projects
 from app.database.mongo.tickets import add_ticket, get_tickets, update_values
 from app.schema.project_schema import RegisterVersion, TicketType
 from app.schema.ticket_schema import ToBeTicket

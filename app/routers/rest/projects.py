@@ -18,9 +18,8 @@ from app.app_exception import (ProjectNotRegistered,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-from app.database.mongo.projects import create_project_version, get_project, get_project_results, \
-    get_projects, \
-    insert_results
+from app.database.mongo.projects import (create_project_version, get_project,
+    get_projects)
 from app.database.mongo.versions import get_version, update_version_data, update_version_status
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
@@ -153,23 +152,23 @@ async def update_version(project_name: str,
     return await update_version_data(project_name.casefold(), version.casefold(), body)
 
 
-@router.post("/projects/{project_name}/results")
-async def upload_results(project_name: str,
-                         result_date: str,
-                         file: UploadFile = File(),
-                         user: Any = Security(authorize_user, scopes=["admin", "user"])
-                         ):
-    contents = await file.read()
-    decoded = contents.decode()
-    buffer = StringIO(decoded)
-    rows = DictReader(buffer)
-    results = [{**row, "date": datetime.strptime(result_date, "%Y%m%dT%H:%M")} for row in rows]
-    await insert_results(project_name, results)
-    return {"result": "ok"}
+# @router.post("/projects/{project_name}/results")
+# async def upload_results(project_name: str,
+#                          result_date: str,
+#                          file: UploadFile = File(),
+#                          user: Any = Security(authorize_user, scopes=["admin", "user"])
+#                          ):
+#     contents = await file.read()
+#     decoded = contents.decode()
+#     buffer = StringIO(decoded)
+#     rows = DictReader(buffer)
+#     results = [{**row, "date": datetime.strptime(result_date, "%Y%m%dT%H:%M")} for row in rows]
+#     await insert_results(project_name, results)
+#     return {"result": "ok"}
 
 
-@router.get("/projects/{project_name}/results")
-async def get_results(project_name: str):
-    return await get_project_results(project_name)
+# @router.get("/projects/{project_name}/results")
+# async def get_results(project_name: str):
+#     return await get_project_results(project_name)
 
 

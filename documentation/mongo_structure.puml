@@ -1,0 +1,33 @@
+@startuml
+database mongo
+node "<project>"
+node settings
+collections projects
+collections token
+collections users
+collections archived
+collections future
+collections current
+collections tickets
+collections bugs
+collections testResults
+collections files
+
+mongo -- "<project>"
+mongo -- settings
+
+"<project>" -- archived
+"<project>" -- future
+"<project>" -- current
+"<project>" -- tickets
+"<project>" -- bugs
+"<project>" -- testResults
+
+settings -- projects
+settings -- token
+settings -- users
+settings -- files
+
+
+
+@enduml

@@ -9,8 +9,7 @@ from app.database.authentication import init_user_token
 from app.database.mongo.users import init_user
 from app.database.postgre.postgres import init_postgres, update_postgres
 from app.routers.rest import (auth, bugs, project_campaigns, project_repository, projects,
-                              settings,
-                              users, version)
+                              settings, users, version, project_test_results)
 from app.routers.front import (front_dashboard, front_projects, front_projects_campaign,
                                front_projects_bug, front_projects_repository, front_forms)
 from app.utils.openapi_tags import DESCRIPTION
@@ -49,6 +48,7 @@ app.include_router(version.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(bugs.router)
+app.include_router(project_test_results.router)
 app.include_router(project_repository.router)
 app.include_router(project_campaigns.router)
 app.include_router(front_projects.router)

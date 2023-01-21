@@ -32,13 +32,17 @@ SESSION_KEY=<the session key>
 
 By default, an admin is created. Its name is `admin@admin.fr` and its password is `admin`. Please mind updating its password :)
 
-http://localhost:8081/openapi.json
+Openapi json description http://localhost:8081/openapi.json
+Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.4
+## Current: 2.5
 
 ## History
+- 2.5
+  - Add test result post (REST API)
+  - Add test result get (REST API)
 - 2.4
   - Fix first start async issue on create_user
   - Messages are sent to the footer

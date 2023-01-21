@@ -70,8 +70,14 @@ class NotAuthorized(Exception):
 
 
 class IncorrectFieldsRequest(Exception):
+    """To be raised when field is missing in the request"""
     pass
 
 
 class MalformedCsvFile(Exception):
+    """To be raised when csv misses header or field header"""
+    pass
+
+class DuplicateTestResults(Exception):
+    """To be raised when an existing test campaign result is already in database"""
     pass

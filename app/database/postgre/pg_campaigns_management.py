@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List
+from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
@@ -11,7 +11,7 @@ from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
 
 
-async def create_campaign(project_name, version):
+async def create_campaign(project_name, version) -> dict:
     """Insert into campaign a new empty occurrence"""
     _version, __ = await get_version_and_collection(project_name, version)
     if _version is None:
@@ -88,7 +88,7 @@ async def retrieve_campaign(project_name,
         return conn.fetchall(), count.fetchone()["total"]
 
 
-async def retrieve_campaign_id(project_name: str, version: str, occurrence: str):
+async def retrieve_campaign_id(project_name: str, version: str, occurrence: str) -> Tuple[int, str]:
     """get campaign internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
