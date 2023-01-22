@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from app.database.authentication import init_user_token
+from app.database.mongo.mongo import mongo_register, update_mongodb
 from app.database.mongo.users import init_user
 from app.database.postgre.postgres import init_postgres, update_postgres
 from app.routers.rest import (auth, bugs, project_campaigns, project_repository, projects,
@@ -21,7 +22,7 @@ Eaidashboard is a simple api and front to monitor test activities.
 """
 app = FastAPI(title="Eaidashboard",
               description=description,
-              version="1.6",
+              version="2.6",
               license_info={
                   "name": "GNU GPL v3",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
@@ -31,6 +32,7 @@ app = FastAPI(title="Eaidashboard",
 
 init_postgres()
 update_postgres()
+update_mongodb()
 
 app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -64,6 +66,7 @@ init_user_token()
 @app.on_event("startup")
 def db_start_connection():
     pool.open()
+    mongo_register()
 
 
 @app.on_event("shutdown")

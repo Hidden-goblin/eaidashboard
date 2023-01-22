@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import logging
 from datetime import timezone
 from typing import Optional
 from pymongo import MongoClient
@@ -27,15 +28,19 @@ def get_password_hash(password):
 
 
 def authenticate_user(username, password):
-    client = MongoClient(mongo_string)
-    db = client["settings"]
-    collection = db["users"]
-    user = collection.find_one({"username": username}, projection={"_id": False})
-    if user and verify_password(password, user["password"]):
-        return user["username"], user["scopes"]
-    else:
+    try:
+        client = MongoClient(mongo_string)
+        db = client["settings"]
+        collection = db["users"]
+        user = collection.find_one({"username": username}, projection={"_id": False})
+        if user and verify_password(password, user["password"]):
+            return user["username"], user["scopes"]
+        else:
+            return None, []
+    except Exception as exception:
+        log = logging.getLogger("uvicorn.access")
+        log.warning(msg=" ".join(exception.args))
         return None, []
-
 
 def create_access_token(data: dict,
                         expires_delta: Optional[timedelta] = ACCESS_TOKEN_EXPIRE_MINUTES):

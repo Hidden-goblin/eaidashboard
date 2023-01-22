@@ -10,12 +10,13 @@ from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.versions import get_version_and_collection
 from app.schema.project_schema import Statistics, TicketType
 from app.schema.ticket_schema import Ticket, ToBeTicket, UpdatedTicket
+from app.utils.project_alias import provide
 
 
 async def update_values(project_name, project_version):
     _version, _collection = await get_version_and_collection(project_name, project_version)
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     _tickets = db[DashCollection.TICKETS.value].find({"version": _version}, {"status": True})
     stat = {}
     for _ticket in _tickets:
@@ -43,7 +44,7 @@ async def add_ticket(project_name, project_version, ticket: ToBeTicket):
     if _version is None:
         raise VersionNotFound(f"Version {project_version} does not exist")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return db[DashCollection.TICKETS.value].insert_one({"version": _version, **ticket.dict()})
 
 
@@ -52,7 +53,7 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
     if _version is None:
         raise VersionNotFound(f"Version {project_version} does not exist")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return [Ticket(**_ticket) for _ticket in db[DashCollection.TICKETS.value].find(
         {"version": _version}, {"_id": False})]
 
@@ -78,7 +79,7 @@ async def update_ticket(project_name: str,
     if "description" in _updated_ticket and _updated_ticket["description"] is not None:
         _to_update["description"] = _updated_ticket["description"]
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     db[DashCollection.TICKETS.value].delete_one({"version": project_version,
                                                  "reference": ticket_reference})
 
@@ -90,7 +91,7 @@ async def get_ticket(project_name, project_version, reference):
     if _version is None:
         raise VersionNotFound(f"Version {project_version} does not exist")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return db[DashCollection.TICKETS.value].find_one({"version": _version,
                                                       "reference": reference}, {"_id": False})
 
@@ -100,7 +101,7 @@ async def get_tickets_by_reference(project_name: str, project_version: str, refe
     if _version is None:
         raise VersionNotFound(f"Version {project_version} does not exist")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return db[DashCollection.TICKETS.value].find({"reference": {"$in": list(references)},
                                                   "version": _version},
                                                  {"_id": False})

@@ -12,6 +12,7 @@ from app.database.mongo.projects import registered_projects
 from app.database.mongo.versions import get_version_and_collection, get_versions
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugsStatistics, BugTicket, Statistics, UpdateBugTicket
+from app.utils.project_alias import provide
 
 
 async def insert_bug(project_name: str, bug_ticket: BugTicket):
@@ -19,7 +20,7 @@ async def insert_bug(project_name: str, bug_ticket: BugTicket):
     if version is None:
         raise ProjectNotRegistered(f"Version {bug_ticket.version} not found")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     res = db[str(DashCollection.BUGS)].insert_one(bug_ticket.dict())
     return str(res.inserted_id)
 
@@ -35,7 +36,7 @@ async def get_bugs(project_name: str,
                     "version": version}
     request = {key: str(value) for key, value in temp_request.items() if value is not None}
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     bugs = list(db[str(DashCollection.BUGS)].find(request))
     return list(map(_bugs_rewriting, bugs))
 
@@ -49,12 +50,12 @@ async def db_get_bug(project_name: str,
     if project_name not in await registered_projects():
         raise ProjectNotRegistered("Project not found")
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return _bugs_rewriting(db[str(DashCollection.BUGS)].find_one({"_id": ObjectId(internal_id)}))
 
 async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     res0 =db[str(DashCollection.BUGS)].update_one({"_id": ObjectId(internal_id)},
                                                   {"$set": bug_ticket.to_dict()})
     res = db[str(DashCollection.BUGS)].find_one({"_id": ObjectId(internal_id)}, projection={"_id": False})
@@ -65,7 +66,7 @@ async def version_bugs(project_name, version, side_version=None):
     """Compute the total bugs in a version after a bug creation/update"""
     _version, _collection = await get_version_and_collection(project_name, version)
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     _bugs = db[DashCollection.BUGS.value].find({"version": _version}, {"status": True,
                                                                        "criticality": True})
     stat = {}
@@ -80,7 +81,7 @@ async def version_bugs(project_name, version, side_version=None):
     # if project_name not in await registered_projects():
     #     raise ProjectNotRegistered("Project not found")
     # client = MongoClient(mongo_string)
-    # db = client[project_name]
+    # db = client[provide(project_name)]
     # pipeline_blocking = [
     #     {"$match": {"version": version, "criticality": BugCriticalityEnum.blocking}},
     #     {"$project": {"myStatus": {"$concat": ["$status", "_", BugCriticalityEnum.blocking]}}},

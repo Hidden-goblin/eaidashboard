@@ -7,7 +7,7 @@ from app.app_exception import IncorrectFieldsRequest, MalformedCsvFile
 from app.database.mongo.mg_test_results import mg_insert_test_result
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign_id
 from app.database.postgre.pg_test_results import check_result_uniqueness
-
+from app.schema.postgres_enums import CampaignStatusEnum
 
 
 async def insert_result(project_name,
@@ -34,19 +34,19 @@ async def insert_result(project_name,
     # for complete run
     if not is_partial:
         check_result_uniqueness(project_name, version, result_date)
-        campaign = await create_campaign(project_name, version)
+        campaign = await create_campaign(project_name, version, CampaignStatusEnum.closed)
         campaign_id = await retrieve_campaign_id(project_name,
                                                  version,
                                                  campaign["occurrence"])
 
+    elif part_of_campaign_occurrence is None:
+        raise IncorrectFieldsRequest("campaign_occurrence is mandatory for partial results")
     else:
-        if part_of_campaign_occurrence is None:
-            raise IncorrectFieldsRequest("campaign_occurrence is mandatory for partial results")
         campaign_id = await retrieve_campaign_id(project_name,
                                                  version,
                                                  part_of_campaign_occurrence)
     campaign_id = campaign_id[0]
     # SPEC: Record an entry into mongo testResults and return entry uuid while importing data
-    res = await mg_insert_test_result(project_name, version, campaign_id, is_partial)
+    test_result_uuid = await mg_insert_test_result(project_name, version, campaign_id, is_partial)
 
-    return res, campaign_id, rows
+    return test_result_uuid, campaign_id, rows

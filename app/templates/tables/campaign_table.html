@@ -30,18 +30,21 @@
                  <li class="page-item"><a class="page-link"
                                           hx-trigger="click"
                                           hx-target="#campaign_table"
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">Previous</a></li>
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">Previous</a></li>
                {% else %}
                     {% if current_page != page[0] and loop.last %}
                       <li class="page-item"><a class="page-link"
                                           hx-trigger="click"
                                           hx-target="#campaign_table"
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">Next</a></li>
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">Next</a></li>
                     {% else %}
                              <li class="page-item"><a class="page-link"
                                           hx-trigger="click"
                                           hx-target="#campaign_table"
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns/table?limit={{page[1]}}&skip={{page[2]}}">{{page[0]}}</a></li>
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">{{page[0]}}</a></li>
                     {%endif%}
                {%endif%}
             {%endfor%}
