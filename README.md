@@ -37,9 +37,15 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.5
+## Current: 2.6
 
 ## History
+- 2.6
+  - Add singleton project name provider
+  - Avoid creating database name with `/\. "$*<>:|?` character (alias)
+  - Propagate update on mongo queries
+  - fix campaign occurrence value when importing all scenarios results
+  - fix campaign board previous/next button
 - 2.5
   - Add test result post (REST API)
   - Add test result get (REST API)

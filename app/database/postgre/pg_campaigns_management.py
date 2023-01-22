@@ -11,20 +11,24 @@ from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
 
 
-async def create_campaign(project_name, version) -> dict:
+async def create_campaign(project_name, version, status: str = "recorded") -> dict:
     """Insert into campaign a new empty occurrence"""
     _version, __ = await get_version_and_collection(project_name, version)
     if _version is None:
         raise VersionNotFound(f"{version} does not belong to {project_name}.")
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        conn = connection.execute("insert into campaigns (project_id, version, status) "
-                                  "values (%s, %s, %s)"
+        conn = connection.execute("insert into campaigns (project_id, version, status, occurrence) "
+                                  "select %s, %s, %s, coalesce(max(occurrence), 0) +1 "
+                                  "from campaigns where project_id = %s and version = %s "
                                   "returning project_id as project_name, "
                                   "version as version, occurrence as occurrence, "
                                   "description as description, status as status;",
-                                  (project_name.casefold(), _version,
-                                   CampaignStatusEnum.recorded)).fetchone()
+                                  (project_name.casefold(),
+                                   _version,
+                                   CampaignStatusEnum(status),
+                                   project_name.casefold(),
+                                   _version)).fetchone()
 
         connection.commit()
         return conn

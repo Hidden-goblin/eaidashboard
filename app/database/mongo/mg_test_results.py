@@ -7,11 +7,12 @@ from bson import ObjectId
 from pymongo import MongoClient
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
+from app.utils.project_alias import provide
 
 
 async def mg_insert_test_result(project_name, version, campaign_id, is_partial):
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     if DashCollection.RESULTS.value not in db.list_collection_names():
         db.create_collection(DashCollection.RESULTS.value)
     collection = db.get_collection(DashCollection.RESULTS.value)
@@ -26,7 +27,7 @@ async def mg_insert_test_result(project_name, version, campaign_id, is_partial):
 
 async def mg_insert_test_result_done(project_name, uuid, message=None):
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     collection = db.get_collection(DashCollection.RESULTS.value)
     res = collection.update_one({"_id": ObjectId(uuid)}, {"$set": {"status": "available",
                                                    "updated": datetime.datetime.now()}})

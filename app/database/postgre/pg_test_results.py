@@ -37,6 +37,9 @@ def retrieve_tuple_data(result_date, project_name, version, campaign_id, row, is
 
 
 def check_result_uniqueness(project_name, version, result_date):
+    """Check if result data exist for project_name-version-date exists
+    :return None
+    :raise DuplicateTestResults"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         if result := connection.execute(
@@ -50,7 +53,10 @@ def check_result_uniqueness(project_name, version, result_date):
                                        f" in version '{version}' run at '{result_date}'")
 
 
-def set_status(current_status, new_result):
+def set_status(current_status: str, new_result: str) -> str:
+    """For container elements, set the status based on the worse status.
+    i.e. container element is failed if one of its element is failed
+    """
     if new_result == "failed" or current_status == "failed":
         return "failed"
     if new_result == "skipped" and current_status == "skipped":

@@ -8,6 +8,8 @@ class InsertionError(Exception):
 class ProjectNotRegistered(Exception):
     pass
 
+class ProjectNameInvalid(Exception):
+    pass
 
 class VersionNotFound(Exception):
     pass

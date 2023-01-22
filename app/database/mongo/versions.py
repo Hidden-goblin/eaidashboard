@@ -14,6 +14,7 @@ from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.projects import registered_projects
 from app.schema.project_schema import Bugs, StatusEnum, UpdateVersion
 from app.schema.ticket_schema import UpdateTickets
+from app.utils.project_alias import contains, provide
 
 
 async def clean_update_version(body: UpdateVersion) -> dict:
@@ -33,16 +34,15 @@ async def clean_update_version(body: UpdateVersion) -> dict:
         _body["started"] = datetime.strptime(_body["started"], "%Y-%m-%d")
     if "end_forecast" in _body:
         _body["end_forecast"] = datetime.strptime(_body["end_forecast"], "%Y-%m-%d")
-    print(_body)
     return _body
 
 
 async def get_version_and_collection(project_name: str, version: str):
-    if project_name.casefold() not in await registered_projects():
+    if not contains(project_name):
         raise ProjectNotRegistered("Project not found")
 
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     current = db[DashCollection.CURRENT.value]
     future = db[DashCollection.FUTURE.value]
     archived = db[DashCollection.ARCHIVED.value]
@@ -62,13 +62,13 @@ async def get_version(project_name: str, version: str):
     if _version is None:
         return {}
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     return db[_collection].find_one({"version": _version}, projection={"_id": False})
 
 
 async def get_versions(project_name: str) -> list:
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     current = db[DashCollection.CURRENT.value]
     future = db[DashCollection.FUTURE.value]
     archived = db[DashCollection.ARCHIVED.value]
@@ -147,7 +147,7 @@ async def update_version_status(project_name: str, version: str, to_be_status: s
     }
     # Check transition is allowed
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     document = db[_collection].find_one({"version": _version}, projection={"_id": False})
     if StatusEnum(to_be_status) not in authorized_transition[StatusEnum(document["status"])]:
         raise StatusTransitionForbidden("Transition is not accepted")
@@ -171,7 +171,7 @@ async def update_version_status(project_name: str, version: str, to_be_status: s
         db[_collection].delete_one({"version": _version})
         return db[DashCollection.CURRENT.value].find_one({"version": _version},
                                                          projection={"_id": False})
-    db = client[project_name]
+    db = client[provide(project_name)]
     db[_collection].update_one({"version": _version},
                                {"$set": {"status": StatusEnum(to_be_status).value,
                                          "updated": datetime.now()}})
@@ -181,7 +181,7 @@ async def update_version_status(project_name: str, version: str, to_be_status: s
 async def update_version_data(project_name: str, version: str, body: UpdateVersion):
     _version, _collection = await get_version_and_collection(project_name, version)
     client = MongoClient(mongo_string)
-    db = client[project_name]
+    db = client[provide(project_name)]
     document = db[_collection].find_one({"version": _version}, projection={"_id": False,
                                                                            "created": False,
                                                                            "updated": False,
@@ -202,7 +202,7 @@ async def dashboard():
     client = MongoClient(mongo_string)
     result = []
     for project in projects:
-        db = client[project]
+        db = client[provide(project)]
         current = db[DashCollection.CURRENT.value].find({}, projection={"_id": False})
         future = db[DashCollection.FUTURE.value].find({}, projection={"_id": False})
 
