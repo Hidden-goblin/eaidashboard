@@ -37,9 +37,11 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.6
+## Current: 2.6.1
 
 ## History
+- 2.6.1
+  - Change the base container
 - 2.6
   - Add singleton project name provider
   - Avoid creating database name with `/\. "$*<>:|?` character (alias)

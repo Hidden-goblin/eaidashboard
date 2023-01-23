@@ -1,6 +1,6 @@
-FROM python:3.11-alpine
+FROM python:3.11.0-slim
 
-RUN apk update &&  pip install pipenv
+RUN apt-get -y update &&  pip install pipenv
 
 WORKDIR /usr/src/dashboard
 
