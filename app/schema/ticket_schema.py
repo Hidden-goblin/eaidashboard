@@ -15,6 +15,9 @@ class Ticket(BaseModel):
     created: datetime
     updated: datetime
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class ToBeTicket(BaseModel):
     reference: str
@@ -23,6 +26,9 @@ class ToBeTicket(BaseModel):
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class UpdatedTicket(BaseModel):
     description: Optional[str]
@@ -30,8 +36,14 @@ class UpdatedTicket(BaseModel):
     version: Optional[str]
     updated: datetime = datetime.now()
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 class EnrichedTicket(Ticket):
     campaign_occurrences: Optional[List[str]]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class UpdateTickets(BaseModel):
@@ -40,3 +52,6 @@ class UpdateTickets(BaseModel):
     blocked: Optional[int]
     in_progress: Optional[int]
     done: Optional[int]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)

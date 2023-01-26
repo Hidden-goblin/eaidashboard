@@ -10,6 +10,9 @@ from app.schema.postgres_enums import CampaignStatusEnum
 class ToBeCampaign(BaseModel):
     version: str
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class ScenarioCampaign(BaseModel):
     scenario_id: str
@@ -17,16 +20,25 @@ class ScenarioCampaign(BaseModel):
     feature_name: str
     feature_filename: Optional[str]
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class Scenarios(BaseModel):
     epic: str
     feature_name: str
     scenario_ids: List[str]
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class TicketScenarioCampaign(BaseModel):
     ticket_reference: str
     scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class CampaignLight(BaseModel):
@@ -35,4 +47,7 @@ class CampaignLight(BaseModel):
     occurrence: int
     description: Optional[str]
     status: CampaignStatusEnum
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 

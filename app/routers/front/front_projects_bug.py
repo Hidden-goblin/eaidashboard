@@ -13,6 +13,7 @@ from app.database.mongo.versions import get_versions
 from app.database.mongo.projects import registered_projects
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.project_schema import BugTicket, UpdateBugTicket
+from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -38,7 +39,8 @@ async def front_project_bugs(project_name: str,
                                               "request": request,
                                               "projects": projects,
                                               "display_closed": display_all,
-                                              "project_name": project_name
+                                              "project_name": project_name,
+                                              "project_name_alias": provide(project_name)
                                           })
     elif requested_item.casefold() == "FORM".casefold() and allowed:
         versions = await get_versions(project_name)
@@ -47,6 +49,7 @@ async def front_project_bugs(project_name: str,
                                               "request": request,
                                               "versions": versions,
                                               "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
                                               "criticality": [f"{crit}" for crit in
                                                               BugCriticalityEnum]
                                           })
@@ -59,7 +62,8 @@ async def front_project_bugs(project_name: str,
                                           {"request": request,
                                            "bugs": bugs,
                                            "display_closed": display_all,
-                                           "project_name": project_name}
+                                           "project_name": project_name,
+                                           "project_name_alias": provide(project_name)}
                                           )
     elif allowed:
         return templates.TemplateResponse("error_message.html",
@@ -99,7 +103,8 @@ async def record_bug(project_name: str,
     return templates.TemplateResponse("void.html",
                                       {
                                           "request": request,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       },
                                       headers={
                                           "HX-Trigger": request.headers.get('eaid-next', "")
@@ -125,6 +130,7 @@ async def display_bug(project_name: str,
                                       {
                                           "request": request,
                                           "project_name": project_name,
+                                          "project_name_alias": provide(project_name),
                                           "versions": versions,
                                           "criticality": [f"{crit}" for crit in
                                                           BugCriticalityEnum],
@@ -154,7 +160,8 @@ async def front_update_bug(project_name: str,
     return templates.TemplateResponse("void.html",
                                       {
                                           "request": request,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       },
                                       headers={
                                           "HX-Trigger": request.headers.get('eaid-next', "")
@@ -182,7 +189,8 @@ async def front_update_bug_patch(project_name: str,
     return templates.TemplateResponse("void.html",
                                       {
                                           "request": request,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       },
                                       headers={
                                           "HX-Trigger": request.headers.get('eaid-next', "")

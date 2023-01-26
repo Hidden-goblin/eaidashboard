@@ -14,6 +14,7 @@ from app.database.postgre.testrepository import db_project_epics, db_project_fea
 from app.database.mongo.tickets import add_ticket, get_tickets, update_values
 from app.schema.project_schema import RegisterVersion, TicketType
 from app.schema.ticket_schema import ToBeTicket
+from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -51,7 +52,8 @@ async def front_project_management(project_name: str,
                                           "request": request,
                                           "versions": versions,
                                           "projects": projects,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       })
 
 
@@ -80,7 +82,8 @@ async def project_versions(project_name: str,
                                       {
                                           "request": request,
                                           "versions": versions,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       })
 
 @router.get("/{project_name}/versions/{version}",
@@ -103,6 +106,7 @@ async def project_version_tickets(project_name: str,
                                           {
                                               "request": request,
                                               "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
                                               "version": version,
                                               "status": [status.value for status in TicketType]
                                           })
@@ -113,6 +117,7 @@ async def project_version_tickets(project_name: str,
                                       "request": request,
                                       "version": version,
                                       "project_name": project_name,
+                                      "project_name_alias": provide(project_name),
                                       "tickets": tickets
                                   })
 
@@ -162,7 +167,8 @@ async def form_version(project_name: str,
     return templates.TemplateResponse("forms/add_version.html",
                                       {
                                           "request": request,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       })
 
 
@@ -191,6 +197,7 @@ async def repository_dropdowns(project_name: str, request: Request, epic: str, f
                                           {
                                               "request": request,
                                               "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
                                               "epics": epics,
                                               "features": features
                                           })
@@ -200,6 +207,7 @@ async def repository_dropdowns(project_name: str, request: Request, epic: str, f
                                           {
                                               "request": request,
                                               "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
                                               "features": features
                                           })
 

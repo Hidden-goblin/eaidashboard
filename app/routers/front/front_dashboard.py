@@ -14,6 +14,7 @@ from app.database.mongo.projects import registered_projects
 from app.database.mongo.tickets import get_ticket, get_tickets, update_ticket, update_values
 from app.database.mongo.versions import dashboard as db_dash
 from app.schema.ticket_schema import UpdatedTicket
+from app.utils.project_alias import provide
 
 router = APIRouter()
 
@@ -50,6 +51,7 @@ async def project_version_tickets(request: Request, project_name, project_versio
                                       {"request": request,
                                        "tickets": await get_tickets(project_name, project_version),
                                        "project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "project_version": project_version})
 
 
@@ -90,7 +92,10 @@ async def post_login(request: Request,
         data={"sub": sub,
               "scopes": scopes})
     request.session["token"] = access_token
-    return HTMLResponse("""<span _="on htmx:afterSettle wait 1s then then remove .modal-backdrop then remove .modal then wait 1s then go to url /"/> """)
+    return templates.TemplateResponse("void.html",
+                                      {
+                                          "request": request
+                                      })
 
 
 @router.delete("/login",
@@ -125,6 +130,7 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "project_version": project_version})
 
 
@@ -148,6 +154,7 @@ async def project_version_ticket(request: Request, project_name, project_version
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "project_version": project_version})
 
 
@@ -183,6 +190,7 @@ async def project_version_update_ticket(request: Request,
                                                             project_version,
                                                             reference),
                                        "project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "project_version": project_version})
 
 

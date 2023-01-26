@@ -15,6 +15,7 @@ from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
 from app.schema.mongo_enums import BugStatusEnum
 from app.utils.pages import page_numbering
+from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -52,7 +53,8 @@ async def front_project_repository(project_name: str,
                                           "repository": {},  # repository_board(project_name,
                                           # request, epic, feature),
                                           "display_closed": status,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       })
 
 
@@ -137,6 +139,7 @@ async def get_scenario(project_name: str,
                                       {
                                           "request": request,
                                           "project_name": project_name,
+                                          "project_name_alias": provide(project_name),
                                           "scenarios": scenarios,
                                           "pages": pages,
                                           "current_page": current_page,
