@@ -49,6 +49,9 @@ class Statistics(BaseModel):
     in_progress: int
     done: int
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 class BugsStatistics(BaseModel):
     open_blocking: int = 0
     open_major: int = 0
@@ -56,6 +59,9 @@ class BugsStatistics(BaseModel):
     closed_blocking: int = 0
     closed_major: int = 0
     closed_minor: int = 0
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class Bugs(BaseModel):
@@ -65,6 +71,9 @@ class Bugs(BaseModel):
     closed_blocking: Optional[int]
     closed_major: Optional[int]
     closed_minor: Optional[int]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class BugTicket(BaseModel):
@@ -76,6 +85,9 @@ class BugTicket(BaseModel):
     url: str
     status: BugStatusEnum
     criticality: BugCriticalityEnum
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class BugTicketResponse(BaseModel):
@@ -133,12 +145,16 @@ class Version(BaseModel):
     statistics: Statistics
     bugs: Bugs
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 class UpdateVersion(BaseModel):
     started: Optional[str]
     end_forecast: Optional[str]
     status: Optional[str]
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 class TicketVersion(BaseModel):
     version: str
@@ -147,6 +163,9 @@ class TicketVersion(BaseModel):
     started: Optional[datetime]
     end_forecast: Optional[datetime]
     status: str
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
         
 
 class Project(BaseModel):
@@ -155,21 +174,36 @@ class Project(BaseModel):
     current: Optional[int]
     archived: Optional[int]
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class TicketProject(BaseModel):
     name: str
     future: Optional[List[TicketVersion]]
     current: Optional[List[TicketVersion]]
     archived: Optional[List[TicketVersion]]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
         
         
 class RegisterVersion(BaseModel):
     version: str
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class RegisterProject(BaseModel):
     name: str
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 
 class ErrorMessage(BaseModel):
     detail: str
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)

@@ -1,9 +1,9 @@
 {% extends "base_project.html" %}
 {% block project %}
-<div id="project_{{project_name}}" class="container">
+<div id="project_{{project_name_alias}}" class="container">
     <!-- repository board -->
     <div id="repositoryMessage"></div>
-<div id="{{project_name}}-repository" class="container">
+<div id="{{project_name_alias}}-repository" class="container">
     <h1>{{project_name}} Repository</h1>
     <div id="repository_filter"
          hx-trigger="load"

@@ -206,9 +206,9 @@ async def dashboard():
         current = db[DashCollection.CURRENT.value].find({}, projection={"_id": False})
         future = db[DashCollection.FUTURE.value].find({}, projection={"_id": False})
 
-        result.extend({"name": project, **cur} for cur in current)
+        result.extend({"name": project, "alias": provide(project), **cur} for cur in current)
 
-        result.extend({"name": project, **fut} for fut in future)
+        result.extend({"name": project,  "alias": provide(project), **fut} for fut in future)
 
     return result
 

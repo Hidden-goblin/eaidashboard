@@ -37,9 +37,12 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.6.1
+## Current: 2.6.2
 
 ## History
+- 2.6.2
+  - Fix mongo alias naming for id
+  - Fix Object not subscriptable error
 - 2.6.1
   - Change the base container
 - 2.6

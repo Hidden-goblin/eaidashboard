@@ -9,6 +9,9 @@ class Feature(BaseModel):
     tags: Optional[str]
     filename: str
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 class Scenario(BaseModel):
     epic: str
     feature_name: str
@@ -19,6 +22,9 @@ class Scenario(BaseModel):
     tags: str
     steps: str
 
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
 class TestFeature(BaseModel):
     epic_name: str
     feature_name: str
@@ -26,6 +32,9 @@ class TestFeature(BaseModel):
     description: str
     filename: str
     tags: str
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
 
 
 class TestScenario(BaseModel):
@@ -37,3 +46,6 @@ class TestScenario(BaseModel):
     description: str
     steps: str
     tags: str
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)

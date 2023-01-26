@@ -26,6 +26,7 @@ from app.database.mongo.projects import registered_projects
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
+from app.utils.project_alias import provide
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -147,6 +148,7 @@ async def process_upload(csv_content, project_name):
     features = [{"epic_name": row["epic"],
                  "feature_name": row["feature_name"],
                  "project_name": project_name,
+                 "project_name_alias": provide(project_name),
                  "description": row["feature_description"],
                  "tags": row["feature_tags"],
                  "filename": row["feature_filename"]
@@ -160,6 +162,7 @@ async def process_upload(csv_content, project_name):
     excluded_features = [{"epic_name": row["epic"],
                          "feature_name": row["feature_name"],
                          "project_name": project_name,
+                          "project_name_alias": provide(project_name),
                          "description": row["feature_description"],
                          "tags": row["feature_tags"],
                          "filename": row["feature_filename"]
@@ -175,6 +178,7 @@ async def process_upload(csv_content, project_name):
     # Spec: Scenario must in an included feature
     scenarios = [{"filename": row["feature_filename"],
                   "project_name": project_name,
+                  "project_name_alias": provide(project_name),
                   "scenario_id": row["scenario_id"],
                   "name": row["scenario_name"],
                   "is_outline": row["scenario_is_outline"] == "True",
@@ -189,6 +193,7 @@ async def process_upload(csv_content, project_name):
     rows = DictReader(buffer)
     excluded_scenarios = [{"filename": row["feature_filename"],
                            "project_name": project_name,
+                           "project_name_alias": provide(project_name),
                            "scenario_id": row["scenario_id"],
                            "name": row["scenario_name"],
                            "is_outline": row["scenario_is_outline"] == "True",

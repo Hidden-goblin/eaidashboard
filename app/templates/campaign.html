@@ -2,9 +2,9 @@
 {% block project %}
   <h1>Project: {{project_name}} Campaigns</h1>
   <!-- Project data. -->
-  <div id="{{project_name}}-campaigns" class="container">
+  <div id="{{project_name_alias}}-campaigns" class="container">
     <div id="dialog"></div>
-    <button id="{{project_name}}-new" class="btn btn-primary"
+    <button id="{{project_name_alias}}-new" class="btn btn-primary"
             hx-trigger="click"
             hx-target="#campaign-form"
             hx-headers='{"eaid-request":"form"}'

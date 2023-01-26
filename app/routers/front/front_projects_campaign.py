@@ -21,6 +21,7 @@ from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
 from app.utils.pages import page_numbering
+from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -64,7 +65,8 @@ async def front_project_management(project_name: str,
                                           "request": request,
                                           "projects": projects,
                                           "campaigns": True,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
                                       })
 
 
@@ -80,6 +82,7 @@ async def front_project_table(project_name: str,
                                           "request": request,
                                           "campaigns": campaigns,
                                           "project_name": project_name,
+                                          "project_name_alias": provide(project_name),
                                           "pages": pages,
                                           "current": current_page,
                                           "nav_bar": count >= limit
@@ -92,7 +95,8 @@ def front_new_campaign_form(project_name: str,
     return templates.TemplateResponse("forms/add_campaign.html",
                                       {
                                           "request": request,
-                                          "project_name": project_name
+                                          "project_name": project_name,
+                                          "project_name_alias": provide(project_name)
 
                                       })
 
@@ -133,6 +137,7 @@ async def front_scenarios_selector(project_name: str,
     scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
     return templates.TemplateResponse("forms/add_scenarios_selector.html",
                                       {"project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "epic": body["epic"],
                                        "feature": body["feature"],
                                        "scenarios": scenarios,
@@ -170,6 +175,7 @@ async def front_get_campaign(project_name: str,
                                       {
                                           "request": request,
                                           "project_name": project_name,
+                                          "project_name_alias": provide(project_name),
                                           "version": version,
                                           "occurrence": occurrence,
                                           "campaign": campaign,
@@ -203,6 +209,7 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
         unique_features = set()
     return templates.TemplateResponse("forms/add_scenarios.html",
                                       {"project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "version": version,
                                        "occurrence": occurrence,
                                        "request": request,
@@ -237,6 +244,7 @@ async def front_get_campaign_ticket(project_name: str,
                                       {
                                           "request": request,
                                           "project_name": project_name,
+                                          "project_name_alias": provide(project_name),
                                           "version": version,
                                           "occurrence": occurrence,
                                           "ticket_reference": ticket_reference,
@@ -304,6 +312,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                scenario_id)
     return templates.TemplateResponse("forms/campaign_scenario_status.html",
                                       {"project_name": project_name,
+                                       "project_name_alias": provide(project_name),
                                        "version": version,
                                        "occurrence": occurrence,
                                        "ticket_reference": ticket_reference,
@@ -397,6 +406,7 @@ async def front_campaign_version_tickets(project_name,
                                           {
                                               "request":request,
                                               "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
                                               "version": version,
                                               "occurrence": occurrence,
                                               "tickets": tickets

@@ -1,6 +1,9 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import re
+# from logging import getLogger
+#
+# log = getLogger("uvicorn.access")
 
 PROJECT_ALIAS = {}
 
@@ -28,8 +31,9 @@ def register(project_name: str, alias: str = None):
         PROJECT_ALIAS[project_name.casefold()] = project_name.casefold()
 
 
+
 def provide(project_name: str):
-    return PROJECT_ALIAS[project_name.casefold()]
+    return PROJECT_ALIAS.get(project_name.casefold(), None)
 
 
 def contains(project_name) -> bool:

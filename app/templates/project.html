@@ -3,7 +3,7 @@
 {% block project %}
   <h1>Project: {{project_name}}</h1>
 <!-- project -->
-  <div id="{{project_name}}-versions" class="container">
+  <div id="{{project_name_alias}}-versions" class="container">
     <div id="dialog"></div>
     <button class="btn btn-primary"
             hx-get="/front/v1/projects/{{project_name}}/forms/version"
