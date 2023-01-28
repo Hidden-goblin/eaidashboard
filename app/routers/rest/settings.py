@@ -2,11 +2,10 @@
 # -*- Author: E.Aivayan -*-
 from typing import Any, List
 
-from fastapi import APIRouter, HTTPException, Depends, Response, Security, BackgroundTasks
-from pymongo import MongoClient
+from fastapi import (APIRouter, HTTPException, Security, BackgroundTasks)
 
 import app.database.mongo.projects
-from app.app_exception import ProjectNameInvalid
+from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
 from app.schema.project_schema import (ErrorMessage, Project, RegisterProject)
 from app.database.mongo.projects import (set_index, register_project)
@@ -27,6 +26,8 @@ router = APIRouter(
                                       " contains / \\ $ character"},
                  401: {"model": ErrorMessage,
                        "description": "You are not authenticated"},
+                 409: {"model": ErrorMessage,
+                       "description": "A project with this name already exist"},
                  500: {"model": ErrorMessage,
                        "description": "Error during server computing"}
              }
@@ -40,6 +41,8 @@ async def post_register_projects(project: RegisterProject,
         return {"name": _project_name}
     except ProjectNameInvalid as pni:
         raise HTTPException(400, detail=" ".join(pni.args)) from pni
+    except DuplicateProject as dp:
+        raise HTTPException(409, detail=" ".join(dp.args)) from dp
     except Exception as exception:
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
 

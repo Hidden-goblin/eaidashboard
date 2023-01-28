@@ -36,24 +36,27 @@ def authorize_user(security_scopes: SecurityScopes,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": authenticate_value},
     )
-    # Authorize method
-    # Token contains the username
-    email = token_user(token)
-    if email is None:
-        raise credentials_exception
+    try:
+        # Authorize method
+        # Token contains the username
+        email = token_user(token)
+        if email is None:
+            raise credentials_exception
 
-    # Check user in db
-    user = get_user(email)
-    if user is None:
-        raise credentials_exception
+        # Check user in db
+        user = get_user(email)
+        if user is None:
+            raise credentials_exception
 
-    # Check token validity
-    if get_token_date(user["username"]) is None:
-        raise credentials_exception
+        # Check token validity
+        if get_token_date(user["username"]) is None:
+            raise credentials_exception
 
-    # Check user right
-    token_scopes = token_scope(token)
-    token_data = TokenData(scopes=token_scopes, email=email)
+        # Check user right
+        token_scopes = token_scope(token)
+        token_data = TokenData(scopes=token_scopes, email=email)
+    except jwt.InvalidSignatureError:
+        raise credentials_exception
     if (all(scope not in security_scopes.scopes for scope in token_data.scopes)
             and security_scopes.scopes):
         raise credentials_exception

@@ -5,13 +5,22 @@ from typing import List, Optional
 
 from pymongo import MongoClient
 
-from app.app_exception import DuplicateArchivedVersion, DuplicateFutureVersion, \
-    DuplicateInProgressVersion, \
-    ProjectNameInvalid, ProjectNotRegistered
+from app.app_exception import (DuplicateArchivedVersion,
+                               DuplicateFutureVersion,
+                               DuplicateInProgressVersion,
+                               DuplicateProject,
+                               ProjectNameInvalid,
+                               ProjectNotRegistered)
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
-from app.schema.project_schema import Bugs, RegisterVersion, Statistics, StatusEnum, Version
-from app.utils.project_alias import (contains, provide, register)
+from app.schema.project_schema import (Bugs,
+                                       RegisterVersion,
+                                       Statistics,
+                                       StatusEnum,
+                                       Version)
+from app.utils.project_alias import (contains,
+                                     provide,
+                                     register)
 
 
 async def get_projects(skip:int, limit: int):
@@ -142,13 +151,16 @@ async def register_project(project_name: str):
     forbidden_char = ["\\", "/", "$"]
     if any(char in project_name for char in forbidden_char):
         raise ProjectNameInvalid("Project name must not be contains \\ / $ characters")
-    if not contains(project_name):
-        register(project_name)
-        client = MongoClient(mongo_string)
-        db = client.settings
-        collection = db.projects
-        collection.insert_one({"name": project_name.casefold(),
-                               "alias": provide(project_name)})
+    if contains(project_name):
+        raise DuplicateProject(f"Project name '{project_name}' "
+                               f"already exists. Please update the name "
+                               f"so that project can be registered.")
+    register(project_name)
+    client = MongoClient(mongo_string)
+    db = client.settings
+    collection = db.projects
+    collection.insert_one({"name": project_name.casefold(),
+                           "alias": provide(project_name)})
     return project_name.casefold()
 
 
