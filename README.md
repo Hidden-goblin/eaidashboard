@@ -37,9 +37,12 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.6.2
+## Current: 2.7
 
 ## History
+- 2.7
+  - Avoid creating an existing project. Raise an error doing so.
+  - Catch error when the app restart and a user is still connected (SignatureError with new key)
 - 2.6.2
   - Fix mongo alias naming for id
   - Fix Object not subscriptable error

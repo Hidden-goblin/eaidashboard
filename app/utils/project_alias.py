@@ -37,5 +37,5 @@ def provide(project_name: str):
 
 
 def contains(project_name) -> bool:
-    return (project_name in list(PROJECT_ALIAS.keys())
+    return (project_name.casefold() in list(PROJECT_ALIAS.keys())
             or _compute_alias(project_name) in list(PROJECT_ALIAS.keys()))

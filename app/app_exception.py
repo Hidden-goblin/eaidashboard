@@ -5,6 +5,9 @@ class InsertionError(Exception):
     pass
 
 
+class DuplicateProject(Exception):
+    pass
+
 class ProjectNotRegistered(Exception):
     pass
 
