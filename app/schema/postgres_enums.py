@@ -27,7 +27,7 @@ class ScenarioStatusEnum(str, Enum):
     waiting_answer = "waiting answer"
 
 
-class CampaignTicketEnum(str, Enum):
+class CampaignTicketTableEnum(str, Enum):
     reference = "reference"
     status = "status"
     epic_id = "epic_id"
@@ -36,3 +36,9 @@ class CampaignTicketEnum(str, Enum):
     steps = "steps"
     summary = "summary"
     scenario_id = "scenario_id"
+
+
+class TestResultStatusEnum(str, Enum):
+    passed = "passed"
+    failed = "failed"
+    skipped = "skipped"

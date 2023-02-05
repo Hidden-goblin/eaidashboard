@@ -1,5 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from csv import DictReader
+from datetime import datetime
+from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
@@ -10,7 +13,13 @@ from app.database.utils.what_strategy import WhatStrategy
 from app.utils.pgdb import pool
 
 
-def retrieve_tuple_data(result_date, project_name, version, campaign_id, row, is_partial):
+def retrieve_tuple_data(result_date,
+                        project_name,
+                        version,
+                        campaign_id,
+                        row,
+                        is_partial) -> Tuple:
+    """:return list of tuple (date, str, str, int, int, int, int, str, bool)"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         db_row = connection.execute("select ep.id as epic_id, ft.id as feature_id,"
@@ -36,7 +45,7 @@ def retrieve_tuple_data(result_date, project_name, version, campaign_id, row, is
                 is_partial)
 
 
-def check_result_uniqueness(project_name, version, result_date):
+def check_result_uniqueness(project_name: str, version: str, result_date: datetime):
     """Check if result data exist for project_name-version-date exists
     :return None
     :raise DuplicateTestResults"""
@@ -64,8 +73,58 @@ def set_status(current_status: str, new_result: str) -> str:
     return "passed"
 
 
+def __compute_epic_result(epic_list: list,
+                          current_epic: int,
+                          current_epic_status: str,
+                          result_epic: int,
+                          result_status: str,
+                          result_date,
+                          project_name: str,
+                          version: str,
+                          campaign_id: int,
+                          is_partial: bool
+                          ) -> Tuple[int, str]:
+    if current_epic != result_epic:
+        epic_list.append((result_date,
+                          project_name,
+                          version,
+                          campaign_id,
+                          current_epic,
+                          current_epic_status,
+                          is_partial))
+    return result_epic, set_status(current_epic_status,result_status)
 
-async def insert_result(result_date, project_name, version, campaign_id, is_partial, mg_result_uuid ,rows):
+
+def __compute_feature_result(feature_list: list,
+                             current_feature: int,
+                             current_feature_status: str,
+                             result_feature: int,
+                             result_status: str,
+                             result_date,
+                             project_name: str,
+                             version: str,
+                             campaign_id: int,
+                             current_epic: int,
+                             is_partial: bool) -> Tuple[int, str]:
+    if current_feature != result_feature:
+        feature_list.append((result_date,
+                             project_name,
+                             version,
+                             campaign_id,
+                             current_epic,
+                             current_feature,
+                             current_feature_status,
+                             is_partial))
+    return result_feature, set_status(current_feature_status, result_status)
+
+
+async def insert_result(result_date: datetime,
+                        project_name: str,
+                        version: str,
+                        campaign_id: int,
+                        is_partial: bool,
+                        mg_result_uuid: str,
+                        rows: DictReader | List[dict]):
     results = [retrieve_tuple_data(result_date,
                                    project_name,
                                    version,
@@ -87,39 +146,35 @@ async def insert_result(result_date, project_name, version, campaign_id, is_part
             RESULT_STATUS_POS: int = 7
             for result in results:
                 copy.write_row(result)
-                # Feature management
-                if current_feature is None:
-                    current_feature = result[FEATURE_ID_POS]
-                    current_feature_status = result[RESULT_STATUS_POS]
-                if current_feature != result[FEATURE_ID_POS]:
-                    features.append((result_date,
-                                     project_name,
-                                     version,
-                                     campaign_id,
-                                     current_epic,
-                                     current_feature,
-                                     current_feature_status,
-                                     is_partial))
-                    current_feature = result[FEATURE_ID_POS]
-                    current_feature_status = result[RESULT_STATUS_POS]
+
                 # Epic management
-                if current_epic is None:
-                    current_epic = result[EPIC_ID_POS]
-                    current_epic_status = result[RESULT_STATUS_POS]
-                if current_epic != result[EPIC_ID_POS]:
-                    epics.append((result_date,
-                                     project_name,
-                                     version,
-                                     campaign_id,
-                                     current_epic,
-                                     current_epic_status,
-                                     is_partial))
-                    current_epic = result[EPIC_ID_POS]
-                    current_epic_status = result[RESULT_STATUS_POS]
-                current_feature_status = set_status(current_feature_status,
-                                                    result[RESULT_STATUS_POS])
-                current_epic_status = set_status(current_epic_status,
-                                                 result[RESULT_STATUS_POS])
+                current_epic, current_epic_status = __compute_epic_result(
+                    epics,
+                    current_epic,
+                    current_epic_status,
+                    result[EPIC_ID_POS],
+                    result[RESULT_STATUS_POS],
+                    result_date,
+                    project_name,
+                    version,
+                    campaign_id,
+                    is_partial
+                )
+
+                # Feature management
+                current_feature, current_feature_status = __compute_feature_result(
+                    features,
+                    current_feature,
+                    current_feature_status,
+                    result[FEATURE_ID_POS],
+                    result[RESULT_STATUS_POS],
+                    result_date,
+                    project_name,
+                    version,
+                    campaign_id,
+                    current_epic,
+                    is_partial)
+
             # Last results
             features.append((result_date,
                              project_name,
@@ -147,46 +202,6 @@ async def insert_result(result_date, project_name, version, campaign_id, is_part
             for epic in epics:
                 copy.write_row(epic)
     await mg_insert_test_result_done(project_name, mg_result_uuid)
-async def retrieve_result(project_name, version: str = None):
-    with pool.connection() as connection:
-        connection.row_factory = dict_row
-        results = connection.execute("select epic_id, feature_id, scenario_id, status, run_date "
-                                     "from test_results "
-                                     "where project_id = %s "
-                                     "order by run_date, epic_id, feature_id;", (project_name,))
-
-
-        current_epic = ""
-        current_epic_status = ""
-        current_feature = ""
-        current_feature_status = ""
-        return_value = {"datetime": [],
-                        "epic": {"failed": [], "skipped": [], "passed": []},
-                        "feature": {"failed": [], "skipped": [], "passed": []},
-                        "scenario": {"failed": [], "skipped": [], "passed": []}}
-        current_date = None
-        for result in results:
-
-            if not return_value["datetime"]:
-                # initial state
-                return_value["datetime"].append(result["run_date"])
-                current_epic = result["epic_id"]
-                current_epic_status = result["status"]
-                current_feature = result["feature_id"]
-                current_feature_status = result["status"]
-
-            elif result["run_date"] != return_value["datetime"][-1]:
-                # new run
-                return_value["datetime"].append(result["run_date"])
-                current_epic = result["epic_id"]
-                current_epic_status = result["status"]
-                current_feature = result["feature_id"]
-                current_feature_status = result["status"]
-            else:
-                # current run
-                if result["epic_id"] != current_epic:
-                    # new epic
-                    pass
 
 
 class TestResults:
