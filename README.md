@@ -37,9 +37,12 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.7
+## Current: 2.8
 
 ## History
+- 2.8
+  - Add capability to register campaign status
+  - Add capability to display Map result (scenarios based) for a campaign
 - 2.7
   - Avoid creating an existing project. Raise an error doing so.
   - Catch error when the app restart and a user is still connected (SignatureError with new key)

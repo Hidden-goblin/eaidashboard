@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import Any
+from typing import Any, Union
 
 from fastapi import (APIRouter,
                      HTTPException,
@@ -89,6 +89,14 @@ async def rest_import_test_results(project_name: str,
 
 
 @router.get("/{project_name}/testResults",
+            description="""Provide test results for a project.
+            
+            **Partial test repository result** can be retrieved when providing a campaign execution (version and occurrence).
+            
+            **Complete test repository results** are retrieved on the all other cases.
+            
+            Please note that partial results are not counted in the application results.
+            """,
             tags=["Test Results"])
 async def rest_export_results(project_name: str,
                               category: RestTestResultCategoryEnum,

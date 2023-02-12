@@ -131,19 +131,23 @@ async def insert_result(result_date: datetime,
                                    campaign_id,
                                    row,
                                    is_partial) for row in rows]
+    if not results:
+        return await mg_insert_test_result_done(project_name, mg_result_uuid)
     with pool.connection() as connection:
         with connection.cursor().copy("COPY test_scenario_results (run_date, project_id, version,"
                                       " campaign_id, epic_id, feature_id, scenario_id,"
                                       " status, is_partial) from stdin") as copy:
-            current_epic = None
-            current_epic_status = None
-            current_feature = None
-            current_feature_status = None
-            epics = []
-            features = []
+
             FEATURE_ID_POS: int = 5
             EPIC_ID_POS: int = 4
             RESULT_STATUS_POS: int = 7
+
+            current_epic = results[0][EPIC_ID_POS]
+            current_epic_status = results[0][RESULT_STATUS_POS]
+            current_feature = results[0][FEATURE_ID_POS]
+            current_feature_status = results[0][RESULT_STATUS_POS]
+            epics = []
+            features = []
             for result in results:
                 copy.write_row(result)
 

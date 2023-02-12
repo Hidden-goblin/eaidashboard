@@ -1,0 +1,12 @@
+<div id="div-frame" class="vstack gap-3">
+    <div class="hstack gap-2">
+        <button class="btn btn-secondary"
+                hx-delete="/clear"
+                hx-target="#div-frame">Dismiss</button>
+        <a href="{{link}}" target="_blank" rel="noopener noreferrer">The result as stand alone page</a>
+    </div>
+    <iframe title="Map of test results"
+    width="800"
+    height="600"
+            src="{{link}}"></iframe>
+</div>

@@ -22,7 +22,7 @@ Eaidashboard is a simple api and front to monitor test activities.
 """
 app = FastAPI(title="Eaidashboard",
               description=description,
-              version="2.7",
+              version="2.8",
               license_info={
                   "name": "GNU GPL v3",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"

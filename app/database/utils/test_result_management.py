@@ -58,17 +58,20 @@ async def insert_result(project_name: str,
 
 def __convert_scenario_status_to_three_state(scenarios):
     for scenario in scenarios:
+        # Dirty workaround to manage keys
+        if "feature_name" not in scenario:
+            scenario["feature_name"] = scenario.get("feature_id")
         if scenario["status"] == ScenarioStatusEnum.done.value:
             scenario["status"] = TestResultStatusEnum.passed.value
-            break
-        if scenario["status"] == ScenarioStatusEnum.waiting_fix.value:
+        elif scenario["status"] == ScenarioStatusEnum.waiting_fix.value:
             scenario["status"] = TestResultStatusEnum.failed.value
-            break
-        scenario["status"] = TestResultStatusEnum.skipped.value
+        else:
+            scenario["status"] = TestResultStatusEnum.skipped.value
 
 async def register_manual_campaign_result(project_name: str,
                                    version: str,
                                    campaign_occurrence: str) -> Tuple[str, int, List[dict]]:
+    """:return test_result_uuid, campaign_id, list of scenarios"""
     campaign_id = await retrieve_campaign_id(project_name,
                                              version,
                                              campaign_occurrence)
