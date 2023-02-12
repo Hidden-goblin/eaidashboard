@@ -25,7 +25,7 @@ from app.database.postgre.pg_campaigns_management import (create_campaign,
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
-from app.schema.campaign_schema import (CampaignLight, Scenarios,
+from app.schema.campaign_schema import (CampaignFull, CampaignLight, Scenarios,
                                         TicketScenarioCampaign,
                                         ToBeCampaign)
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
@@ -101,6 +101,7 @@ async def get_campaigns(project_name: str,
 
 # Retrieve campaign for project-version
 @router.get("/{project_name}/campaigns/{version}/{occurrence}",
+            response_model=CampaignFull,
             tags=["Campaign"],
             description="Retrieve the full campaign")
 async def get_campaign(project_name: str,
