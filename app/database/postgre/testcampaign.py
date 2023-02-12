@@ -130,6 +130,7 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
 
 
 def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[dict]:
+    """:return list of dict epic_id, feature_id, scenario_id, name, steps and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         result = connection.execute("select ep.name as epic_id ,"

@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import datetime
 import logging
 from typing import (Any, List)
 
@@ -7,8 +8,11 @@ from fastapi import (APIRouter,
                      HTTPException,
                      Response,
                      Security)
+from starlette.background import BackgroundTasks
 
-from app.app_exception import (CampaignNotFound, NonUniqueError, VersionNotFound)
+from app.app_exception import (CampaignNotFound, DuplicateTestResults, IncorrectFieldsRequest,
+                               MalformedCsvFile, NonUniqueError,
+                               VersionNotFound)
 from app.database.authorization import authorize_user
 from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
@@ -16,14 +20,15 @@ from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                db_set_campaign_ticket_scenario_status, get_campaign_content,
 
                                                fill_campaign as db_fill_campaign)
-from app.database.postgre.pg_campaigns_management import create_campaign, is_campaign_exist, \
-    retrieve_campaign
-from app.database.mongo.versions import get_version_and_collection
+from app.database.postgre.pg_campaigns_management import (create_campaign,
+                                                          retrieve_campaign)
+from app.database.utils.test_result_management import register_manual_campaign_result
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.campaign_schema import (CampaignLight, Scenarios,
                                         TicketScenarioCampaign,
                                         ToBeCampaign)
+from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -173,8 +178,40 @@ async def update_campaign_ticket_scenario_status(project_name: str,
                                                  user: Any = Security(authorize_user,
                                                                       scopes=["admin", "user"])):
     return await db_set_campaign_ticket_scenario_status(project_name,
-                                                  version,
-                                                  occurrence,
-                                                  reference,
-                                                  scenario_id,
-                                                  new_status)
+                                                        version,
+                                                        occurrence,
+                                                        reference,
+                                                        scenario_id,
+                                                        new_status)
+
+
+@router.post("/{project_name}/campaigns/{version}/{occurrence}/",
+             tags=["Campaign"])
+async def create_campaign_occurrence_result(project_name: str,
+                                            version: str,
+                                            occurrence: str,
+                                            background_task: BackgroundTasks,
+                                            user: Any = Security(authorize_user,
+                                                                 scopes=["admin", "user"])):
+    try:
+        test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
+            project_name,
+            version,
+            occurrence)
+        background_task.add_task(pg_insert_result,
+                                 datetime.datetime.now(),
+                                 project_name,
+                                 version,
+                                 campaign_id,
+                                 True,
+                                 test_result_uuid,
+                                 scenarios)
+        return test_result_uuid
+    except IncorrectFieldsRequest as ifr:
+        raise HTTPException(400, detail="".join(ifr.args)) from ifr
+    except DuplicateTestResults as dtr:
+        raise HTTPException(400, detail=" ".join(dtr.args)) from dtr
+    except MalformedCsvFile as mcf:
+        raise HTTPException(400, detail=" ".join(mcf.args)) from mcf
+    except VersionNotFound as vnf:
+        raise HTTPException(404, detail=" ".join(vnf.args)) from vnf

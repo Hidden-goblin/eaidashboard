@@ -1,11 +1,14 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import datetime
 
 from fastapi import APIRouter, Form
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 
 from app.conf import templates
 from app.database.authorization import is_updatable
+from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
 from app.database.mongo.projects import registered_projects
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
@@ -15,13 +18,21 @@ from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenari
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status)
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
-from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
+from app.database.postgre.testrepository import db_project_epics, db_project_features, \
+    db_project_scenarios
+
+from app.database.utils.output_strategy import REGISTERED_OUTPUT
+from app.database.utils.test_result_management import register_manual_campaign_result
 
 from app.database.utils.ticket_management import add_tickets_to_campaign
+from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
+from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, \
+    RestTestResultRenderingEnum
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
+from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -385,7 +396,10 @@ async def add_scenarios_to_ticket(project_name: str,
                                       headers={"HX-Trigger": request.headers.get('eaid-next',"")})
 
 
-@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets")
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets",
+            tags=["Front - Campaign"],
+            include_in_schema=False
+            )
 async def front_campaign_version_tickets(project_name,
                                          version,
                                          occurrence,
@@ -415,10 +429,14 @@ async def front_campaign_version_tickets(project_name,
         # TODO: return the accordion table for the campaign (ease the refresh process)
         pass
 
-@router.post("/{project_name}/campaigns/{version}/{occurrence}/tickets")
-async def front_campaign_add_tickets(project_name,
-                                     version,
-                                     occurrence,
+
+@router.post("/{project_name}/campaigns/{version}/{occurrence}/tickets",
+             tags=["Front - Campaign"],
+             include_in_schema=False
+             )
+async def front_campaign_add_tickets(project_name: str,
+                                     version: str,
+                                     occurrence: str,
                                      request: Request,
                                      body: dict):
     if not is_updatable(request, ("admin", "user")):
@@ -439,4 +457,64 @@ async def front_campaign_add_tickets(project_name,
                                           "advise": ("Reload the page as auto-reloading feature has"
                                                      " not been implemented yet.")
                                       },
+                                      headers={"HX-Retarget": "#messageBox"})
+
+
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/results",
+            tags=["Front - Campaign"],
+            include_in_schema=False
+            )
+async def front_campaign_occurrence_status(project_name: str,
+                                           version: str,
+                                           occurrence: str,
+                                           request: Request):
+    test_results = TestResults(
+        REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][RestTestResultRenderingEnum.MAP],
+        REGISTERED_OUTPUT[RestTestResultRenderingEnum.MAP][RestTestResultHeaderEnum.HTML])
+    result = await test_results.render(project_name, version, occurrence)
+    return templates.TemplateResponse("frame.html",
+                                      {
+                                          "request": request,
+                                          "link": f"{request.base_url}static/{result}"
+                                      })
+
+
+@router.post("/{project_name}/campaigns/{version}/{occurrence}/results",
+             tags=["Front - Campaign"],
+             include_in_schema=False
+             )
+async def front_campaign_occurrence_snapshot_status(project_name: str,
+                                                    version: str,
+                                                    occurrence: str,
+                                                    request: Request,
+                                                    background_task: BackgroundTasks):
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          },
                                           headers={"HX-Retarget": "#messageBox"})
+    test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
+        project_name,
+        version,
+        occurrence)
+    background_task.add_task(pg_insert_result,
+                             datetime.datetime.now(),
+                             project_name,
+                             version,
+                             campaign_id,
+                             True,
+                             test_result_uuid,
+                             scenarios)
+    return templates.TemplateResponse("back_message.html",
+                                      {
+                                          "request": request,
+                                          "highlight": "Your request has been taken in account.",
+                                          "sequel": " The application is processing data.",
+                                          "advise": f"You might see the status for "
+                                                    f"{test_result_uuid}."
+                                      },
+                                      headers={"HX-Retarget": "#messageBox"})
