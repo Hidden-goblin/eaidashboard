@@ -57,3 +57,4 @@ async def add_tickets_to_campaign(project_name, version, occurrence, ticket_refe
                                                                 occurrence,
                                                                 reference)))
     return [task.result() for task in tasks]
+

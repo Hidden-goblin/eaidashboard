@@ -17,3 +17,9 @@ class RestTestResultCategoryEnum(str, Enum):
 class RestTestResultRenderingEnum(str, Enum):
     STACKED = "stacked"
     MAP = "map"
+
+
+class DeliverableTypeEnum(str, Enum):
+    TEST_PLAN = "test_plan"
+    TER = "TER"
+    EVIDENCE = "evidence"

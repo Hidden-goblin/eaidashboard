@@ -25,8 +25,7 @@ async def insert_result(project_name: str,
     # scenario_id, status
     buffer = StringIO(csv_file_content)
     rows = DictReader(buffer)
-    expected_headers = ("project_id",
-                        "epic_id",
+    expected_headers = ("epic_id",
                         "feature_name",
                         "scenario_id",
                         "status")

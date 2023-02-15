@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.project_schema import TicketType
 
 
 class ToBeCampaign(BaseModel):
@@ -64,12 +65,14 @@ class Scenario(BaseModel):
     def __getitem__(self, index):
         return self.dict().get(index, None)
 
+class ScenarioInternal(Scenario):
+    internal_id: int
 
 class TicketScenario(BaseModel):
     reference: str
     summary: str
-    status: Optional[CampaignStatusEnum] = CampaignStatusEnum.recorded
-    scenarios: Optional[list[Scenario]] = []
+    status: Optional[TicketType] = TicketType.OPEN
+    scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
     def __getitem__(self, index):
         return self.dict().get(index, None)
 

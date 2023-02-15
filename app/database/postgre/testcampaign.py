@@ -10,7 +10,8 @@ from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.mongo.tickets import get_ticket, get_tickets_by_reference
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.campaign_schema import CampaignFull, Scenario, Scenarios, TicketScenario, \
+from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, Scenarios, \
+    TicketScenario, \
     TicketScenarioCampaign
 from app.utils.pgdb import pool
 
@@ -199,8 +200,8 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     " sc.name as name,"
                                     " sc.steps as steps,"
                                     " cts.status as status,"
-                                    " ft.name as feature_name,"
-                                    " sc.id as sc_internal, "
+                                    " ft.name as feature_id,"
+                                    " sc.id as internal_id, "
                                     "ep.name as epic_id "
                                     "from campaign_tickets as ct "
                                     "inner join campaign_ticket_scenarios as cts "
@@ -214,7 +215,7 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     "where ct.campaign_id = %s "
                                     "and ct.ticket_reference = %s ",
                                     (campaign_id[0], reference))
-        return result.fetchall()
+        return [ScenarioInternal(**res) for res in result.fetchall()]
 
 
 async def db_get_campaign_ticket_scenario(project_name,
