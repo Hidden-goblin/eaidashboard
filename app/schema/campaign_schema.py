@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.project_schema import TicketType
 
 
@@ -60,10 +60,13 @@ class Scenario(BaseModel):
     scenario_id: str
     name: str
     steps: str
-    status: ScenarioStatusEnum
+    status: ScenarioStatusEnum | TestResultStatusEnum
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
+    def get(self, index, default):
+        return self.dict().get(index, default)
 
 class ScenarioInternal(Scenario):
     internal_id: int

@@ -17,24 +17,30 @@ def retrieve_tuple_data(result_date,
                         project_name,
                         version,
                         campaign_id,
-                        row,
-                        is_partial) -> Tuple:
+                        rows,
+                        is_partial,
+                        result: list):
     """:return list of tuple (date, str, str, int, int, int, int, str, bool)"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        db_row = connection.execute("select ep.id as epic_id, ft.id as feature_id,"
-                                    " sc.id as scenario_internal_id from scenarios as sc "
-                                    "inner join features as ft on sc.feature_id = ft.id "
-                                    "inner join epics as ep on ep.id = ft.epic_id "
-                                    "where ep.name = %s "
-                                    "and ft.name = %s "
-                                    "and sc.scenario_id = %s "
-                                    "and ep.project_id = %s;",
-                                    (row["epic_id"],
-                                     row["feature_name"],
-                                     row["scenario_id"],
-                                     project_name)).fetchone()
-        return (result_date,
+        for row in rows:
+            if db_row := connection.execute(
+                "select ep.id as epic_id, ft.id as feature_id,"
+                " sc.id as scenario_internal_id from scenarios as sc "
+                "inner join features as ft on sc.feature_id = ft.id "
+                "inner join epics as ep on ep.id = ft.epic_id "
+                "where ep.name = %s "
+                "and ft.name = %s "
+                "and sc.scenario_id = %s "
+                "and ep.project_id = %s;",
+                (
+                    row["epic_id"],
+                    row.get("feature_name", row.get("feature_id", None)),
+                    row["scenario_id"],
+                    project_name,
+                ),
+            ).fetchone():
+                result.append((result_date,
                 project_name,
                 version,
                 campaign_id,
@@ -42,7 +48,7 @@ def retrieve_tuple_data(result_date,
                 db_row["feature_id"],
                 db_row["scenario_internal_id"],
                 row["status"],
-                is_partial)
+                is_partial))
 
 
 def check_result_uniqueness(project_name: str, version: str, result_date: datetime):
@@ -125,12 +131,20 @@ async def insert_result(result_date: datetime,
                         is_partial: bool,
                         mg_result_uuid: str,
                         rows: DictReader | List[dict]):
-    results = [retrieve_tuple_data(result_date,
-                                   project_name,
-                                   version,
-                                   campaign_id,
-                                   row,
-                                   is_partial) for row in rows]
+    results = []
+    # results = [retrieve_tuple_data(result_date,
+    #                                project_name,
+    #                                version,
+    #                                campaign_id,
+    #                                row,
+    #                                is_partial) for row in rows]
+    retrieve_tuple_data(result_date,
+                        project_name,
+                        version,
+                        campaign_id,
+                        rows,
+                        is_partial,
+                        results)
     if not results:
         return await mg_insert_test_result_done(project_name, mg_result_uuid)
     with pool.connection() as connection:

@@ -37,9 +37,12 @@ Swagger interface http://localhost:8081/docs
 
 # Version history
 
-## Current: 2.8
+## Current: 2.9
 
 ## History
+- 2.9
+  - Add Test Plan, TER and evidence generation
+  - Fix test result import
 - 2.8
   - Add capability to register campaign status
   - Add capability to display Map result (scenarios based) for a campaign
