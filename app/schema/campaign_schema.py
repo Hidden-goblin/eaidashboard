@@ -1,10 +1,12 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional, Union
+from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
+from app.schema.project_schema import TicketType
 
 
 class ToBeCampaign(BaseModel):
@@ -51,3 +53,31 @@ class CampaignLight(BaseModel):
     def __getitem__(self, index):
         return self.dict().get(index, None)
 
+
+class Scenario(BaseModel):
+    epic_id: str
+    feature_id: str
+    scenario_id: str
+    name: str
+    steps: str
+    status: ScenarioStatusEnum | TestResultStatusEnum
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
+    def get(self, index, default):
+        return self.dict().get(index, default)
+
+class ScenarioInternal(Scenario):
+    internal_id: int
+
+class TicketScenario(BaseModel):
+    reference: str
+    summary: str
+    status: Optional[TicketType] = TicketType.OPEN
+    scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
+class CampaignFull(CampaignLight):
+    tickets: Optional[list[TicketScenario]] = []

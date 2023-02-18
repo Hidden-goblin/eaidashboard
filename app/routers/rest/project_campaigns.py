@@ -9,6 +9,7 @@ from fastapi import (APIRouter,
                      Response,
                      Security)
 from starlette.background import BackgroundTasks
+from starlette.requests import Request
 
 from app.app_exception import (CampaignNotFound, DuplicateTestResults, IncorrectFieldsRequest,
                                MalformedCsvFile, NonUniqueError,
@@ -23,12 +24,17 @@ from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
 from app.database.postgre.pg_campaigns_management import (create_campaign,
                                                           retrieve_campaign)
 from app.database.utils.test_result_management import register_manual_campaign_result
+from app.database.utils.combined_results import get_ticket_with_scenarios
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
-from app.schema.campaign_schema import (CampaignLight, Scenarios,
+from app.schema.campaign_schema import (CampaignFull, CampaignLight, Scenarios,
                                         TicketScenarioCampaign,
                                         ToBeCampaign)
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
+from app.schema.rest_enum import DeliverableTypeEnum
+from app.utils.report_generator import campaign_deliverable, evidence_from_ticket, \
+    test_exit_report_from_campaign, \
+    test_plan_from_campaign
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -101,6 +107,7 @@ async def get_campaigns(project_name: str,
 
 # Retrieve campaign for project-version
 @router.get("/{project_name}/campaigns/{version}/{occurrence}",
+            response_model=CampaignFull,
             tags=["Campaign"],
             description="Retrieve the full campaign")
 async def get_campaign(project_name: str,
@@ -213,5 +220,23 @@ async def create_campaign_occurrence_result(project_name: str,
         raise HTTPException(400, detail=" ".join(dtr.args)) from dtr
     except MalformedCsvFile as mcf:
         raise HTTPException(400, detail=" ".join(mcf.args)) from mcf
+    except VersionNotFound as vnf:
+        raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
+
+
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/deliverables",
+            tags=["Campaign-Deliverables"])
+async def retrieve_campaign_occurrence_deliverables(project_name: str,
+                                                    version: str,
+                                                    occurrence: str,
+                                                    request: Request,
+                                                    deliverable_type: DeliverableTypeEnum = DeliverableTypeEnum.TEST_PLAN,
+                                                    ticket_ref: str = None,
+                                                    user: Any = Security(authorize_user,
+                                                                         scopes=["admin", "user"])
+                                                    ):
+    try:
+        filename = await campaign_deliverable(project_name, version, occurrence, deliverable_type, ticket_ref)
+        return f"{request.base_url}static/{filename}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf

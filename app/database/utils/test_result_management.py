@@ -25,8 +25,7 @@ async def insert_result(project_name: str,
     # scenario_id, status
     buffer = StringIO(csv_file_content)
     rows = DictReader(buffer)
-    expected_headers = ("project_id",
-                        "epic_id",
+    expected_headers = ("epic_id",
                         "feature_name",
                         "scenario_id",
                         "status")
@@ -58,15 +57,12 @@ async def insert_result(project_name: str,
 
 def __convert_scenario_status_to_three_state(scenarios):
     for scenario in scenarios:
-        # Dirty workaround to manage keys
-        if "feature_name" not in scenario:
-            scenario["feature_name"] = scenario.get("feature_id")
-        if scenario["status"] == ScenarioStatusEnum.done.value:
-            scenario["status"] = TestResultStatusEnum.passed.value
-        elif scenario["status"] == ScenarioStatusEnum.waiting_fix.value:
-            scenario["status"] = TestResultStatusEnum.failed.value
+        if scenario.status == ScenarioStatusEnum.done.value:
+            scenario.status = TestResultStatusEnum.passed.value
+        elif scenario.status == ScenarioStatusEnum.waiting_fix.value:
+            scenario.status = TestResultStatusEnum.failed.value
         else:
-            scenario["status"] = TestResultStatusEnum.skipped.value
+            scenario.status = TestResultStatusEnum.skipped.value
 
 async def register_manual_campaign_result(project_name: str,
                                    version: str,

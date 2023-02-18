@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from typing import List
 
-from psycopg.rows import dict_row, tuple_row
+from psycopg.rows import class_row, dict_row, tuple_row
 
 from app.app_exception import CampaignNotFound, NonUniqueError, ScenarioNotFound, TicketNotFound
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
@@ -10,7 +10,9 @@ from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.mongo.tickets import get_ticket, get_tickets_by_reference
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.campaign_schema import Scenarios, TicketScenarioCampaign
+from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, Scenarios, \
+    TicketScenario, \
+    TicketScenarioCampaign
 from app.utils.pgdb import pool
 
 
@@ -97,39 +99,47 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
                                     "order by ct.ticket_reference desc;",
                                     (campaign_id[0],))
         # Prepare the result
-        camp = {"project": project_name,
-                "version": version,
-                "occurrence": occurrence,
-                "status": campaign_id[1],
-                "tickets": []}
+        # camp = {"project": project_name,
+        #         "version": version,
+        #         "occurrence": occurrence,
+        #         "status": campaign_id[1],
+        #         "tickets": []}
+        camp = CampaignFull(project_name=project_name,
+                            version= version,
+                            occurrence=int(occurrence),
+                            status=campaign_id[1])
         # Accumulators
         tickets = set()
-        current_ticket = {}
+        current_ticket = None
         # Iter over result and dispatch between new ticket and ticket's scenario_internal_id
         for row in result.fetchall():
             if row["reference"] not in tickets:
                 if current_ticket:
                     camp["tickets"].append(current_ticket)
                 tickets.add(row['reference'])
-                current_ticket = {"reference": row['reference'],
-                                  "summary": None,
-                                  "scenarios": db_get_campaign_scenarios(
-                                      row["campaign_ticket_id"])}
+                # current_ticket = {"reference": row['reference'],
+                #                   "summary": None,
+                #                   "scenarios": db_get_campaign_scenarios(
+                #                       row["campaign_ticket_id"])}
+                current_ticket = TicketScenario(reference=row['reference'],
+                                                summary="",
+                                                scenarios= db_get_campaign_scenarios(
+                                      row["campaign_ticket_id"]))
         # Add the last ticket
-        camp["tickets"].append(current_ticket)
+        camp.tickets.append(current_ticket)
 
         # Retrieve data from mongo
         tickets_data = {tick["reference"]: tick["description"]
                         for tick in await get_tickets_by_reference(project_name, version, tickets)}
 
         # Update the tickets with their summary
-        for tick in camp["tickets"]:
+        for tick in camp.tickets:
             if tick:
-                tick["summary"] = tickets_data[tick["reference"]]
+                tick.summary = tickets_data[tick["reference"]]
         return camp
 
 
-def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[dict]:
+def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[Scenario]:
     """:return list of dict epic_id, feature_id, scenario_id, name, steps and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -144,7 +154,7 @@ def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[dict]:
                                     "join features as ft on sc.feature_id = ft.id "
                                     "join epics as ep on ft.epic_id = ep.id "
                                     "where cts.campaign_ticket_id = %s", (campaign_ticket_id,))
-        return list(result.fetchall())
+        return [Scenario(**item) for item in result.fetchall()]
 
 
 async def db_get_campaign_tickets(project_name,
@@ -190,8 +200,8 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     " sc.name as name,"
                                     " sc.steps as steps,"
                                     " cts.status as status,"
-                                    " ft.name as feature_name,"
-                                    " sc.id as sc_internal, "
+                                    " ft.name as feature_id,"
+                                    " sc.id as internal_id, "
                                     "ep.name as epic_id "
                                     "from campaign_tickets as ct "
                                     "inner join campaign_ticket_scenarios as cts "
@@ -205,7 +215,7 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     "where ct.campaign_id = %s "
                                     "and ct.ticket_reference = %s ",
                                     (campaign_id[0], reference))
-        return result.fetchall()
+        return [ScenarioInternal(**res) for res in result.fetchall()]
 
 
 async def db_get_campaign_ticket_scenario(project_name,

@@ -28,11 +28,13 @@ from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
-from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, \
+from app.schema.rest_enum import DeliverableTypeEnum, RestTestResultCategoryEnum, \
+    RestTestResultHeaderEnum, \
     RestTestResultRenderingEnum
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
+from app.utils.report_generator import campaign_deliverable
 
 router = APIRouter(prefix="/front/v1/projects")
 
@@ -518,3 +520,31 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                                     f"{test_result_uuid}."
                                       },
                                       headers={"HX-Retarget": "#messageBox"})
+
+
+@router.get("/{project_name}/campaigns/{version}/{occurrence}/deliverables",
+             tags=["Front - Campaign"],
+             include_in_schema=False
+             )
+async def front_campaign_occurrence_deliverables(project_name: str,
+                                                    version: str,
+                                                    occurrence: str,
+                                                    request: Request,
+                                                    deliverable_type: DeliverableTypeEnum = DeliverableTypeEnum.TEST_PLAN,
+                                                    ticket_ref: str = None):
+    if not is_updatable(request, ("admin", "user")):
+        return templates.TemplateResponse("error_message.html",
+                                          {
+                                              "request": request,
+                                              "highlight": "You are not authorized",
+                                              "sequel": " to perform this action.",
+                                              "advise": "Try to log again"
+                                          },
+                                          headers={"HX-Retarget": "#messageBox"})
+    result = await campaign_deliverable(project_name, version, occurrence, deliverable_type, ticket_ref)
+
+    return templates.TemplateResponse("download_link.html",
+                                      {
+                                          "request": request,
+                                          "link": f"{request.base_url}static/{result}"
+                                      })

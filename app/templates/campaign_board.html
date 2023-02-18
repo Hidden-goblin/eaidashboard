@@ -6,6 +6,18 @@
     <h1>Campaign for {{project_name}} version {{version}} (run {{occurrence}})</h1>
     <h2>Status: {{campaign.status}}</h2>
     <div class="hstack">
+        <button class="btn"
+                hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/deliverables"
+                hx-target="#addResults"
+        >
+            Test Plan
+        </button>
+        <button class="btn"
+                hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/deliverables?deliverable_type=TER"
+                hx-target="#addResults"
+        >
+            TER
+        </button>
         <button class="ms-auto btn"
                 hx-post="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/results"
                 >
@@ -63,6 +75,10 @@
                                  height="20px"
                                  width="20px"/>
                     </button>
+                    <button class="btn btn-secondary"
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/deliverables?deliverable_type=evidence&ticket_ref={{ticket.reference}}"
+                            hx-target="#addResults"
+                    >Evidence template</button>
                 </div>
                 <div class="accordion-body" id="accordion-body{{loop.index}}">
                     <strong>{{ticket.reference}}</strong>
