@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Security
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.database.authentication import authenticate_user, create_access_token, revoke
+from app.database.authentication import authenticate_user, create_access_token
+from app.database.mongo.tokens import revoke
 from app.database.authorization import authorize_user
 
 router = APIRouter(

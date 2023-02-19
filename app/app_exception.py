@@ -8,6 +8,9 @@ class InsertionError(Exception):
 class DuplicateProject(Exception):
     pass
 
+class DuplicateVersion(Exception):
+    pass
+
 class ProjectNotRegistered(Exception):
     pass
 

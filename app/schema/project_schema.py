@@ -31,6 +31,12 @@ class StatusEnum(Enum):
         return self.value
 
 
+    @classmethod
+    def in_enum(cls, item):
+        return item in [str(val) for val in StatusEnum.__members__.values()]
+
+
+
 class TicketType(Enum):
     OPEN = "open"
     CANCELLED = "cancelled"

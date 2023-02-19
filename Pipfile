@@ -19,6 +19,7 @@ pydantic = {extras = ["email"], version = "*"}
 pyjwt = {extras = ["crypto"], version = "*"}
 psycopg = {extras = ["binary", "pool"], version = "*"}
 python-docx = "*"
+redis = "*"
 
 [dev-packages]
 pydeps = "*"

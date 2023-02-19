@@ -10,6 +10,7 @@ id: int autoincrement
 type: varchar(28)
 op_user: varchar(100)
 op_order: int
+content: varchar
 --
 unique (type, op_order)
 }
@@ -82,9 +83,11 @@ id: autoincrement
 ---
 campaign_id: int FK
 ticket_reference: text
+ticket_id: int
 ---
 unique(campaign_id, ticket_reference)
 FK campaign_id: campaigns.id
+FK ticket_id: tickets.id
 }
 
 ' link between campaign-ticket and scenario
@@ -164,4 +167,91 @@ FK campaign_id: campaigns.id
 FK epic_id: epics.id
 }
 test_epic_results }o--|| epics
+
+' -----------------------------------------
+' Project
+' -----------------------------------------
+
+entity projects {
+id: int autoincrement
+name: string unique
+alias: string
+}
+
+entity versions {
+id: int autoincrement
+---
+project_id: int
+version: string
+created: datetime
+updated: datetime
+started: datetime
+end_forecast: datetime
+status: varchar(50)
+open: int=0
+cancelled: int=0
+blocked: int=0
+in_progress: int=0
+done: int=0
+open_blocking: int=0
+open_major: int=0
+open_minor: int=0
+closed_blocking: int=0
+closed_major: int=0
+closed_minor: int=0
+---
+FK project_id: projects.id
+unique(project_id, version)
+}
+
+entity tickets {
+id: int autoincrement
+---
+reference: str
+description: str
+status: TicketStatusEnum
+created: datetime
+updated: datetime
+current_version: str
+past_version: List[str]
+delivery_date: datetime
+project_id: int
+---
+FK project_id: projects.id
+FK current_version: versions.version
+}
+
+entity bugs {
+id: int autoincrement
+---
+title: str
+url: str | None
+description: str
+project_id: int
+version_id: str
+fix_version_id: str
+status: BugStatusEnum
+created: datetime
+updated: datetime
+---
+FK project_id: projects.id
+unique(project_id, version_id, reference)
+}
+
+projects ||--o{ versions
+versions ||--o{ tickets
+tickets ||--|| campaign_tickets
+
+' -----------------------------------------
+' Users
+' -----------------------------------------
+entity users{
+id: int autoincrement
+---
+username: str
+password: str
+scopes: str
+---
+unique(username)
+}
 @enduml
