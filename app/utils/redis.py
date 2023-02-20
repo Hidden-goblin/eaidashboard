@@ -1,25 +1,25 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from contextlib import asynccontextmanager
-import redis.asyncio as redis
+
+import redis
 from redis.exceptions import ConnectionError
 from app.conf import redis_dict
 
+redis_pool = None
 
-async def redis_health():
+def redis_health():
     try:
-        async with redis_connection() as conn:
-            return await conn.ping()
+        conn = redis_connection()
+        return conn.ping()
     except ConnectionError:
         print("Redis connection error")
         return False
 
-@asynccontextmanager
-async def redis_connection():
-    connection = redis.Redis(**redis_dict, db=0)
-    try:
-        yield connection
-    finally:
-        await connection.close()
+
+def redis_connection():
+    if redis_pool is None:
+        redis_pool = redis.ConnectionPool(**redis_dict, db=0)
+    
+    return redis.Redis(connection_pool=redis_pool)
 
 
