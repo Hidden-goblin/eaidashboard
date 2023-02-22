@@ -152,11 +152,11 @@ POSTGRE_UPDATES = [
         id serial primary key,
         project_id int not null,
         version varchar (50) not null),
-        created date not null default CURRENT_DATE,
-        updated date not null default CURRENT_DATE,
-        started date,
-        end_forecast date,
-        status varchar(50),
+        created timestamp not null default CURRENT_TIMESTAMP,
+        updated timestamp not null default CURRENT_TIMESTAMP,
+        started timestamp,
+        end_forecast timestamp,
+        status varchar(50) default 'recorded',
         open int default 0,
         cancelled int default 0,
         blocked int default 0,
@@ -184,11 +184,11 @@ POSTGRE_UPDATES = [
         reference varchar(50) not null,
         description varchar,
         status varchar(50) default 'open',
-        created date not null default CURRENT_DATE,
-        updated date not null default CURRENT_DATE,
+        created timestamp not null default CURRENT_TIMESTAMP,
+        updated timestamp not null default CURRENT_TIMESTAMP,
         current_version int not null,
         past_versions varchar(50) [],
-        delivery_date date,
+        delivery_date timestamp,
         project_id int not null);
         """,
         "description": "Create tickets table"
@@ -219,7 +219,10 @@ POSTGRE_UPDATES = [
     {
         "request": """alter table campaign_tickets 
         add column ticket_id int,
-        add constraint campaign_tickets_ticket_id_fk foreign key (ticket_id) references tickets(id);""",
+        add constraint campaign_tickets_ticket_id_fk foreign key (ticket_id) references tickets(id)
+         match simple on update no action
+         on delete set null
+         not valid;""",
         "description": "Add ticket_id column to campaign_tickets and add fk constraint"
     },
     {
@@ -233,8 +236,8 @@ POSTGRE_UPDATES = [
         fix_version_id int,
         criticality varchar(20) not null,
         status varchar(20) not null,
-        created date default CURRENT_DATE,
-        updated date default CURRENT_DATE);""",
+        created timestamp default CURRENT_TIMESTAMP,
+        updated timestamp default CURRENT_TIMESTAMP);""",
         "description": "Create bugs table"
     },
     {

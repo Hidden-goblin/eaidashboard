@@ -3,6 +3,7 @@
 import psycopg
 from app.conf import postgre_string, postgre_setting_string, config
 from app.database.postgre.postgre_updates import POSTGRE_UPDATES
+from app.utils.project_alias import register
 
 
 def init_postgres():
@@ -81,3 +82,11 @@ def create_schema(connexion):
     values ('database', 'application', 0, 'Init db schema')
      on conflict (type, op_order) do nothing; """)
     connexion.commit()
+
+
+def postgre_register():
+    conn = psycopg.connect(postgre_string, autocommit=True)
+    cur = conn.cursor()
+    rows = cur.execute("select name, alias from projects;").fetchall()
+    for row in rows:
+        register(row[0], row[1])

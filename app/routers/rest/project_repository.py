@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.background import BackgroundTasks
 from starlette.responses import Response
 
+from app import conf
 from app.app_exception import MalformedCsvFile
 from app.database.authorization import authorize_user
 from app.database.postgre.testrepository import (add_epic,
@@ -20,8 +21,10 @@ from app.database.postgre.testrepository import (add_epic,
                                                  db_project_epics,
                                                  db_project_features,
                                                  db_project_scenarios)
-
-from app.database.mongo.projects import registered_projects
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import registered_projects
+else:
+    from app.database.mongo.projects import registered_projects
 
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.project_schema import ErrorMessage

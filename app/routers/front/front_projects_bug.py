@@ -6,13 +6,23 @@ from fastapi import APIRouter
 from starlette.background import BackgroundTask, BackgroundTasks
 from starlette.requests import Request
 
+from app import conf
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.mongo.bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug, version_bugs
-from app.database.mongo.versions import get_versions
-from app.database.mongo.projects import registered_projects
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_bugs import (db_get_bug,
+                                              db_update_bugs,
+                                              get_bugs,
+                                              insert_bug,
+                                              version_bugs)
+    from app.database.postgre.pg_versions import get_versions
+    from app.database.postgre.pg_projects import registered_projects
+else:
+    from app.database.mongo.bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug, version_bugs
+    from app.database.mongo.versions import get_versions
+    from app.database.mongo.projects import registered_projects
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
-from app.schema.project_schema import BugTicket, UpdateBugTicket
+from app.schema.bugs_schema import BugTicket, UpdateBugTicket
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")

@@ -6,9 +6,22 @@ from fastapi import APIRouter, HTTPException, Security
 from pymongo.errors import DuplicateKeyError
 from starlette.background import BackgroundTasks
 
+from app import conf
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.mongo.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
+
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_tickets import (add_ticket,
+                                                 get_ticket,
+                                                 get_tickets,
+                                                 update_ticket,
+                                                 update_values)
+else:
+    from app.database.mongo.tickets import (add_ticket,
+                                            get_ticket,
+                                            get_tickets,
+                                            update_ticket,
+                                            update_values)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)

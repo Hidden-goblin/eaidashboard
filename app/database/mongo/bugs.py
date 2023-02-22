@@ -11,7 +11,8 @@ from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.projects import registered_projects
 from app.database.mongo.versions import get_version_and_collection, get_versions
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
-from app.schema.project_schema import BugsStatistics, BugTicket, Statistics, UpdateBugTicket
+from app.schema.project_schema import Statistics
+from app.schema.bugs_schema import BugsStatistics, BugTicket, UpdateBugTicket
 from app.utils.project_alias import provide
 
 

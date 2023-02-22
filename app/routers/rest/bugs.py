@@ -5,13 +5,23 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, HTTPException, Security
 from starlette.background import BackgroundTasks
 
+from app import conf
 from app.database.authorization import authorize_user
-from app.database.mongo.bugs import (compute_bugs, db_update_bugs, get_bugs as db_g_bugs,
-                                     insert_bug, version_bugs)
+
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_bugs import (compute_bugs,
+                                              db_update_bugs,
+                                              get_bugs as db_g_bugs,
+                                              insert_bug,
+                                              version_bugs)
+else:
+    from app.database.mongo.bugs import (compute_bugs, db_update_bugs, get_bugs as db_g_bugs,
+                                         insert_bug, version_bugs)
 from app.database.mongo.versions import get_version_and_collection
 from app.schema.mongo_enums import (BugCriticalityEnum, BugStatusEnum)
-from app.schema.project_schema import (BugTicket, BugTicketResponse, ErrorMessage, TicketType,
-                                       UpdateBugTicket)
+from app.schema.project_schema import (ErrorMessage)
+from app.schema.status_enum import TicketType
+from app.schema.bugs_schema import BugTicket, BugTicketResponse, UpdateBugTicket
 
 router = APIRouter(
     prefix="/api/v1/projects"

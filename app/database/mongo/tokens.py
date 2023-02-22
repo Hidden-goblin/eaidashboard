@@ -2,21 +2,9 @@
 # -*- Author: E.Aivayan -*-
 from datetime import datetime, timezone
 
-from jwt import decode
 from pymongo import MongoClient
 from app.conf import config, mongo_string
-from app import conf
 from app.database.utils.password_management import generate_keys
-
-
-def token_user(token):
-    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
-    return payload.get("sub")
-
-
-def token_scope(token):
-    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
-    return payload.get("scopes", [])
 
 
 def get_token_date(username):

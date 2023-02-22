@@ -29,7 +29,7 @@ async def migrate_redis(user: Any = Security(authorize_user, scopes=["admin"])):
     if conf.MIGRATION_DONE:
         raise Exception("Migration done nothing to do")
     # Check Redis alive
-    if not await redis_health():
+    if not redis_health():
         raise Exception("Redis not ready")
 
     client = MongoClient(mongo_string)
@@ -107,7 +107,7 @@ async def migrate_versions(project_name):
                          "on conflict do nothing;",
                          (version,
                           _version.get("created"),
-                          _version.get("update"),
+                          _version.get("updated"),
                           _version.get("started", None),
                           _version.get("end_forecast", None),
                           _version.get("status"),

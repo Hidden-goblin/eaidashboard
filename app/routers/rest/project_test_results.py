@@ -16,13 +16,17 @@ from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from app import conf
 from app.app_exception import DuplicateTestResults, IncorrectFieldsRequest, MalformedCsvFile, \
     VersionNotFound
 from app.database.authorization import authorize_user
-from app.database.mongo.versions import get_version_and_collection
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_versions import version_exists
+else:
+    from app.database.mongo.versions import version_exists
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
-from app.database.utils.test_result_management import insert_result
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
+from app.database.utils.test_result_management import insert_result
 from app.schema.project_schema import ErrorMessage
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result, TestResults
 from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, \
@@ -59,8 +63,7 @@ async def rest_import_test_results(project_name: str,
                                    campaign_occurrence: str = Form(default=None),
                                    user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
-        _version, __ = await get_version_and_collection(project_name, version)
-        if not _version:
+        if not version_exists(project_name, version):
             raise VersionNotFound(f"Project '{project_name}' in version '{version}' not found")
         contents = await file.read()
         decoded = contents.decode()

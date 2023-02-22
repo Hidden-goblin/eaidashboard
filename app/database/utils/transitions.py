@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from app.app_exception import StatusTransitionForbidden, UnknownStatusException
-from app.schema.project_schema import StatusEnum
+from app.schema.status_enum import StatusEnum
 
 
 def version_transition(current_status, to_be_status):
@@ -55,6 +55,9 @@ def version_transition(current_status, to_be_status):
             StatusEnum.CANCELLED
         ]
     }
-    if StatusEnum(to_be_status) not in authorized_transition[current_status]:
+    _to_be_status = StatusEnum(to_be_status)
+    _current_status = StatusEnum(current_status)
+    _transition = authorized_transition[_current_status]
+    if _to_be_status not in _transition:
         raise StatusTransitionForbidden(f"You are not allowed to go from {current_status} to "
                                         f"{to_be_status} status.")

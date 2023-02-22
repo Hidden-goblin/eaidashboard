@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
-from app.schema.project_schema import TicketType
+from app.schema.status_enum import TicketType
 
 
 class ToBeCampaign(BaseModel):

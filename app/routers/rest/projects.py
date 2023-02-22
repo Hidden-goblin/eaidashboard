@@ -30,14 +30,16 @@ if conf.MIGRATION_DONE:
 else:
     from app.database.mongo.projects import (create_project_version, get_project,
         get_projects)
-    from app.database.mongo.versions import get_version, update_version_data, update_version_status
+    from app.database.mongo.versions import (get_version,
+                                             update_version_data,
+                                             update_version_status)
 
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       UpdateVersion,
-                                       Version,
                                        TicketProject)
+from app.schema.bugs_schema import UpdateVersion
+from app.schema.versions_schema import Version
 
 router = APIRouter(
     prefix="/api/v1"

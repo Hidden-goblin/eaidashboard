@@ -14,12 +14,13 @@ from logging import getLogger
 if conf.MIGRATION_DONE:
     from app.database.redis.token_management import (get_token_date,
                                                      renew_token_date)
+    from app.database.postgre.pg_users import get_user
 else:
     from app.database.mongo.tokens import (get_token_date,
-                                           renew_token_date,
-                                           token_scope,
-                                           token_user)
-from app.database.mongo.users import get_user
+                                           renew_token_date)
+    from app.database.mongo.users import get_user
+
+from app.database.utils.token import token_scope, token_user
 from app.schema.authentication import TokenData
 
 log = getLogger(__name__)

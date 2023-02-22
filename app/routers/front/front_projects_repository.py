@@ -5,12 +5,17 @@ from typing import Optional
 from fastapi import APIRouter, File, UploadFile
 from starlette.requests import Request
 
+from app import conf
 from app.app_exception import MalformedCsvFile
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.mongo.bugs import get_bugs
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_bugs import get_bugs
+    from app.database.postgre.pg_projects import registered_projects
+else:
+    from app.database.mongo.bugs import get_bugs
+    from app.database.mongo.projects import registered_projects
 from app.database.postgre.testrepository import db_project_scenarios
-from app.database.mongo.projects import registered_projects
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
 from app.schema.mongo_enums import BugStatusEnum

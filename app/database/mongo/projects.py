@@ -13,11 +13,11 @@ from app.app_exception import (DuplicateArchivedVersion,
                                ProjectNotRegistered)
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
-from app.schema.project_schema import (Bugs,
-                                       RegisterVersion,
-                                       Statistics,
-                                       StatusEnum,
-                                       Version)
+from app.schema.project_schema import (RegisterVersion,
+                                       Statistics)
+from app.schema.status_enum import StatusEnum
+from app.schema.versions_schema import Version
+from app.schema.bugs_schema import Bugs
 from app.utils.project_alias import (contains,
                                      provide,
                                      register)

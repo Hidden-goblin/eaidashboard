@@ -8,7 +8,8 @@ from app.app_exception import VersionNotFound
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.versions import get_version_and_collection
-from app.schema.project_schema import Statistics, TicketType
+from app.schema.project_schema import Statistics
+from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import Ticket, ToBeTicket, UpdatedTicket
 from app.utils.project_alias import provide
 

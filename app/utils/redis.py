@@ -3,6 +3,8 @@
 
 import redis
 from redis.exceptions import ConnectionError
+
+import app.utils.redis
 from app.conf import redis_dict
 
 redis_pool = None
@@ -17,9 +19,9 @@ def redis_health():
 
 
 def redis_connection():
-    if redis_pool is None:
-        redis_pool = redis.ConnectionPool(**redis_dict, db=0)
+    if app.utils.redis.redis_pool is None:
+        app.utils.redis.redis_pool = redis.ConnectionPool(**redis_dict, db=0)
     
-    return redis.Redis(connection_pool=redis_pool)
+    return redis.Redis(connection_pool=app.utils.redis.redis_pool)
 
 

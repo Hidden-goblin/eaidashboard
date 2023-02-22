@@ -4,11 +4,15 @@ from typing import Any, List
 
 from fastapi import (APIRouter, HTTPException, Security, BackgroundTasks)
 
-import app.database.mongo.projects
+from app import conf
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
 from app.schema.project_schema import (ErrorMessage, Project, RegisterProject)
-from app.database.mongo.projects import (set_index, register_project)
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import (set_index, register_project, registered_projects)
+    pass
+else:
+    from app.database.mongo.projects import (set_index, register_project, registered_projects)
 
 router = APIRouter(
     prefix="/api/v1/settings"
@@ -53,4 +57,4 @@ async def post_register_projects(project: RegisterProject,
             description="""Register a new project. Only admin can do so."""
             )
 async def get_registered_projects():
-    return await app.database.mongo.projects.registered_projects()
+    return await registered_projects()

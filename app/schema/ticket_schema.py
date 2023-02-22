@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.schema.project_schema import TicketType
+from app.schema.status_enum import TicketType
 
 
 class Ticket(BaseModel):
@@ -23,8 +23,6 @@ class ToBeTicket(BaseModel):
     reference: str
     description: str
     status: str = TicketType.OPEN.value
-    created: datetime = datetime.now()
-    updated: datetime = datetime.now()
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
@@ -52,6 +50,18 @@ class UpdateTickets(BaseModel):
     blocked: Optional[int]
     in_progress: Optional[int]
     done: Optional[int]
+
+    def __getitem__(self, index):
+        return self.dict().get(index, None)
+
+
+class TicketVersion(BaseModel):
+    version: str
+    created: datetime
+    updated: datetime
+    started: Optional[datetime]
+    end_forecast: Optional[datetime]
+    status: str
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
