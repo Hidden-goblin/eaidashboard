@@ -47,6 +47,8 @@ class BugTicket(BaseModel):
     def __getitem__(self, index):
         return self.dict().get(index, None)
 
+class BugTicketFull(BugTicket):
+    internal_id: int
 
 class BugTicketResponse(BaseModel):
     internal_id: PyObjectId = Field(default_factory=PyObjectId)

@@ -10,7 +10,7 @@ from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, Updated
 from app.utils.project_alias import provide
 
 
-async def add_ticket(project_name, project_version, ticket: ToBeTicket):
+async def add_ticket(project_name, project_version, ticket: ToBeTicket) -> RegisterVersionResponse:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
@@ -28,7 +28,7 @@ async def add_ticket(project_name, project_version, ticket: ToBeTicket):
         return RegisterVersionResponse(inserted_id=row[0])
 
 
-async def get_ticket(project_name, project_version, reference):
+async def get_ticket(project_name, project_version, reference) -> Ticket:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute(
@@ -46,17 +46,18 @@ async def get_ticket(project_name, project_version, reference):
                                   f" version {project_version}")
         return Ticket(**row)
 
-async def get_tickets(project_name, project_version) -> List[Ticket]:
+
+async def get_tickets(project_name, project_version) -> List[EnrichedTicket]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         results = connection.execute("select tk.status,"
-                                    " tk.reference,"
-                                    " tk.description,"
-                                    " tk.created,"
-                                    " tk.updated,"
-                                    " array_agg(cp.occurrence) as campaign_occurrences"
-                                    " from tickets as tk"
-                                    " join versions as ve on tk.current_version = ve.id"
+                                     " tk.reference,"
+                                     " tk.description,"
+                                     " tk.created,"
+                                     " tk.updated,"
+                                     " array_agg(cp.occurrence) as campaign_occurrences"
+                                     " from tickets as tk"
+                                     " join versions as ve on tk.current_version = ve.id"
                                     " join projects as pj on pj.id = ve.project_id"
                                     " join campaign_tickets as cp_tk on cp_tk.ticket_id = tk.id"
                                     " join campaigns as cp on cp.id = cp_tk.campaign_id"
@@ -69,7 +70,7 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
 
 
 async def get_tickets_by_reference(project_name: str, project_version: str,
-                                   references: Union[List, set]):
+                                   references: Union[List, set]) -> List[Ticket]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         _references = references if isinstance(references, list) else list(references)
@@ -130,7 +131,9 @@ async def move_tickets(project_name,
             _ticket_id.append(ticket_id[0])
             connection.commit()
     return await _update_ticket_version(_ticket_id, target_version_id)
-async def _update_ticket_version(ticket_ids, target_version_id):
+
+
+async def _update_ticket_version(ticket_ids, target_version_id) -> List[str]:
     _success = []
     _fail = []
     with pool.connection() as connection:
