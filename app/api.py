@@ -17,7 +17,6 @@ def check_transition():
                            "from operations "
                            "where type='migration_redis' order by op_order DESC;")
         row = res.fetchone()
-        print(row)
         if row is not None and row[0] == 7:
             conf.MIGRATION_DONE = True
 

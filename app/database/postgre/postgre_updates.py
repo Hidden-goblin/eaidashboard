@@ -57,7 +57,7 @@ POSTGRE_UPDATES = [
     {
         "request": """create table if not exists campaign_ticket_scenarios (
         id serial primary key,
-        campaign_ticket_id int not null,
+        campaign_id int not null,
         scenario_id int not null,
         status text);
         """,
@@ -65,8 +65,8 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table campaign_ticket_scenarios 
-        add constraint unique_campaign_ticket_scenario unique (campaign_ticket_id, scenario_id),
-        add constraint campaign_ticket_id_fkey foreign key (campaign_ticket_id) references campaign_tickets(id) match full, 
+        add constraint unique_campaign_ticket_scenario unique (campaign_id, scenario_id),
+        add constraint campaign_ticket_id_fkey foreign key (campaign_id) references campaign_tickets(id) match full, 
         add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
         "description": "Add constraints to campaign_ticket_scenarios"
     },

@@ -39,7 +39,6 @@ async def migrate_redis(user: Any = Security(authorize_user, scopes=["admin"])):
     users = collection.find({})
     with pool.connection() as conn:
         for user in users:
-            print(user["password"])
             conn.execute("insert into users (username, password, scopes) "
                          "values (%s, %s, %s) "
                          "on conflict do nothing;",

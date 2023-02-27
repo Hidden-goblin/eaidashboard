@@ -1,6 +1,7 @@
 @startuml
 'https://plantuml.com/sequence-diagram
 
+'TODO check the move sequence as there an issue on campaign content
 actor User
 participant API
 database MONGO

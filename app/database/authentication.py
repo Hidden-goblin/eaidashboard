@@ -27,7 +27,6 @@ def authenticate_user(username, password):
         return None, []
 
 def create_access_token(data: dict):
-    print(conf.MIGRATION_DONE)
     to_encode = data.copy()
     if not register_connection(data):
         generate_keys()

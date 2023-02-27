@@ -1,10 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import json
-from datetime import datetime, timezone
 
-import redis
-from app.conf import (redis_dict, config)
+from app.conf import config
 from app.utils.redis import redis_connection
 
 EXPIRE_LIMIT = 60 * int(config['TIMEDELTA'])
@@ -27,5 +25,5 @@ def register_connection(username):
     return count
 
 def revoke(username):
-    connection = redis.Redis(**redis_dict, db=0)
+    connection = redis_connection()
     connection.delete(f"{username}:token")

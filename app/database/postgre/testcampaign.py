@@ -5,12 +5,17 @@ from typing import List
 from psycopg.rows import class_row, dict_row, tuple_row
 
 from app.app_exception import CampaignNotFound, NonUniqueError, ScenarioNotFound, TicketNotFound
+from app.conf import MIGRATION_DONE
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
 from app.database.postgre.testrepository import db_get_scenarios_id
-from app.database.mongo.tickets import get_ticket, get_tickets_by_reference
+if MIGRATION_DONE:
+    from app.database.postgre.pg_tickets import (get_ticket, get_tickets_by_reference)
+else:
+    from app.database.mongo.tickets import get_ticket, get_tickets_by_reference
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, Scenarios, \
+from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioCampaign, ScenarioInternal, \
+    Scenarios, \
     TicketScenario, \
     TicketScenarioCampaign
 from app.utils.pgdb import pool
@@ -28,8 +33,8 @@ async def fill_campaign(project_name: str,
                                                 content.ticket_reference)
     if isinstance(content.scenarios, list):
         scenarios = content.scenarios
-    elif isinstance(content.scenarios, dict):
-        scenarios = list(content.scenarios)
+    elif isinstance(content.scenarios, ScenarioCampaign):
+        scenarios = [content.scenarios]
     else:
         return
 
@@ -50,9 +55,9 @@ async def fill_campaign(project_name: str,
                 break
 
             result = connection.execute("insert into campaign_ticket_scenarios "
-                                        "(campaign_ticket_id, scenario_id,status) "
+                                        "(campaign_id, scenario_id,status) "
                                         "values (%s, %s, %s) "
-                                        "on conflict (campaign_ticket_id, scenario_id) "
+                                        "on conflict (campaign_id, scenario_id) "
                                         "do nothing;",
                                         (campaign_ticket_id, scenario_id[0],
                                          CampaignStatusEnum.recorded))
@@ -91,23 +96,19 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
     campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        # Select all sql data related to the campaign
-        result = connection.execute("select ct.ticket_reference as reference, "
-                                    "ct.id as campaign_ticket_id "
-                                    "from campaign_tickets as ct "
-                                    "where ct.campaign_id = %s "
-                                    "order by ct.ticket_reference desc;",
-                                    (campaign_id[0],))
+
         # Prepare the result
-        # camp = {"project": project_name,
-        #         "version": version,
-        #         "occurrence": occurrence,
-        #         "status": campaign_id[1],
-        #         "tickets": []}
         camp = CampaignFull(project_name=project_name,
                             version= version,
                             occurrence=int(occurrence),
                             status=campaign_id[1])
+        # Select all sql data related to the campaign
+        result = connection.execute("select ct.ticket_reference as reference, "
+                                    "ct.id as campaign_id "
+                                    "from campaign_tickets as ct "
+                                    "where ct.campaign_id = %s "
+                                    "order by ct.ticket_reference desc;",
+                                    (campaign_id[0],))
         # Accumulators
         tickets = set()
         current_ticket = None
@@ -120,13 +121,14 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
                 # current_ticket = {"reference": row['reference'],
                 #                   "summary": None,
                 #                   "scenarios": db_get_campaign_scenarios(
-                #                       row["campaign_ticket_id"])}
+                #                       row["campaign_id"])}
                 current_ticket = TicketScenario(reference=row['reference'],
                                                 summary="",
                                                 scenarios= db_get_campaign_scenarios(
-                                      row["campaign_ticket_id"]))
+                                      row["campaign_id"]))
         # Add the last ticket
-        camp.tickets.append(current_ticket)
+        if current_ticket is not None:
+            camp.tickets.append(current_ticket)
 
         # Retrieve data from mongo
         tickets_data = {tick["reference"]: tick["description"]
@@ -134,12 +136,12 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
 
         # Update the tickets with their summary
         for tick in camp.tickets:
-            if tick:
+            if tick and tickets_data[tick["reference"]]:
                 tick.summary = tickets_data[tick["reference"]]
         return camp
 
 
-def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[Scenario]:
+def db_get_campaign_scenarios(campaign_id: int) -> List[Scenario]:
     """:return list of dict epic_id, feature_id, scenario_id, name, steps and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -148,12 +150,13 @@ def db_get_campaign_scenarios(campaign_ticket_id: int) -> List[Scenario]:
                                     " sc.scenario_id as scenario_id,"
                                     " sc.name as name,"
                                     " sc.steps as steps,"
-                                    " cts.status as status "
-                                    "from campaign_ticket_scenarios as cts "
-                                    "join scenarios as sc on sc.id = cts.scenario_id "
-                                    "join features as ft on sc.feature_id = ft.id "
-                                    "join epics as ep on ft.epic_id = ep.id "
-                                    "where cts.campaign_ticket_id = %s", (campaign_ticket_id,))
+                                    " cts.status as status"
+                                    " from campaign_ticket_scenarios as cts"
+                                    " join scenarios as sc on sc.id = cts.scenario_id"
+                                    " join features as ft on sc.feature_id = ft.id"
+                                    " join epics as ep on ft.epic_id = ep.id"
+                                    " join campaign_tickets as ct on ct.id = cts.campaign_ticket_id"
+                                    " where ct.campaign_id = %s;", (campaign_id,))
         return [Scenario(**item) for item in result.fetchall()]
 
 
@@ -205,7 +208,7 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     "ep.name as epic_id "
                                     "from campaign_tickets as ct "
                                     "inner join campaign_ticket_scenarios as cts "
-                                    " on ct.id = cts.campaign_ticket_id "
+                                    " on ct.id = cts.campaign_id "
                                     "inner join scenarios as sc "
                                     "   on sc.id = cts.scenario_id "
                                     "inner join features as ft "
@@ -234,7 +237,7 @@ async def db_get_campaign_ticket_scenario(project_name,
                                     "from campaign_ticket_scenarios as cts "
                                     "join scenarios as sc "
                                     "   on sc.id = cts.scenario_id "
-                                    "where cts.campaign_ticket_id = %s "
+                                    "where cts.campaign_id = %s "
                                     "and sc.scenario_id = %s",
                                     (campaign_ticket_id[0], scenario_id))
         return result.fetchone()
@@ -260,7 +263,7 @@ async def db_put_campaign_ticket_scenarios(project_name,
                                                     scenario.feature_name,
                                                     scenario.scenario_ids))
         connection.execute("insert into campaign_ticket_scenarios "
-                           "(campaign_ticket_id, scenario_id, status) "
+                           "(campaign_id, scenario_id, status) "
                            "SELECT %s, x, %s "
                            "FROM unnest(%s) x "
                            "on conflict do nothing;", (campaign_ticket_id[0],
@@ -281,7 +284,7 @@ async def db_delete_campaign_ticket_scenario(project_name,
     with pool.connection() as connection:
         connection.row_factory = dict_row
         connection.execute("delete from campaign_ticket_scenarios "
-                           "where campaign_ticket_id = %s "
+                           "where campaign_id = %s "
                            "and scenario_id = %s ",
                            (campaign_ticket_id[0],
                             scenario_internal_id))
@@ -300,7 +303,7 @@ async def db_set_campaign_ticket_scenario_status(project_name,
             "update campaign_ticket_scenarios as cts "
             "set status = %s "
             "from scenarios as sc "
-            "where cts.campaign_ticket_id = %s "
+            "where cts.campaign_id = %s "
             " and sc.scenario_id = %s "
             " and cts.scenario_id = sc.id "
             "returning sc.scenario_id as scenario_id, cts.status as status;",

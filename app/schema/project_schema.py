@@ -46,6 +46,7 @@ class RegisterVersion(BaseModel):
 
 class RegisterVersionResponse(BaseModel):
     inserted_id: int
+    acknowledged: bool = True
 
 
 class RegisterProject(BaseModel):

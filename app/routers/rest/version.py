@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import logging
 from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
@@ -124,8 +125,10 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
     try:
         return await get_ticket(project_name, version, reference)
     except VersionNotFound as pnr:
+        logging.getLogger("uvicorn.error").error(" ".join(pnr.args))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
+        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
 
 
@@ -169,4 +172,5 @@ async def update_one_ticket(project_name: str,
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
+        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception

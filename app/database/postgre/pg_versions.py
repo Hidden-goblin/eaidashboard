@@ -16,7 +16,8 @@ from app.utils.project_alias import contains, provide, register
 
 async def version_exists(project_name: str, version: str) -> bool:
     with pool.connection() as connection:
-        row = connection.execute("select id from version as ve "
+        row = connection.execute("select ve.id "
+                                 " from versions as ve "
                                  " join projects as pjt on pjt.id = ve.project_id "
                                  " where pjt.alias = %s "
                                  " and ve.version = %s;",
@@ -181,3 +182,9 @@ async def dashboard():
                        "alias": provide(project["name"]),
                        **version.dict()} for version in project_versions)
     return result
+
+
+async def get_version_and_collection(project_name, version):
+    # TODO remove when migration done
+    result = await version_exists(project_name, version)
+    return (version, result) or (None, None)
