@@ -68,15 +68,30 @@ async def db_get_bug(project_name: str,
                                  " from bugs as bg"
                                  " join projects as pj on pj.id = bg.project_id"
                                  " join versions as ve on ve.id = bg.version_id"
-                                 " where bg.id = %"
+                                 " where bg.id = %s"
                                  " and pj.alias = %s",
                                  (int(internal_id), provide(project_name))).fetchone()
     return BugTicketFull(**row)
 
 async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
-    pass
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        bug_ticket_dict = bug_ticket.dict()
+        to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys())
+        values = [val for val in bug_ticket_dict.values()]
+        values.append(internal_id)
+        row = connection.execute(f"update bugs"
+                                 f" set "
+                                 f" {to_set}"
+                                 f" where id = %s"
+                                 f" returning id;",
+                 values)
+        # TODO update versions data
+    return await db_get_bug(project_name, internal_id)
+        
 
 async def version_bugs(project_name, version, side_version=None):
+    # TODO to remove as it is a fake function
     pass
 
 
@@ -99,4 +114,5 @@ async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersio
              BugStatusEnum.open.value,
              bug_ticket.version,
              provide(project_name))).fetchone()
+        # TODO add an update version with the current data
         return RegisterVersionResponse(inserted_id=row[0])
