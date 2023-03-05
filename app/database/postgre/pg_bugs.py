@@ -4,6 +4,7 @@ from typing import Optional
 
 from psycopg.rows import dict_row, tuple_row
 
+from app.database.postgre.pg_versions import version_internal_id
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket, BugTicketFull
 from app.schema.project_schema import RegisterVersionResponse
@@ -76,17 +77,36 @@ async def db_get_bug(project_name: str,
 async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        bug_ticket_dict = bug_ticket.dict()
-        to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys())
-        values = [val for val in bug_ticket_dict.values()]
+        bug_ticket_dict = bug_ticket.to_dict()
+        current_bug = connection.execute("select criticality, status, version_id"
+                                         " from bugs where id = %s;",
+                                         (internal_id,)).fetchone()
+        if "status" in bug_ticket_dict.keys() or "criticality" in bug_ticket_dict.keys():
+            current_status_criticality = f"{current_bug['status']}_{current_bug['criticality']}"
+            to_be_status_criticality = (
+                f"{bug_ticket_dict['status'] if 'status' in bug_ticket_dict else current_bug['status']}"
+                f"_{bug_ticket_dict['criticality'] if 'criticality' in bug_ticket_dict else current_bug['criticality']}")
+            update_query = ("update versions"
+                            f" set {current_status_criticality} = {current_status_criticality} - 1,"
+                            f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
+                            f" where id = %s;")
+            up_version = connection.execute(update_query,
+                                            (current_bug["version_id"], ))
+        to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys() if key != "version")
+        values = [value for key, value in bug_ticket_dict.items() if key != "version"]
+        # TIPS: convert string version into internal id version
+        if "version" in bug_ticket_dict:
+            to_set = f"{to_set}, version_id = %s"
+            values.append(await version_internal_id(project_name, bug_ticket_dict["version"]))
+
         values.append(internal_id)
         row = connection.execute(f"update bugs"
                                  f" set "
                                  f" {to_set}"
                                  f" where id = %s"
                                  f" returning id;",
-                 values)
-        # TODO update versions data
+                                 values)
+
     return await db_get_bug(project_name, internal_id)
         
 
@@ -114,5 +134,12 @@ async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersio
              BugStatusEnum.open.value,
              bug_ticket.version,
              provide(project_name))).fetchone()
-        # TODO add an update version with the current data
+        update_query = (f"update versions as ve"
+                        f" set {bug_ticket.status}_{bug_ticket.criticality}"
+                        f" = {bug_ticket.status}_{bug_ticket.criticality} + 1"
+                        f" from projects as pj"
+                        f" where pj.alias = %s"
+                        f" and pj.id = ve.project_id"
+                        f" and ve.version = %s;")
+        connection.execute(update_query, (provide(project_name), bug_ticket.version))
         return RegisterVersionResponse(inserted_id=row[0])

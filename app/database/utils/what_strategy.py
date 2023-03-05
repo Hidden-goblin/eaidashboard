@@ -288,14 +288,15 @@ class ScenarioMap(WhatStrategy):
                 campaign_id = await retrieve_campaign_id(project_name, version, campaign_occurrence)
                 campaign_id = campaign_id[0]
                 result = connection.execute(
-                    "select ter.run_date, ter.scenario_id, ter.status, "
-                    "concat (ft.name,'--', ep.scenario_id) "
-                    "from test_scenario_results as ter "
-                    "join scenarios as ep on ep.id = ter.scenario_id "
-                    "join features as ft on ft.id =  ep.feature_id "
-                    "where ter.campaign_id = %s "
-                    "order by ter.run_date, ter.scenario_id;",
-                    (campaign_id,))
+                    "select ter.run_date, ter.scenario_id, ter.status,"
+                    " concat (ft.name,'--', ep.scenario_id)"
+                    " from test_scenario_results as ter"
+                    " join scenarios as ep on ep.id = ter.scenario_id"
+                    " join features as ft on ft.id =  ep.feature_id"
+                    " where ter.campaign_id = %s"
+                    " and ter.is_partial = %s"
+                    " order by ter.run_date, ter.scenario_id;",
+                    (campaign_id,True))
         return list(result.fetchall())
 
 

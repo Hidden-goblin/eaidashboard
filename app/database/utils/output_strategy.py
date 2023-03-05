@@ -83,8 +83,8 @@ class MapHtml(OutputStrategy):
         mapper = CategoricalColorMapper(palette=["red", "green", "gray"],
                                         factors=["failed", "passed", "skipped"])
         item: datetime
-        _dates_range = [item.strftime("%Y-%m-%dT%H:%M") for item in sorted(set(_json["run_date"]))]
-        _dates = [item.strftime("%Y-%m-%dT%H:%M") for item in _json["run_date"]]
+        _dates_range = [item.strftime("%Y-%m-%dT%H:%M:%S") for item in sorted(set(_json["run_date"]))]
+        _dates = [item.strftime("%Y-%m-%dT%H:%M:%S") for item in _json["run_date"]]
         _json["run_date"] = _dates
         _elements_names = sorted(list(set(_json["element_name"])))
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.html"
@@ -94,6 +94,8 @@ class MapHtml(OutputStrategy):
                    x_range=_dates_range,
                    y_range=_elements_names,
                    x_axis_location="above",
+                   width=800,
+                   height=800,
                    tools=TOOLS,
                    toolbar_location='below',
                    tooltips=[('Test: ', '@element_name'),

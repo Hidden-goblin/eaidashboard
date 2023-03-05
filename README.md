@@ -1,6 +1,6 @@
 # EAIDASHBOARD
 
-Simple test campaign dashboard using FastApi, Jinja2 and Mongo db. 
+Simple test campaign dashboard using FastApi, Jinja2 and redis and Postgresql database. 
 
 Docker image accessible on [dockerhub](https://hub.docker.com/r/hiddengob/eaidashboard)
 
@@ -25,6 +25,8 @@ PG_PORT=<the postgres db port>
 PG_USR=<the postgres db user>
 PG_PWD=<the postgres db user password>
 PG_DB=<the postgres db name>
+REDIS_URL=<the redis db url>
+REDIS_PORT=<the redis db port>
 SESSION_KEY=<the session key>
 ```
 
@@ -35,11 +37,26 @@ By default, an admin is created. Its name is `admin@admin.fr` and its password i
 Openapi json description http://localhost:8081/openapi.json
 Swagger interface http://localhost:8081/docs
 
+## Migrate from 2.* version to 3.*
+
+You must use the 3.0 version to migrate data from mongodb to postgresql.
+
+Ensure you have set a redis database. 
+
+Use the migration endpoint `GET /api/v1/admin/redis_migration`. The migration process must be launch by an admin.
+
+After the migration is done, restart the application to be sure not to use the mongodb connector. You can even shutdown the mongodb database.
+
+
 # Version history
 
-## Current: 2.9
+## Current: 3.0
 
 ## History
+- 3.0
+  - Migrate all mongodb data to postgresql
+  - Add Redis for transient data and ttl data
+  - Add migration endpoint (Will disappear in next version)
 - 2.9
   - Add Test Plan, TER and evidence generation
   - Fix test result import

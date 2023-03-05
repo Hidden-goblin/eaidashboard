@@ -3,6 +3,7 @@
 from typing import List, Union
 
 from app.app_exception import VersionNotFound
+from app.database.postgre.pg_versions import update_version_ticket_stats
 from app.schema.project_schema import RegisterVersionResponse
 from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
@@ -47,26 +48,27 @@ async def get_ticket(project_name, project_version, reference) -> Ticket:
         return Ticket(**row)
 
 
-async def get_tickets(project_name, project_version) -> List[EnrichedTicket]:
+async def get_tickets(project_name, project_version) -> List[Ticket]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         results = connection.execute("select tk.status,"
                                      " tk.reference,"
                                      " tk.description,"
                                      " tk.created,"
-                                     " tk.updated,"
-                                     " array_agg(cp.occurrence) as campaign_occurrences"
+                                     " tk.updated"
+                                     # " array_agg(cp.occurrence) as campaign_occurrences"
                                      " from tickets as tk"
                                      " join versions as ve on tk.current_version = ve.id"
                                     " join projects as pj on pj.id = ve.project_id"
-                                    " join campaign_tickets as cp_tk on cp_tk.ticket_id = tk.id"
-                                    " join campaigns as cp on cp.id = cp_tk.campaign_id"
+                                    # " join campaign_tickets as cp_tk on cp_tk.ticket_id = tk.id"
+                                    # " join campaigns as cp on cp.id = cp_tk.campaign_id"
                                     " where pj.alias = %s"
                                     " and ve.version = %s"
-                                    " group by tk.reference, tk.description, tk.status, tk.created,"
-                                    " tk.updated;",
+                                    # " group by tk.reference, tk.description, tk.status, tk.created,"
+                                    # " tk.updated;"
+                                     ,
                                     (provide(project_name), project_version))
-        return [EnrichedTicket(**result) for result in results.fetchall()]
+        return [Ticket(**result) for result in results.fetchall()]
 
 
 async def get_tickets_by_reference(project_name: str, project_version: str,
@@ -158,7 +160,13 @@ async def _update_ticket_version(ticket_ids, target_version_id) -> List[str]:
 async def update_ticket(project_name: str,
                         project_version: str,
                         ticket_reference: str,
-                        updated_ticket: UpdatedTicket)->RegisterVersionResponse:
+                        updated_ticket: UpdatedTicket) -> RegisterVersionResponse:
+    # SPEC: update the version ticket count status where ticket status is updated
+    if updated_ticket.status is not None:
+        await update_version_ticket_stats(project_name,
+                                          project_version,
+                                          ticket_reference,
+                                          updated_ticket.status)
     # SPEC: update the values first then move the ticket to another version
     query = ("update tickets tk"
              " set")
@@ -185,12 +193,12 @@ async def update_ticket(project_name: str,
                 f" version {project_version}")
         if updated_ticket.version is None:
             return RegisterVersionResponse(inserted_id = row["id"])
-        else:
-            result = await move_tickets(project_name,
-                                  project_version,
-                                  updated_ticket.version,
-                                  ticket_reference)
-            return RegisterVersionResponse(inserted_id = ', '.join(result))
+
+        result = await move_tickets(project_name,
+                              project_version,
+                              updated_ticket.version,
+                              ticket_reference)
+        return RegisterVersionResponse(inserted_id = ', '.join(result))
 
 async def update_values(project_name, version):
     # Fake process

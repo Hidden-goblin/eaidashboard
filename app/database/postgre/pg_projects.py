@@ -3,7 +3,7 @@
 from typing import (List, Optional)
 
 from psycopg import (DatabaseError, IntegrityError)
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid)
 from app.database.mongo.db_settings import DashCollection
@@ -32,6 +32,7 @@ async def register_project(project_name: str):
 
 async def registered_projects():
     with pool.connection() as connection:
+        connection.row_factory = tuple_row
         return [item[0] for item in connection.execute("select name from projects;").fetchall()]
 
 

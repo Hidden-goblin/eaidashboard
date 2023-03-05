@@ -151,7 +151,7 @@ POSTGRE_UPDATES = [
         "request": """create table if not exists versions (
         id serial primary key,
         project_id int not null,
-        version varchar (50) not null),
+        version varchar (50) not null,
         created timestamp not null default CURRENT_TIMESTAMP,
         updated timestamp not null default CURRENT_TIMESTAMP,
         started timestamp,
@@ -167,7 +167,7 @@ POSTGRE_UPDATES = [
         open_minor int default 0,
         closed_blocking int default 0,
         closed_major int default 0,
-        closed_minor int default 0;
+        closed_minor int default 0);
         """,
         "description": "Create table versions"
     },
@@ -246,5 +246,12 @@ POSTGRE_UPDATES = [
         add constraint bugs_version_id_fk foreign key (version_id) references versions(id) match full,
         add constraint unique_title_project_id unique (project_id, version_id, title);""",
         "description": "Add fk and unique constraint on bugs"
+    },
+    {
+        "request": """alter table campaign_ticket_scenarios
+        rename column campaign_id 
+         to campaign_ticket_id;
+        """,
+        "description": "Rename campaign_id to campaign_ticket_id in campaign_ticket_scenarios"
     }
 ]

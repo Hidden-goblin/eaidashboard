@@ -21,7 +21,7 @@ from app.database.mongo.versions import get_version_and_collection
 from app.schema.mongo_enums import (BugCriticalityEnum, BugStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.status_enum import TicketType
-from app.schema.bugs_schema import BugTicket, BugTicketResponse, UpdateBugTicket
+from app.schema.bugs_schema import BugTicket, BugTicketFull, BugTicketResponse, UpdateBugTicket
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -30,7 +30,7 @@ router = APIRouter(
 
 @router.get("/{project_name}/bugs",
             tags=["Bug"],
-            response_model=List[BugTicketResponse]
+            response_model=List[BugTicketResponse|BugTicketFull]
             )
 async def get_bugs(project_name: str,
                    background_task: BackgroundTasks,
@@ -53,11 +53,12 @@ async def get_bugs_for_version(project_name: str,
                                background_task: BackgroundTasks,
                                status: Optional[BugStatusEnum] = None,
                                criticality: Optional[BugCriticalityEnum] = None):
-    _version, __ = await get_version_and_collection(project_name, version)
-    if not _version:
-        raise HTTPException(404,
-                            detail=f"Version {version} is not found for project {project_name}")
-    background_task.add_task(version_bugs, project_name, version)
+    if not conf.MIGRATION_DONE:
+        _version, __ = await get_version_and_collection(project_name, version)
+        if not _version:
+            raise HTTPException(404,
+                                detail=f"Version {version} is not found for project {project_name}")
+        background_task.add_task(version_bugs, project_name, version)
     return await db_g_bugs(project_name, status, criticality, version)
 
 

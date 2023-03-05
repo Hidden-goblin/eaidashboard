@@ -11,6 +11,8 @@ from app.conf import config
 from app.database.utils.password_management import generate_keys
 from app.utils.pgdb import pool
 
+init_postgres()
+update_postgres()
 def check_transition():
     with pool.connection() as conn:
         res = conn.execute("select op_order, content "
@@ -41,7 +43,7 @@ Eaidashboard is a simple api and front to monitor test activities.
 """
 app = FastAPI(title="Eaidashboard",
               description=description,
-              version="2.9",
+              version="3.0",
               license_info={
                   "name": "GNU GPL v3",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
@@ -49,8 +51,7 @@ app = FastAPI(title="Eaidashboard",
               openapi_tags=DESCRIPTION,
               docs_url=None)
 
-init_postgres()
-update_postgres()
+
 if not conf.MIGRATION_DONE:
     update_mongodb()
 

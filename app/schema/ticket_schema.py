@@ -23,6 +23,8 @@ class ToBeTicket(BaseModel):
     reference: str
     description: str
     status: str = TicketType.OPEN.value
+    created: datetime = datetime.now()
+    updated: datetime = datetime.now()
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
