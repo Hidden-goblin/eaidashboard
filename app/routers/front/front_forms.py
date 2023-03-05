@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from starlette.requests import Request
 
+from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
 
@@ -13,16 +14,19 @@ router = APIRouter(prefix="/front/v1/forms")
             tags=["Front - Repository"],
             include_in_schema=False)
 async def get_import_repository_form(request: Request):
-    if is_updatable(request, ("admin", "user")):
-        return templates.TemplateResponse("forms/import_repository_from_csv.html",
-                                          {"request": request,
-                                           "project_name": request.headers.get("HX-PROJECT")})
-    else:
-        return templates.TemplateResponse("error_message.html",
-                                          {
-                                              "request": request,
-                                              "highlight": "You are not authorized",
-                                              "sequel": " to perform this action.",
-                                              "advise": "Try to log again"
-                                          },
-                                          headers={"HX-Retarget": "#messageBox"})
+    try:
+        if is_updatable(request, ("admin", "user")):
+            return templates.TemplateResponse("forms/import_repository_from_csv.html",
+                                              {"request": request,
+                                               "project_name": request.headers.get("HX-PROJECT")})
+        else:
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again"
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+    except Exception as exception:
+        return front_error_message(templates, request, exception)

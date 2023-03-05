@@ -50,9 +50,12 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.0-1
+## Current: 3.1
 
 ## History
+- 3.1
+  - Technical version remove mongodb
+  - Fix some bugs
 - 3.0-1
   - Fix issue where database renaming does not work
 - 3.0

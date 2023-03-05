@@ -6,12 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Security
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app import conf
 from app.database.authentication import authenticate_user, create_access_token
-if conf.MIGRATION_DONE:
-    from app.database.redis.token_management import revoke
-else:
-    from app.database.mongo.tokens import revoke
+from app.database.redis.token_management import revoke
+
 from app.database.authorization import authorize_user
 
 router = APIRouter(
@@ -24,7 +21,7 @@ router = APIRouter(
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     sub, scopes = authenticate_user(form_data.username, form_data.password)
     if sub is None:
-        return HTTPException(401, detail="Unrecognized credentials")
+        raise HTTPException(401, detail="Unrecognized credentials")
     access_token = create_access_token(
         data={"sub": sub,
               "scopes": scopes})

@@ -8,11 +8,9 @@ from datetime import datetime
 from math import pi
 
 from bokeh import resources
-from bokeh.embed import file_html
 from bokeh.io import output_file, save
 from bokeh.models import CategoricalColorMapper, ColumnDataSource
 from bokeh.plotting import figure
-from bokeh.resources import CDN
 
 from app.conf import BASE_DIR
 
@@ -37,13 +35,14 @@ class StakedHtml(OutputStrategy):
         )
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.html"
         output_file(filename=filename, title="Stacked status over time")
-        p = figure(y_range=(0,max_y), x_axis_type="datetime")
+        p = figure(y_range=(0, max_y), x_axis_type="datetime", width=800,
+                   height=800 )
         p.varea_stack(stackers=["failed", "skipped", "passed"],
                       x="run_date",
                       color=["red", "gray", "green"],
                       legend_label=["failed", "skipped", "passed"],
                       source=ColumnDataSource(_json))
-        save(p,resources=resources.INLINE)
+        save(p, resources=resources.INLINE)
         return filename.name
 
 class StakedCsv(OutputStrategy):

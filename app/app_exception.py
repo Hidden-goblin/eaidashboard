@@ -1,5 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from app.utils.log_management import log_error
+
 
 class InsertionError(Exception):
     pass
@@ -89,3 +91,16 @@ class MalformedCsvFile(Exception):
 class DuplicateTestResults(Exception):
     """To be raised when an existing test campaign result is already in database"""
     pass
+
+def front_error_message(templates, request, exception):
+    log_error(repr(exception))
+    return templates.TemplateResponse(
+        "error_message.html",
+        {
+            "request": request,
+            "highlight": "The server could not compute data",
+            "sequel": " to perform this action.",
+            "advise": f"Try to reload the page. \n Error message is {repr(exception)}",
+        },
+        headers={"HX-Retarget": "#messageBox"}
+    )

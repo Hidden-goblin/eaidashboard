@@ -12,10 +12,6 @@ from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
-async def compute_bugs(project_name):
-    pass
-
-
 async def get_bugs(project_name: str,
                    status: Optional[BugStatusEnum] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
@@ -86,12 +82,13 @@ async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket)
             to_be_status_criticality = (
                 f"{bug_ticket_dict['status'] if 'status' in bug_ticket_dict else current_bug['status']}"
                 f"_{bug_ticket_dict['criticality'] if 'criticality' in bug_ticket_dict else current_bug['criticality']}")
-            update_query = ("update versions"
-                            f" set {current_status_criticality} = {current_status_criticality} - 1,"
-                            f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
-                            f" where id = %s;")
-            up_version = connection.execute(update_query,
-                                            (current_bug["version_id"], ))
+            if current_status_criticality != to_be_status_criticality:
+                update_query = ("update versions"
+                                f" set {current_status_criticality} = {current_status_criticality} - 1,"
+                                f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
+                                f" where id = %s;")
+                up_version = connection.execute(update_query,
+                                                (current_bug["version_id"], ))
         to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys() if key != "version")
         values = [value for key, value in bug_ticket_dict.items() if key != "version"]
         # TIPS: convert string version into internal id version
@@ -108,11 +105,6 @@ async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket)
                                  values)
 
     return await db_get_bug(project_name, internal_id)
-        
-
-async def version_bugs(project_name, version, side_version=None):
-    # TODO to remove as it is a fake function
-    pass
 
 
 async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersionResponse:

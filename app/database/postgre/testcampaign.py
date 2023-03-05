@@ -2,29 +2,31 @@
 # -*- Author: E.Aivayan -*-
 from typing import List
 
-from psycopg.rows import class_row, dict_row, tuple_row
+from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import CampaignNotFound, NonUniqueError, ScenarioNotFound, TicketNotFound
-from app.conf import MIGRATION_DONE
+from app.app_exception import CampaignNotFound, ScenarioNotFound, TicketNotFound
+
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
 from app.database.postgre.testrepository import db_get_scenarios_id
-if MIGRATION_DONE:
-    from app.database.postgre.pg_tickets import (get_ticket, get_tickets_by_reference)
-else:
-    from app.database.mongo.tickets import get_ticket, get_tickets_by_reference
+from app.database.postgre.pg_tickets import (get_ticket,
+                                             get_tickets_by_reference)
+
 from app.database.utils.ticket_management import add_ticket_to_campaign
-from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioCampaign, ScenarioInternal, \
-    Scenarios, \
-    TicketScenario, \
-    TicketScenarioCampaign
+from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
+from app.schema.campaign_schema import (CampaignFull,
+                                        Scenario,
+                                        ScenarioCampaign,
+                                        ScenarioInternal,
+                                        Scenarios,
+                                        TicketScenario,
+                                        TicketScenarioCampaign)
 from app.utils.pgdb import pool
 
 
 async def fill_campaign(project_name: str,
-                  version: str,
-                  occurrence: str,
-                  content: TicketScenarioCampaign):
+                        version: str,
+                        occurrence: str,
+                        content: TicketScenarioCampaign):
     """Attach ticket to campaign
     Attach scenarios to campaign"""
     campaign_ticket_id = await add_ticket_to_campaign(project_name,
@@ -119,10 +121,6 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
                 if current_ticket:
                     camp.tickets.append(current_ticket)
                 tickets.add(row['reference'])
-                # current_ticket = {"reference": row['reference'],
-                #                   "summary": None,
-                #                   "scenarios": db_get_campaign_scenarios(
-                #                       row["campaign_id"])}
                 current_ticket = TicketScenario(reference=row['reference'],
                                                 summary="",
                                                 scenarios= await db_get_campaign_ticket_scenarios(

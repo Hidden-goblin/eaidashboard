@@ -5,12 +5,9 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import VersionNotFound
-from app.conf import MIGRATION_DONE
 
-if MIGRATION_DONE:
-    from app.database.postgre.pg_versions import get_version_and_collection
-else:
-    from app.database.mongo.versions import get_version_and_collection
+from app.database.postgre.pg_versions import get_version_and_collection
+
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
