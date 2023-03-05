@@ -6,7 +6,8 @@ from psycopg import (DatabaseError, IntegrityError)
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid)
-from app.database.mongo.db_settings import DashCollection
+from app.schema.project_enum import DashCollection
+
 from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
 from app.utils.pgdb import pool
 from app.utils.project_alias import contains, provide, register

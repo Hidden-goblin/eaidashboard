@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 
 from fastapi import (APIRouter,
                      HTTPException,
@@ -16,21 +16,22 @@ from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from app import conf
-from app.app_exception import DuplicateTestResults, IncorrectFieldsRequest, MalformedCsvFile, \
-    VersionNotFound
+from app.app_exception import (DuplicateTestResults,
+                               IncorrectFieldsRequest,
+                               MalformedCsvFile,
+                               VersionNotFound)
 from app.database.authorization import authorize_user
-if conf.MIGRATION_DONE:
-    from app.database.postgre.pg_versions import version_exists
-else:
-    from app.database.mongo.versions import version_exists
+from app.database.postgre.pg_versions import version_exists
+
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.database.utils.test_result_management import insert_result
 from app.schema.project_schema import ErrorMessage
-from app.database.postgre.pg_test_results import insert_result as pg_insert_result, TestResults
-from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, \
-    RestTestResultRenderingEnum
+from app.database.postgre.pg_test_results import (insert_result as pg_insert_result,
+                                                  TestResults)
+from app.schema.rest_enum import (RestTestResultCategoryEnum,
+                                  RestTestResultHeaderEnum,
+                                  RestTestResultRenderingEnum)
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -89,6 +90,8 @@ async def rest_import_test_results(project_name: str,
         raise HTTPException(400, detail=" ".join(mcf.args)) from mcf
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
+    except Exception as exp:
+        raise HTTPException(500, repr(exp))
 
 
 @router.get("/{project_name}/testResults",
@@ -120,4 +123,6 @@ async def rest_export_results(project_name: str,
             return f"{request.base_url}static/{result}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
+    except Exception as exp:
+        raise HTTPException(500, repr(exp))
 

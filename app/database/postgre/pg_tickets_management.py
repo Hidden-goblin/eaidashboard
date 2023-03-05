@@ -3,12 +3,8 @@
 
 from psycopg.rows import tuple_row
 
-from app.conf import MIGRATION_DONE
+from app.database.postgre.pg_tickets import get_tickets
 
-if MIGRATION_DONE:
-    from app.database.postgre.pg_tickets import get_tickets
-else:
-    from app.database.mongo.tickets import get_tickets
 from app.utils.pgdb import pool
 
 async def get_campaign_ids_for_ticket(project_name, version, ticket_reference):

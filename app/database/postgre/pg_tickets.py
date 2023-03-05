@@ -7,7 +7,7 @@ from app.database.postgre.pg_versions import update_version_ticket_stats
 from app.schema.project_schema import RegisterVersionResponse
 from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
-from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
+from app.schema.ticket_schema import (Ticket, ToBeTicket, UpdatedTicket)
 from app.utils.project_alias import provide
 
 
@@ -56,17 +56,11 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
                                      " tk.description,"
                                      " tk.created,"
                                      " tk.updated"
-                                     # " array_agg(cp.occurrence) as campaign_occurrences"
                                      " from tickets as tk"
                                      " join versions as ve on tk.current_version = ve.id"
                                     " join projects as pj on pj.id = ve.project_id"
-                                    # " join campaign_tickets as cp_tk on cp_tk.ticket_id = tk.id"
-                                    # " join campaigns as cp on cp.id = cp_tk.campaign_id"
                                     " where pj.alias = %s"
-                                    " and ve.version = %s"
-                                    # " group by tk.reference, tk.description, tk.status, tk.created,"
-                                    # " tk.updated;"
-                                     ,
+                                    " and ve.version = %s",
                                     (provide(project_name), project_version))
         return [Ticket(**result) for result in results.fetchall()]
 

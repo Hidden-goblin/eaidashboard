@@ -7,22 +7,14 @@ from fastapi import APIRouter, HTTPException, Security
 from pymongo.errors import DuplicateKeyError
 from starlette.background import BackgroundTasks
 
-from app import conf
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
 
-if conf.MIGRATION_DONE:
-    from app.database.postgre.pg_tickets import (add_ticket,
+from app.database.postgre.pg_tickets import (add_ticket,
                                                  get_ticket,
                                                  get_tickets,
                                                  update_ticket,
                                                  update_values)
-else:
-    from app.database.mongo.tickets import (add_ticket,
-                                            get_ticket,
-                                            get_tickets,
-                                            update_ticket,
-                                            update_values)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)
@@ -31,30 +23,6 @@ from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, Updated
 router = APIRouter(
     prefix="/api/v1"
 )
-
-
-# @router.put("/projects/{project_name}/{version}/tickets/{ticket_type}",
-#             response_model=Version,
-#             responses={
-#                 400: {"model": ErrorMessage,
-#                       "description": "Where move is not correct"},
-#                 404: {"model": ErrorMessage,
-#                       "description": "Project name is not registered (ignore case)"}
-#             },
-#             tags=["Versions"],
-#             description="Move one ticket type to other ticket types. All value are positive"
-#             )
-# async def put_tickets(project_name: str,
-#                       version: str,
-#                       ticket_type: TicketType,
-#                       ticket_dispatch: Ticket,
-#                       user: Any = Security(authorize_user, scopes=["admin", "user"])):
-#     try:
-#         return move_tickets(project_name, version, ticket_type, ticket_dispatch)
-#     except ProjectNotRegistered as pnr:
-#         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-#     except IncorrectTicketCount as itc:
-#         raise HTTPException(400, detail=" ".join(itc.args)) from itc
 
 
 @router.post("/projects/{project_name}/versions/{version}/tickets/",
@@ -172,5 +140,5 @@ async def update_one_ticket(project_name: str,
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
-        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
+        logging.getLogger("uvicorn.error").error(repr(exception))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception

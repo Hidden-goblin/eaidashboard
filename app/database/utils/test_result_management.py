@@ -6,15 +6,13 @@ from io import StringIO
 from typing import List, Tuple
 
 from app.app_exception import IncorrectFieldsRequest, MalformedCsvFile
-from app.conf import MIGRATION_DONE
 
-if MIGRATION_DONE:
-    from app.database.redis.rs_test_result import mg_insert_test_result
-else:
-    from app.database.mongo.mg_test_results import mg_insert_test_result
+from app.database.redis.rs_test_result import mg_insert_test_result
+
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign_id
 from app.database.postgre.pg_test_results import check_result_uniqueness
 from app.database.postgre.testcampaign import db_get_campaign_scenarios
+from app.schema.campaign_schema import Scenario
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
 
 
@@ -71,7 +69,7 @@ def __convert_scenario_status_to_three_state(scenarios):
 
 async def register_manual_campaign_result(project_name: str,
                                    version: str,
-                                   campaign_occurrence: str) -> Tuple[str, int, List[dict]]:
+                                   campaign_occurrence: str) -> Tuple[str, int, List[Scenario]]:
     """:return test_result_uuid, campaign_id, list of scenarios"""
     campaign_id = await retrieve_campaign_id(project_name,
                                              version,

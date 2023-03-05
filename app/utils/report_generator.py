@@ -4,12 +4,10 @@ import uuid
 
 from docx import Document
 
-from app.conf import BASE_DIR, MIGRATION_DONE
+from app.conf import BASE_DIR
 
-if MIGRATION_DONE:
-    from app.database.postgre.pg_bugs import get_bugs
-else:
-    from app.database.mongo.bugs import get_bugs
+from app.database.postgre.pg_bugs import get_bugs
+
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
 from app.schema.campaign_schema import CampaignFull, TicketScenario
