@@ -57,7 +57,7 @@ POSTGRE_UPDATES = [
     {
         "request": """create table if not exists campaign_ticket_scenarios (
         id serial primary key,
-        campaign_ticket_id int not null,
+        campaign_id int not null,
         scenario_id int not null,
         status text);
         """,
@@ -65,8 +65,8 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table campaign_ticket_scenarios 
-        add constraint unique_campaign_ticket_scenario unique (campaign_ticket_id, scenario_id),
-        add constraint campaign_ticket_id_fkey foreign key (campaign_ticket_id) references campaign_tickets(id) match full, 
+        add constraint unique_campaign_ticket_scenario unique (campaign_id, scenario_id),
+        add constraint campaign_ticket_id_fkey foreign key (campaign_id) references campaign_tickets(id) match full, 
         add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
         "description": "Add constraints to campaign_ticket_scenarios"
     },
@@ -132,7 +132,126 @@ POSTGRE_UPDATES = [
         add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
         add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full;""",
         "description": "Add foreign key constraints on test_epic_results table."
+    },
+    {
+        "request": """create table if not exists projects (
+        id serial primary key,
+        name varchar (64) not null,
+        alias varchar (64) not null);
+        """,
+        "description": "Create table projects"
+    },
+    {
+        "request": """alter table projects
+         add constraint unique_name unique (name); 
+         """,
+        "description": "Add uniqueness constraint on projects"
+    },
+    {
+        "request": """create table if not exists versions (
+        id serial primary key,
+        project_id int not null,
+        version varchar (50) not null,
+        created timestamp not null default CURRENT_TIMESTAMP,
+        updated timestamp not null default CURRENT_TIMESTAMP,
+        started timestamp,
+        end_forecast timestamp,
+        status varchar(50) default 'recorded',
+        open int default 0,
+        cancelled int default 0,
+        blocked int default 0,
+        in_progress int default 0,
+        done int default 0,
+        open_blocking int default 0,
+        open_major int default 0,
+        open_minor int default 0,
+        closed_blocking int default 0,
+        closed_major int default 0,
+        closed_minor int default 0);
+        """,
+        "description": "Create table versions"
+    },
+    {
+        "request": """alter table versions 
+        add constraint project_id_fkey foreign key (project_id) references projects(id) match full,
+        add constraint unique_project_version unique (project_id, version);
+        """,
+        "description": "Add fk and unique constraint on versions"
+    },
+    {
+        "request": """create table if not exists tickets ( 
+        id serial primary key,
+        reference varchar(50) not null,
+        description varchar,
+        status varchar(50) default 'open',
+        created timestamp not null default CURRENT_TIMESTAMP,
+        updated timestamp not null default CURRENT_TIMESTAMP,
+        current_version int not null,
+        past_versions varchar(50) [],
+        delivery_date timestamp,
+        project_id int not null);
+        """,
+        "description": "Create tickets table"
+    },
+    {
+        "request": """alter table tickets 
+        add constraint tickets_project_fkey foreign key (project_id) references projects(id) match full,
+        add constraint tickets_current_version_fkey foreign key (current_version) references versions(id) match full,
+        add constraint unique_ticket_project unique (project_id, reference);
+        """,
+        "description": "Add fk and unique constraints on tickets"
+    },
+    {
+        "request": """create table if not exists users (
+        id serial primary key,
+        username varchar(50) not null,
+        password varchar not null,
+        scopes varchar(20) []);
+        """,
+        "description": "Create users table"
+    },
+    {
+        "request": """alter table users
+        add constraint unique_username_user unique (username);
+        """,
+        "description": "Add unique constraint on users"
+    },
+    {
+        "request": """alter table campaign_tickets 
+        add column ticket_id int,
+        add constraint campaign_tickets_ticket_id_fk foreign key (ticket_id) references tickets(id)
+         match simple on update no action
+         on delete set null
+         not valid;""",
+        "description": "Add ticket_id column to campaign_tickets and add fk constraint"
+    },
+    {
+        "request": """create table if not exists bugs (
+        id serial primary key,
+        title varchar not null,
+        url varchar,
+        description varchar,
+        project_id int not null,
+        version_id int not null,
+        fix_version_id int,
+        criticality varchar(20) not null,
+        status varchar(20) not null,
+        created timestamp default CURRENT_TIMESTAMP,
+        updated timestamp default CURRENT_TIMESTAMP);""",
+        "description": "Create bugs table"
+    },
+    {
+        "request": """alter table bugs 
+        add constraint bugs_project_id_fk foreign key (project_id) references projects(id) match full,
+        add constraint bugs_version_id_fk foreign key (version_id) references versions(id) match full,
+        add constraint unique_title_project_id unique (project_id, version_id, title);""",
+        "description": "Add fk and unique constraint on bugs"
+    },
+    {
+        "request": """alter table campaign_ticket_scenarios
+        rename column campaign_id 
+         to campaign_ticket_id;
+        """,
+        "description": "Rename campaign_id to campaign_ticket_id in campaign_ticket_scenarios"
     }
-
-
 ]

@@ -6,11 +6,16 @@ from fastapi import APIRouter, Form
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 
+from app import conf
 from app.conf import templates
 from app.database.authorization import is_updatable
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import registered_projects
+else:
+    from app.database.mongo.projects import registered_projects
+
 from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
-from app.database.mongo.projects import registered_projects
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios,
@@ -18,8 +23,9 @@ from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenari
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status)
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
-from app.database.postgre.testrepository import db_project_epics, db_project_features, \
-    db_project_scenarios
+from app.database.postgre.testrepository import (db_project_epics,
+                                                 db_project_features,
+                                                 db_project_scenarios)
 
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
@@ -28,9 +34,10 @@ from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.campaign_schema import Scenarios
 from app.schema.postgres_enums import ScenarioStatusEnum
-from app.schema.rest_enum import DeliverableTypeEnum, RestTestResultCategoryEnum, \
-    RestTestResultHeaderEnum, \
-    RestTestResultRenderingEnum
+from app.schema.rest_enum import (DeliverableTypeEnum,
+                                  RestTestResultCategoryEnum,
+                                  RestTestResultHeaderEnum,
+                                  RestTestResultRenderingEnum)
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result

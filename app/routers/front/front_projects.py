@@ -2,17 +2,34 @@
 # -*- Author: E.Aivayan -*-
 
 from fastapi import APIRouter, Form, HTTPException
+from psycopg.errors import UniqueViolation
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
+from app import conf
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.mongo.projects import create_project_version, get_project, registered_projects
+from app.utils.log_management import log_error
+
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import (create_project_version,
+                                                  get_project,
+                                                  registered_projects)
+    from app.database.postgre.pg_tickets import (add_ticket,
+                                                 get_tickets,
+                                                 update_values)
+else:
+    from app.database.mongo.projects import (create_project_version,
+                                             get_project,
+                                             registered_projects)
+    from app.database.mongo.tickets import (add_ticket,
+                                            get_tickets,
+                                            update_values)
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
-from app.database.mongo.tickets import add_ticket, get_tickets, update_values
-from app.schema.project_schema import RegisterVersion, TicketType
+from app.schema.project_schema import RegisterVersion
+from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import ToBeTicket
 from app.utils.project_alias import provide
 
@@ -123,31 +140,43 @@ async def project_version_tickets(project_name: str,
 
 
 @router.post("/{project_name}/versions/{version}",
-            tags=["Front - Project"],
-            include_in_schema=False)
+             tags=["Front - Project"],
+             include_in_schema=False)
 async def add_ticket_to_version(project_name: str,
                                 version: str,
                                 request: Request,
                                 body: dict,
                                 background_task: BackgroundTasks):
-    if not is_updatable(request, tuple()):
+    try:
+        if not is_updatable(request, tuple()):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+        result = await add_ticket(project_name, version, ToBeTicket(**body))
+        if not result.inserted_id:
+            return "error"
+        background_task.add_task(update_values, project_name, version)
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request,
+                                          },
+                                          headers={"HX-Trigger": f"reload-{version}"})
+    except UniqueViolation as uv:
+        log_error(','.join(uv.args))
         return templates.TemplateResponse("error_message.html",
                                           {
                                               "request": request,
-                                              "highlight": "You are not authorized",
-                                              "sequel": " to perform this action.",
-                                              "advise": "Try to log again."
+                                              "highlight": f"Ticket with {body.get('reference')} "
+                                                           f"reference already exist in {project_name} ",
+                                              "sequel": " so you cannot record it.",
+                                              "advise": "Check the reference or the version."
                                           },
                                           headers={"HX-Retarget": "#messageBox"})
-    result = await add_ticket(project_name,version, ToBeTicket(**body))
-    if not result.inserted_id:
-        return "error"
-    background_task.add_task(update_values, project_name, version)
-    return templates.TemplateResponse("void.html",
-                                      {
-                                          "request": request,
-                                      },
-                                      headers={"HX-Trigger": f"reload-{version}"})
 
 
 @router.get("/{project_name}/forms/version",

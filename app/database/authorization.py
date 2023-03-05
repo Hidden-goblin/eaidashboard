@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import jwt.exceptions
+from app import conf
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jwt import decode, PyJWTError
@@ -10,9 +11,16 @@ from starlette import status
 from starlette.requests import Request
 from logging import getLogger
 
+if conf.MIGRATION_DONE:
+    from app.database.redis.token_management import (get_token_date,
+                                                     renew_token_date)
+    from app.database.postgre.pg_users import get_user
+else:
+    from app.database.mongo.tokens import (get_token_date,
+                                           renew_token_date)
+    from app.database.mongo.users import get_user
 
-from app.database.mongo.tokens import get_token_date, renew_token_date, token_scope, token_user
-from app.database.mongo.users import get_user
+from app.database.utils.token import token_scope, token_user
 from app.schema.authentication import TokenData
 
 log = getLogger(__name__)

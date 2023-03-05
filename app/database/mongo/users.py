@@ -1,11 +1,12 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from pymongo import MongoClient
-from datetime import datetime
 
 from app.app_exception import IncorrectFieldsRequest, InsertionError, UserNotFound
 from app.conf import mongo_string
-from app.database.authentication import authenticate_user, get_password_hash, revoke
+from app.database.utils.password_management import get_password_hash
+from app.database.mongo.tokens import revoke
+
 
 # Leave methods synchron
 
@@ -45,10 +46,7 @@ def user_exist(username):
     return get_user(username) is not None
 
 
-def self_update_user(username, password, new_password):
-    user, scope = authenticate_user(username, password)
-    if user is None:
-        raise UserNotFound("Unrecognized credentials")
+def self_update_user(username, new_password):
     result = update_user(username, new_password)
     revoke(username)
     return result

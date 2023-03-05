@@ -239,6 +239,8 @@ async def db_get_scenarios_id(project_name,
                         feature_name,
                         scenarios_ref: list,
                         feature_filename=None) -> List[int]:
+    if isinstance(scenarios_ref, str):
+        scenarios_ref = [scenarios_ref]
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if feature_filename is None:

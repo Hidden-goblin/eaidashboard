@@ -2,10 +2,15 @@
 # -*- Author: E.Aivayan -*-
 from typing import Any
 
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, HTTPException, Security
 
+from app import conf
+from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
-from app.database.mongo.users import self_update_user, update_user
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_users import (self_update_user, update_user)
+else:
+    from app.database.mongo.users import (self_update_user, update_user)
 from app.schema.users import UpdateMe, UpdateUser
 
 router = APIRouter(
@@ -19,7 +24,10 @@ router = APIRouter(
 async def update_me(body: UpdateMe,
                     user: Any = Security(authorize_user, scopes=["admin", "user"])):
     # If success register token with a ttl
-    return self_update_user(**{**body.dict(), "username": user["username"]})
+    username, scope = authenticate_user(user["username"], body.dict()["password"])
+    if username is None:
+        raise HTTPException(401, "Unrecognized credentials")
+    return self_update_user(username=user["username"], new_password=body.dict()["new_password"])
 
 
 @router.post("/",

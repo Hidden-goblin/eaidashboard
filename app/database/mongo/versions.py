@@ -12,7 +12,8 @@ from app.app_exception import (IncorrectTicketCount, ProjectNotRegistered,
 from app.conf import mongo_string
 from app.database.mongo.db_settings import DashCollection
 from app.database.mongo.projects import registered_projects
-from app.schema.project_schema import Bugs, StatusEnum, UpdateVersion
+from app.schema.status_enum import StatusEnum
+from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.ticket_schema import UpdateTickets
 from app.utils.project_alias import contains, provide
 
@@ -56,6 +57,10 @@ async def get_version_and_collection(project_name: str, version: str):
 
     return None, None
 
+
+async def version_exists(project_name: str, version: str) -> bool:
+    _version, _ = get_version_and_collection(project_name, version)
+    return _version is not None
 
 async def get_version(project_name: str, version: str):
     _version, _collection = await get_version_and_collection(project_name, version)

@@ -1,14 +1,28 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import logging
 from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
 from pymongo.errors import DuplicateKeyError
 from starlette.background import BackgroundTasks
 
+from app import conf
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.mongo.tickets import add_ticket, get_ticket, get_tickets, update_ticket, update_values
+
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_tickets import (add_ticket,
+                                                 get_ticket,
+                                                 get_tickets,
+                                                 update_ticket,
+                                                 update_values)
+else:
+    from app.database.mongo.tickets import (add_ticket,
+                                            get_ticket,
+                                            get_tickets,
+                                            update_ticket,
+                                            update_values)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)
@@ -111,8 +125,10 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
     try:
         return await get_ticket(project_name, version, reference)
     except VersionNotFound as pnr:
+        logging.getLogger("uvicorn.error").error(" ".join(pnr.args))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
+        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
 
 
@@ -156,4 +172,5 @@ async def update_one_ticket(project_name: str,
     except VersionNotFound as pnr:
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
+        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception

@@ -7,12 +7,21 @@ from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
+from app import conf
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
-from app.database.mongo.projects import registered_projects
-from app.database.mongo.tickets import get_ticket, get_tickets, update_ticket, update_values
-from app.database.mongo.versions import dashboard as db_dash
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import registered_projects
+    from app.database.postgre.pg_tickets import (get_ticket,
+                                                 get_tickets,
+                                                 update_ticket,
+                                                 update_values)
+    from app.database.postgre.pg_versions import dashboard as db_dash
+else:
+    from app.database.mongo.projects import registered_projects
+    from app.database.mongo.tickets import get_ticket, get_tickets, update_ticket, update_values
+    from app.database.mongo.versions import dashboard as db_dash
 from app.schema.ticket_schema import UpdatedTicket
 from app.utils.project_alias import provide
 
@@ -38,21 +47,29 @@ async def dashboard(request: Request):
             tags=["Front - Utils"],
             include_in_schema=False)
 async def project_version_tickets(request: Request, project_name, project_version):
-    if not is_updatable(request, tuple()):
-        return templates.TemplateResponse("error_message.html",
-                                          {
-                                              "request": request,
-                                              "highlight": "You are not authorized",
-                                              "sequel": " to perform this action.",
-                                              "advise": "Try to log again."
-                                          },
-                                          headers={"HX-Retarget": "#messageBox"})
-    return templates.TemplateResponse("ticket_view.html",
-                                      {"request": request,
-                                       "tickets": await get_tickets(project_name, project_version),
-                                       "project_name": project_name,
-                                       "project_name_alias": provide(project_name),
-                                       "project_version": project_version})
+    return (
+        templates.TemplateResponse(
+            "ticket_view.html",
+            {
+                "request": request,
+                "tickets": await get_tickets(project_name, project_version),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            },
+        )
+        if is_updatable(request, tuple())
+        else templates.TemplateResponse(
+            "error_message.html",
+            {
+                "request": request,
+                "highlight": "You are not authorized",
+                "sequel": " to perform this action.",
+                "advise": "Try to log again.",
+            },
+            headers={"HX-Retarget": "#messageBox"},
+        )
+    )
 
 
 @router.delete("/clear",
@@ -115,23 +132,31 @@ async def logout(request: Request):
             tags=["Front - Tickets"],
             include_in_schema=False)
 async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
-    if not is_updatable(request, tuple()):
-        return templates.TemplateResponse("error_message.html",
-                                          {
-                                              "request": request,
-                                              "highlight": "You are not authorized",
-                                              "sequel": " to perform this action.",
-                                              "advise": "Try to log again."
-                                          },
-                                          headers={"HX-Retarget": "#messageBox"})
-    return templates.TemplateResponse("ticket_row_edit.html",
-                                      {"request": request,
-                                       "ticket": await get_ticket(project_name,
-                                                            project_version,
-                                                            reference),
-                                       "project_name": project_name,
-                                       "project_name_alias": provide(project_name),
-                                       "project_version": project_version})
+    return (
+        templates.TemplateResponse(
+            "ticket_row_edit.html",
+            {
+                "request": request,
+                "ticket": await get_ticket(
+                    project_name, project_version, reference
+                ),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            },
+        )
+        if is_updatable(request, tuple())
+        else templates.TemplateResponse(
+            "error_message.html",
+            {
+                "request": request,
+                "highlight": "You are not authorized",
+                "sequel": " to perform this action.",
+                "advise": "Try to log again.",
+            },
+            headers={"HX-Retarget": "#messageBox"},
+        )
+    )
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
@@ -139,23 +164,31 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
             tags=["Front - Tickets"],
             include_in_schema=False)
 async def project_version_ticket(request: Request, project_name, project_version, reference):
-    if not is_updatable(request, tuple()):
-        return templates.TemplateResponse("error_message.html",
-                                          {
-                                              "request": request,
-                                              "highlight": "You are not authorized",
-                                              "sequel": " to perform this action.",
-                                              "advise": "Try to log again."
-                                          },
-                                          headers={"HX-Retarget": "#messageBox"})
-    return templates.TemplateResponse("ticket_row.html",
-                                      {"request": request,
-                                       "ticket": await get_ticket(project_name,
-                                                            project_version,
-                                                            reference),
-                                       "project_name": project_name,
-                                       "project_name_alias": provide(project_name),
-                                       "project_version": project_version})
+    return (
+        templates.TemplateResponse(
+            "ticket_row.html",
+            {
+                "request": request,
+                "ticket": await get_ticket(
+                    project_name, project_version, reference
+                ),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            },
+        )
+        if is_updatable(request, tuple())
+        else templates.TemplateResponse(
+            "error_message.html",
+            {
+                "request": request,
+                "highlight": "You are not authorized",
+                "sequel": " to perform this action.",
+                "advise": "Try to log again.",
+            },
+            headers={"HX-Retarget": "#messageBox"},
+        )
+    )
 
 
 @router.put("/{project_name}/versions/{project_version}/tickets/{reference}",

@@ -25,6 +25,10 @@ postgre_string = (f"postgresql://{config['PG_USR']}:{config['PG_PWD']}@"
 postgre_setting_string = (f"postgresql://{config['PG_USR']}:{config['PG_PWD']}@"
                           f"{config['PG_URL']}:{config['PG_PORT']}/postgres")
 
+redis_dict = {"host": config['REDIS_URL'],
+              "port": config['REDIS_PORT']}
+
+MIGRATION_DONE = False
 
 SECRET_KEY = None
 PUBLIC_KEY = None

@@ -13,20 +13,33 @@ from fastapi import (APIRouter,
                      UploadFile)
 from csv import DictReader
 
+from app import conf
 from app.app_exception import (ProjectNotRegistered,
                                DuplicateArchivedVersion,
                                DuplicateFutureVersion,
                                DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-from app.database.mongo.projects import (create_project_version, get_project,
-    get_projects)
-from app.database.mongo.versions import get_version, update_version_data, update_version_status
+
+if conf.MIGRATION_DONE:
+    from app.database.postgre.pg_projects import (create_project_version,
+                                                  get_project,
+                                                  get_projects)
+    from app.database.postgre.pg_versions import (get_version,
+                                                  update_version_data,
+                                                  update_version_status)
+else:
+    from app.database.mongo.projects import (create_project_version, get_project,
+        get_projects)
+    from app.database.mongo.versions import (get_version,
+                                             update_version_data,
+                                             update_version_status)
+
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
-                                       UpdateVersion,
-                                       Version,
                                        TicketProject)
+from app.schema.bugs_schema import UpdateVersion
+from app.schema.versions_schema import Version
 
 router = APIRouter(
     prefix="/api/v1"
