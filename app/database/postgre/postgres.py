@@ -3,6 +3,7 @@
 import psycopg
 from app.conf import postgre_string, postgre_setting_string, config
 from app.database.postgre.postgre_updates import POSTGRE_UPDATES
+from app.utils.log_management import log_error
 from app.utils.project_alias import register
 
 
@@ -25,12 +26,22 @@ def update_postgres():
     last_update = cursor.fetchone()[0]
     for index, update in enumerate(POSTGRE_UPDATES):
         if index + 1 > last_update:
-            cursor.execute(update["request"])
-            connexion.commit()
-            cursor.execute("""insert into operations (type, op_user, op_order, content)
-    values ('database', 'application', %s, %s)
-     on conflict (type, op_order) do nothing; """, (index + 1, update["description"]))
-            connexion.commit()
+            try:
+                cursor.execute(update["request"])
+                connexion.commit()
+                cursor.execute("""insert into operations (type, op_user, op_order, content)
+                        values ('database', 'application', %s, %s)
+                        on conflict (type, op_order) do nothing; """, (index + 1, update["description"]))
+                connexion.commit()
+            except Exception as exc:
+                connexion = psycopg.connect(postgre_string)
+                cursor = connexion.cursor()
+                log_error(repr(exc))
+                cursor.execute("""insert into operations (type, op_user, op_order, content)
+                                        values ('database', 'application', %s, %s)
+                                        on conflict (type, op_order) do nothing; """,
+                               (index + 1, f'{update["description"]} - error {repr(exc)}'))
+                connexion.commit()
 
 
 def create_schema(connexion):

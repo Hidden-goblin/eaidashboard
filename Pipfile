@@ -8,7 +8,6 @@ fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
 jinja2 = "*"
-pymongo = "*"
 dpath = "*"
 python-multipart = "*"
 passlib = "*"
@@ -20,6 +19,7 @@ pyjwt = {extras = ["crypto"], version = "*"}
 psycopg = {extras = ["binary", "pool"], version = "*"}
 python-docx = "*"
 redis = "*"
+pymongo = "*"
 
 [dev-packages]
 pydeps = "*"
