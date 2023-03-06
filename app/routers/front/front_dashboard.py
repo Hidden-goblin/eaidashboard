@@ -20,6 +20,7 @@ from app.database.postgre.pg_tickets import (get_ticket,
 from app.database.postgre.pg_versions import dashboard as db_dash
 
 from app.schema.ticket_schema import UpdatedTicket
+from app.utils.log_management import log_error
 from app.utils.project_alias import provide
 
 router = APIRouter()
@@ -39,6 +40,7 @@ async def dashboard(request: Request):
                                            "project_version": await db_dash(),
                                            "projects": projects or []})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -72,6 +74,7 @@ async def project_version_tickets(request: Request, project_name, project_versio
             )
         )
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -97,6 +100,7 @@ async def login(request: Request):
         return templates.TemplateResponse("login_modal.html",
                                           {"request": request})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -121,6 +125,7 @@ async def post_login(request: Request,
                                               "request": request
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -136,6 +141,7 @@ async def logout(request: Request):
         return templates.TemplateResponse("void.html",
                                           {"request": request})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -171,6 +177,7 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
             )
         )
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -206,6 +213,7 @@ async def project_version_ticket(request: Request, project_name, project_version
             )
         )
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -248,6 +256,7 @@ async def project_version_update_ticket(request: Request,
                                            "project_name_alias": provide(project_name),
                                            "project_version": project_version})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 @router.get("/testResults",
@@ -271,4 +280,5 @@ async def get_test_results(request: Request):
                                           {"request": request,
                                            "results": result})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)

@@ -18,6 +18,7 @@ from app.database.postgre.pg_versions import get_versions
 from app.database.postgre.pg_projects import registered_projects
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket
+from app.utils.log_management import log_error
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -90,6 +91,7 @@ async def front_project_bugs(project_name: str,
                                                   "advise": "Try to log again"
                                               })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -120,6 +122,7 @@ async def record_bug(project_name: str,
                                               "HX-Trigger": request.headers.get('eaid-next', "")
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -151,6 +154,7 @@ async def display_bug(project_name: str,
                                               "bug": bug
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -183,6 +187,7 @@ async def front_update_bug(project_name: str,
                                               "HX-Trigger": request.headers.get('eaid-next', "")
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -214,4 +219,5 @@ async def front_update_bug_patch(project_name: str,
                                               "HX-Trigger": request.headers.get('eaid-next', "")
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)

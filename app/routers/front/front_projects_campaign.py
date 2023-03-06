@@ -36,6 +36,7 @@ from app.schema.rest_enum import (DeliverableTypeEnum,
                                   RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
                                   RestTestResultRenderingEnum)
+from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
@@ -90,6 +91,7 @@ async def front_project_management(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -111,6 +113,7 @@ async def front_project_table(project_name: str,
                                               "nav_bar": count >= limit
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -125,6 +128,7 @@ def front_new_campaign_form(project_name: str,
 
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -149,6 +153,7 @@ async def front_new_campaign(project_name: str,
                                           headers={
                                               "hx-trigger": request.headers.get("eaid-next", "")})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -177,6 +182,7 @@ async def front_scenarios_selector(project_name: str,
                                            "scenarios": scenarios,
                                            "request": request})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -221,6 +227,7 @@ async def front_get_campaign(project_name: str,
                                               "projects": projects
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -260,6 +267,7 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                            "features": unique_features,
                                            "initiator": request.headers.get('eaid-next', '')})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -297,6 +305,7 @@ async def front_get_campaign_ticket(project_name: str,
                                               "initiator": request.headers.get('eaid-next', "")
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
@@ -332,6 +341,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                           headers={
                                               "hx-trigger": request.headers.get("eaid-next", "")})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -373,6 +383,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                         ScenarioStatusEnum],
                                            "request": request})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -407,6 +418,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                           headers={
                                               "HX-Trigger": request.headers.get('eaid-next', "")})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -444,6 +456,7 @@ async def add_scenarios_to_ticket(project_name: str,
                                           headers={
                                               "HX-Trigger": request.headers.get('eaid-next', "")})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -481,6 +494,7 @@ async def front_campaign_version_tickets(project_name,
             # TODO: return the accordion table for the campaign (ease the refresh process)
             pass
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -515,6 +529,7 @@ async def front_campaign_add_tickets(project_name: str,
                                           },
                                           headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -538,6 +553,7 @@ async def front_campaign_occurrence_status(project_name: str,
                                               "link": f"{request.base_url}static/{result}"
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -583,6 +599,7 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                           },
                                           headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -616,4 +633,5 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                               "link": f"{request.base_url}static/{result}"
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)

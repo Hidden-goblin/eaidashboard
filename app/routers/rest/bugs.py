@@ -14,7 +14,7 @@ from app.database.postgre.pg_bugs import (
 from app.schema.mongo_enums import (BugCriticalityEnum, BugStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.status_enum import TicketType
-from app.schema.bugs_schema import BugTicket, BugTicketFull, BugTicketResponse, UpdateBugTicket
+from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -23,7 +23,7 @@ router = APIRouter(
 
 @router.get("/{project_name}/bugs",
             tags=["Bug"],
-            response_model=List[BugTicketResponse | BugTicketFull]
+            response_model=List[BugTicketFull]
             )
 async def get_bugs(project_name: str,
                    status: Optional[TicketType] = None

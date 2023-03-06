@@ -6,6 +6,7 @@ from starlette.requests import Request
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
+from app.utils.log_management import log_error
 
 router = APIRouter(prefix="/front/v1/forms")
 
@@ -29,4 +30,5 @@ async def get_import_repository_form(request: Request):
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)

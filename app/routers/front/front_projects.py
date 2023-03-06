@@ -69,6 +69,7 @@ async def front_project_management(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -103,6 +104,7 @@ async def project_versions(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -142,6 +144,7 @@ async def project_version_tickets(project_name: str,
                                               "tickets": tickets
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 @router.post("/{project_name}/versions/{version}",
@@ -184,6 +187,7 @@ async def add_ticket_to_version(project_name: str,
                                           },
                                           headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -209,6 +213,7 @@ async def form_version(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -232,6 +237,7 @@ async def add_version(project_name: str,
         await create_project_version(project_name, RegisterVersion(version=version))
         return HTMLResponse("")
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 

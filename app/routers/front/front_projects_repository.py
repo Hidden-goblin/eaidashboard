@@ -15,6 +15,7 @@ from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
 from app.schema.mongo_enums import BugStatusEnum
+from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
 
@@ -60,6 +61,7 @@ async def front_project_repository(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -85,12 +87,14 @@ async def post_repository(project_name: str,
             await process_upload(file_content.decode(), project_name)
         except MalformedCsvFile as exp:
             message = ','.join(exp.args)
+            log_error(repr(exp))
             return templates.TemplateResponse("error_message.html",
                                               {"request": request,
                                                "highlight": "Error in the bulk import process ",
                                                "sequel": message.replace('\n', '<br />'),
                                                "advise": "Please check your file."})
         except Exception as exp:
+            log_error(repr(exp))
             return templates.TemplateResponse("error_message.html",
                                               {"request": request,
                                                "highlight": "Error in the bulk import process ",
@@ -101,6 +105,7 @@ async def post_repository(project_name: str,
                                           {"request": request})
 
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -123,6 +128,7 @@ async def get_repository(project_name: str,
                                               headers={"HX-Retarget": "#messageBox"})
         return await repository_dropdowns(project_name, request, epic, feature)
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -162,6 +168,7 @@ async def get_scenario(project_name: str,
                                               "filter": _filter
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -197,4 +204,5 @@ async def filter_repository(project_name: str,
                                               "filter": f"&epic={body['epic']}&feature={body['feature']}"
                                           })
     except Exception as exception:
+        log_error(repr(exception))
         return front_error_message(templates, request, exception)

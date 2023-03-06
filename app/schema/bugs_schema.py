@@ -3,11 +3,9 @@
 from datetime import datetime
 from typing import Optional
 
-from bson import ObjectId
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
-from app.schema.py_objectid import PyObjectId
 
 
 class Bugs(BaseModel):
@@ -49,30 +47,6 @@ class BugTicket(BaseModel):
 
 class BugTicketFull(BugTicket):
     internal_id: int
-
-class BugTicketResponse(BaseModel):
-    internal_id: PyObjectId = Field(default_factory=PyObjectId)
-    version: str
-    title: str
-    description: str
-    created: datetime
-    updated: datetime
-    url: str
-    status: BugStatusEnum
-    criticality: BugCriticalityEnum
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        # schema_extra = {
-        #     "example": {
-        #         "name": "Jane Doe",
-        #         "email": "jdoe@example.com",
-        #         "course": "Experiments, Science, and Fashion in Nanophotonics",
-        #         "gpa": "3.0",
-        #     }
-        # }
 
 
 class UpdateBugTicket(BaseModel):

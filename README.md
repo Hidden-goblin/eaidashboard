@@ -15,10 +15,6 @@ Docker image accessible on [dockerhub](https://hub.docker.com/r/hiddengob/eaidas
 ## Environment parameters
 
 ```text
-MONGO_URL=<the mongo db url>
-MONGO_PORT=<the mongo db port>
-MONGO_USR=<the mongo db username>
-MONGO_PWD=<the mongo db user's password>
 TIMEDELTA=<time in minutes before token validity expiration>
 PG_URL=<the postgres db url>
 PG_PORT=<the postgres db port>
@@ -47,6 +43,7 @@ Use the migration endpoint `GET /api/v1/admin/redis_migration`. The migration pr
 
 After the migration is done, restart the application to be sure not to use the mongodb connector. You can even shutdown the mongodb database.
 
+**Please note** version 3.1+ does not provide migration endpoint.
 
 # Version history
 
@@ -56,6 +53,7 @@ After the migration is done, restart the application to be sure not to use the m
 - 3.1
   - Technical version remove mongodb
   - Fix some bugs
+  - Fix bson error
 - 3.0-1
   - Fix issue where database renaming does not work
 - 3.0
