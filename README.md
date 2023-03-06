@@ -50,9 +50,11 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.0
+## Current: 3.0-1
 
 ## History
+- 3.0-1
+  - Fix issue where database renaming does not work
 - 3.0
   - Migrate all mongodb data to postgresql
   - Add Redis for transient data and ttl data
