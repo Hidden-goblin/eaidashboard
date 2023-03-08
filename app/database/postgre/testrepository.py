@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Tuple
 
-from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
+from app.schema.repository_schema import (Feature, Scenario, TestFeature, TestScenario)
 from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
 

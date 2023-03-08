@@ -253,5 +253,41 @@ POSTGRE_UPDATES = [
          to campaign_ticket_id;
         """,
         "description": "Rename campaign_id to campaign_ticket_id in campaign_ticket_scenarios"
+    },
+    {
+        "request": """update versions
+         set open_blocking = 0
+         where open_blocking is NULL""",
+        "description": "Fix null value in versions"
+    },
+{
+        "request": """update versions
+         set open_major = 0
+         where open_major is NULL""",
+        "description": "Fix null value in versions"
+    },
+{
+        "request": """update versions
+         set open_minor = 0
+         where open_minor is NULL""",
+        "description": "Fix null value in versions"
+    },
+{
+        "request": """update versions
+         set closed_blocking = 0
+         where closed_blocking is NULL""",
+        "description": "Fix null value in versions"
+    },
+{
+        "request": """update versions
+         set closed_major = 0
+         where closed_major is NULL""",
+        "description": "Fix null value in versions"
+    },
+{
+        "request": """update versions
+         set closed_minor = 0
+         where closed_minor is NULL""",
+        "description": "Fix null value in versions"
     }
 ]

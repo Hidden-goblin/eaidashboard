@@ -6,12 +6,8 @@ from jwt import encode, decode
 from app import conf
 from app.database.utils.password_management import generate_keys, verify_password
 
-if conf.MIGRATION_DONE:
-    from app.database.redis.token_management import register_connection, revoke
-    from app.database.postgre.pg_users import get_user
-else:
-    from app.database.mongo.users import get_user
-    from app.database.mongo.tokens import register_connection, revoke
+from app.database.redis.token_management import register_connection, revoke
+from app.database.postgre.pg_users import get_user
 
 
 def authenticate_user(username, password):

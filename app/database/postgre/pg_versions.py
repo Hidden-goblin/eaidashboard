@@ -11,7 +11,7 @@ from app.schema.project_schema import Statistics
 from app.schema.versions_schema import Version
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.utils.pgdb import pool
-from app.utils.project_alias import contains, provide, register
+from app.utils.project_alias import provide
 
 
 async def version_exists(project_name: str, version: str) -> bool:
@@ -59,18 +59,19 @@ async def get_version(project_name: str, version: str):
 
 async def get_versions(project_name: str, exclude_archived: bool = False) -> list:
     with pool.connection() as connection:
+        connection.row_factory = tuple_row
         if exclude_archived:
-            return list(connection.execute("select version "
+            return [row[0] for row in connection.execute("select version "
                                            " from versions as ve "
                                            " join projects as pjt on pjt.id = ve.project_id"
                                            " where pjt.alias = %s"
                                            " and ve.status != 'archived';",
-                                           (provide(project_name, ))).fetchall())
-        return list(connection.execute("select version "
+                                           (provide(project_name),)).fetchall()]
+        return [row[0] for row in connection.execute("select version "
                                        " from versions as ve "
                                        " join projects as pjt on pjt.id = ve.project_id"
                                        " where pjt.alias = %s;",
-                                       (provide(project_name, ))).fetchall())
+                                       (provide(project_name), )).fetchall()]
 
 
 async def get_project_versions(project_name: str, exclude_archived: bool = False) -> List[Version]:

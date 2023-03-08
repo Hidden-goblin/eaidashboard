@@ -7,12 +7,9 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import DuplicateTestResults
-from app.conf import MIGRATION_DONE
 
-if MIGRATION_DONE:
-    from app.database.redis.rs_test_result import mg_insert_test_result_done
-else:
-    from app.database.mongo.mg_test_results import mg_insert_test_result_done
+from app.database.redis.rs_test_result import mg_insert_test_result_done
+
 from app.database.utils.output_strategy import OutputStrategy
 from app.database.utils.what_strategy import WhatStrategy
 from app.utils.pgdb import pool

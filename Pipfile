@@ -19,7 +19,6 @@ pyjwt = {extras = ["crypto"], version = "*"}
 psycopg = {extras = ["binary", "pool"], version = "*"}
 python-docx = "*"
 redis = "*"
-pymongo = "*"
 
 [dev-packages]
 pydeps = "*"

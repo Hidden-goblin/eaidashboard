@@ -5,15 +5,10 @@ import asyncio
 from psycopg.rows import tuple_row
 
 from app.app_exception import CampaignNotFound, NonUniqueError
-from app.conf import MIGRATION_DONE
 from app.utils.project_alias import provide
 
-if MIGRATION_DONE:
-    from app.database.postgre.pg_tickets import get_ticket
-    from app.database.postgre.pg_versions import get_version_and_collection
-else:
-    from app.database.mongo.tickets import get_ticket
-    from app.database.mongo.versions import get_version_and_collection
+from app.database.postgre.pg_tickets import get_ticket
+from app.database.postgre.pg_versions import get_version_and_collection
 from app.database.postgre.pg_campaigns_management import retrieve_campaign_id
 from app.utils.pgdb import pool
 
@@ -35,28 +30,23 @@ async def add_ticket_to_campaign(project_name, version, occurrence, ticket_refer
 
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        if MIGRATION_DONE:
-            result = connection.execute("insert into campaign_tickets"
-                                        " (campaign_id, ticket_reference, ticket_id)"
-                                        " select %s, %s, tk.id"
-                                        " from tickets as tk"
-                                        " join versions as ve on tk.current_version = ve.id"
-                                        " join projects as pj on pj.id = ve.project_id"
-                                        " where pj.alias = %s"
-                                        " and ve.version = %s"
-                                        " and tk.reference = %s"
-                                        " on conflict (campaign_id, ticket_reference) do nothing;",
-                                        (campaign_id.result()[0],
+
+        result = connection.execute("insert into campaign_tickets"
+                                    " (campaign_id, ticket_reference, ticket_id)"
+                                    " select %s, %s, tk.id"
+                                    " from tickets as tk"
+                                    " join versions as ve on tk.current_version = ve.id"
+                                    " join projects as pj on pj.id = ve.project_id"
+                                    " where pj.alias = %s"
+                                    " and ve.version = %s"
+                                    " and tk.reference = %s"
+                                    " on conflict (campaign_id, ticket_reference) do nothing;",
+                                    (campaign_id.result()[0],
                                          ticket_reference,
                                          provide(project_name),
                                          version,
                                          ticket_reference))
-        else:
-            result = connection.execute("insert into campaign_tickets"
-                                        " (campaign_id, ticket_reference) "
-                                        "values (%s, %s) "
-                                        "on conflict (campaign_id, ticket_reference) do nothing;",
-                                        (campaign_id.result()[0], ticket.result()["reference"]))
+
         result = connection.execute("select id from campaign_tickets "
                                     "where campaign_id = %s "
                                     "and ticket_reference = %s;",

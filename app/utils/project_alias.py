@@ -1,9 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import re
-# from logging import getLogger
-#
-# log = getLogger("uvicorn.access")
 
 PROJECT_ALIAS = {}
 

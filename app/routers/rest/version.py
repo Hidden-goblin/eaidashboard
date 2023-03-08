@@ -1,60 +1,28 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
 from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
-from pymongo.errors import DuplicateKeyError
+
 from starlette.background import BackgroundTasks
 
-from app import conf
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
 
-if conf.MIGRATION_DONE:
-    from app.database.postgre.pg_tickets import (add_ticket,
+from app.database.postgre.pg_tickets import (add_ticket,
                                                  get_ticket,
                                                  get_tickets,
                                                  update_ticket,
                                                  update_values)
-else:
-    from app.database.mongo.tickets import (add_ticket,
-                                            get_ticket,
-                                            get_tickets,
-                                            update_ticket,
-                                            update_values)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
+from app.utils.log_management import log_error
 
 router = APIRouter(
     prefix="/api/v1"
 )
-
-
-# @router.put("/projects/{project_name}/{version}/tickets/{ticket_type}",
-#             response_model=Version,
-#             responses={
-#                 400: {"model": ErrorMessage,
-#                       "description": "Where move is not correct"},
-#                 404: {"model": ErrorMessage,
-#                       "description": "Project name is not registered (ignore case)"}
-#             },
-#             tags=["Versions"],
-#             description="Move one ticket type to other ticket types. All value are positive"
-#             )
-# async def put_tickets(project_name: str,
-#                       version: str,
-#                       ticket_type: TicketType,
-#                       ticket_dispatch: Ticket,
-#                       user: Any = Security(authorize_user, scopes=["admin", "user"])):
-#     try:
-#         return move_tickets(project_name, version, ticket_type, ticket_dispatch)
-#     except ProjectNotRegistered as pnr:
-#         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-#     except IncorrectTicketCount as itc:
-#         raise HTTPException(400, detail=" ".join(itc.args)) from itc
 
 
 @router.post("/projects/{project_name}/versions/{version}/tickets/",
@@ -78,13 +46,14 @@ async def create_ticket(project_name: str,
         result = await add_ticket(project_name, version, ticket)
         background_task.add_task(update_values, project_name, version)
         return str(result.inserted_id)
-    except DuplicateKeyError as invalid:
-        raise HTTPException(400, detail=" ".join(invalid.args)) from invalid
     except VersionNotFound as pnr:
+        log_error(repr(pnr))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except IncorrectTicketCount as itc:
+        log_error(repr(itc))
         raise HTTPException(400, detail=" ".join(itc.args)) from itc
     except Exception as exception:
+        log_error(repr(exception))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
 
 
@@ -105,8 +74,10 @@ async def router_get_tickets(project_name, version):
         tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
         return tickets
     except VersionNotFound as pnr:
+        log_error(repr(pnr))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
+        log_error(repr(exception))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
 
 
@@ -125,10 +96,10 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
     try:
         return await get_ticket(project_name, version, reference)
     except VersionNotFound as pnr:
-        logging.getLogger("uvicorn.error").error(" ".join(pnr.args))
+        log_error(repr(pnr))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
-        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
+        log_error(repr(exception))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
 
 
@@ -170,7 +141,8 @@ async def update_one_ticket(project_name: str,
             background_task.add_task(update_values, project_name, ticket.dict()["version"])
         return str(res.inserted_id)
     except VersionNotFound as pnr:
+        log_error(repr(pnr))
         raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exception:
-        logging.getLogger("uvicorn.error").error(" ".join(exception.args))
+        log_error(repr(exception))
         raise HTTPException(400, detail=" ".join(exception.args)) from exception
