@@ -24,7 +24,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     document.add_page_break()
     document.add_heading("Test scope")
     # Create table of tickets with a default column for acceptance criteria
-    table = document.add_table(rows=1, cols=3)
+    table = document.add_table(rows=1, cols=3, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -40,7 +40,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test scope impediments and non-testable items")
     # Create table of ticket with two column for testability and reason
-    table = document.add_table(rows=1, cols=4)
+    table = document.add_table(rows=1, cols=4, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -53,7 +53,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test scope estimation")
     # Add table of ticket with one column for estimation
-    table = document.add_table(rows=1, cols=3)
+    table = document.add_table(rows=1, cols=3, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -73,7 +73,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     # Create subsection for each tickets with table of scenario
     for ticket in campaign.tickets:
         document.add_heading(f"Scenarios for {ticket.reference}", 2)
-        table = document.add_table(rows=1, cols=5)
+        table = document.add_table(rows=1, cols=5, style="TableGrid")
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = "Scenario id"
         hdr_cells[1].text = "Scenario name"
@@ -117,7 +117,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test scope")
     # Create table of ticket
-    table = document.add_table(rows=1, cols=2)
+    table = document.add_table(rows=1, cols=2, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -144,7 +144,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test result summary")
     # Create table of ticket with computed status based on scenarios status
-    table = document.add_table(rows=1, cols=4)
+    table = document.add_table(rows=1, cols=4, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -160,7 +160,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     # Create table of defect within the version
     bugs = await get_bugs(project_name=campaign.project_name,
                     version=campaign.version)
-    table = document.add_table(rows=1, cols=3)
+    table = document.add_table(rows=1, cols=3, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Title"
     hdr_cells[1].text = "Criticality"
@@ -198,7 +198,7 @@ async def evidence_from_ticket(ticket: TicketScenario):
     document.add_paragraph("Start date: ", style='List Bullet')
     document.add_paragraph("End date: ", style='List Bullet')
 
-    document.add_heading("Pre requisites")
+    document.add_heading("Prerequisites")
 
     document.add_heading("Test evidence")
     for scenario in ticket.scenarios:

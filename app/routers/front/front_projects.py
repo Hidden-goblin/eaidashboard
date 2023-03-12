@@ -43,6 +43,7 @@ async def front_project_management(project_name: str,
                                                   "advise": "Try to log again."
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
+        # TODO refactor with headers
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
                                               {
@@ -217,7 +218,7 @@ async def form_version(project_name: str,
         return front_error_message(templates, request, exception)
 
 
-@router.post("/{project_name}/forms/version",
+@router.post("/{project_name}/versions",
              tags=["Front - Project"],
              include_in_schema=False)
 async def add_version(project_name: str,
@@ -235,7 +236,11 @@ async def add_version(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
         await create_project_version(project_name, RegisterVersion(version=version))
-        return HTMLResponse("")
+        return templates.TemplateResponse("void.html",
+                                          {
+                                              "request": request
+                                          },
+                                          headers={"HX-Trigger": "update-version-table"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)

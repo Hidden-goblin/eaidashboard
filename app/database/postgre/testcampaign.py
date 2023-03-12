@@ -90,7 +90,10 @@ async def retrieve_campaign_ticket_id(project_name: str,
                                   (campaign_id[0], ticket_reference)).fetchone()
 
 
-async def get_campaign_content(project_name: str, version: str, occurrence: str):
+async def get_campaign_content(project_name: str,
+                               version: str,
+                               occurrence: str,
+                               only_status: bool = False):
     """Retrieve the campaign fully (tickets and scenarios). No pagination."""
     if not await is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
@@ -105,6 +108,8 @@ async def get_campaign_content(project_name: str, version: str, occurrence: str)
                             version= version,
                             occurrence=int(occurrence),
                             status=campaign_id[1])
+        if only_status:
+            return camp
         # Select all sql data related to the campaign
         result = connection.execute("select ct.ticket_reference as reference, "
                                     "ct.id as campaign_id "

@@ -47,9 +47,15 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.1
+## Current: 3.2
 
 ## History
+- 3.2
+  - Fix front closing div
+  - Fix missing feature name on ticket-scenario view
+  - Fix status wording in campaign-ticket view
+  - Add automatic reload in dashboard, campaign ticket, campaign occurrence
+  - Add redis file caching for displaying text report
 - 3.1
   - Technical version remove mongodb
   - Fix some bugs

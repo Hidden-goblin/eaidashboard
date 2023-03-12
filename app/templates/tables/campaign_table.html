@@ -16,7 +16,8 @@
         <td>{{campaign.status}}</td>
           <td><button class="btn btn-primary"
                       hx-get="/front/v1/projects/{{project_name}}/campaigns/{{campaign.version}}/{{campaign.occurrence}}"
-                      hx-headers='{"eaid-request": "REDIRECT"}'
+                      hx-target="#content-block"
+                      hx-headers='{"eaid-request":""}'
                       >Manage</button> </td>
       </tr>
       {% endfor %}

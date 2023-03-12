@@ -1,5 +1,6 @@
 <form hx-post="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets"
-      hx-ext="json-enc">
+      hx-ext="json-enc"
+      hx-headers='{"eaid-next": "update-table"}'>
     <div>Link tickets</div>
     {% for ticket in tickets %}
     <div class="form-check">
@@ -11,6 +12,7 @@
     {% endfor %}
     <button class="btn btn-primary">Link to campaign</button>
     <button class="btn btn-secondary"
+            hx-trigger="click, update-table from:body"
             hx-delete="/clear"
             hx-target="#addTickets">Close</button>
 </form>

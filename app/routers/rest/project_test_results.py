@@ -22,6 +22,8 @@ from app.app_exception import (DuplicateTestResults,
                                VersionNotFound)
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_versions import version_exists
+from app.database.redis.rs_file_management import rs_invalidate_file, rs_record_file, \
+    rs_retrieve_file
 
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
@@ -32,6 +34,7 @@ from app.database.postgre.pg_test_results import (insert_result as pg_insert_res
 from app.schema.rest_enum import (RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
                                   RestTestResultRenderingEnum)
+from app.utils.project_alias import provide
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -81,6 +84,10 @@ async def rest_import_test_results(project_name: str,
                                   campaign_id,
                                   is_partial, res,
                                   rows)
+        if campaign_occurrence is None:
+            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
+        else:
+            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
         return res
     except IncorrectFieldsRequest as ifr:
         raise HTTPException(400, detail="".join(ifr.args)) from  ifr
@@ -114,15 +121,22 @@ async def rest_export_results(project_name: str,
                               ):
     try:
         # TODO add triggered background task to remove old file [Trigger task]
+        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:{rendering}:{accept}"
+        if accept != "application/json":
+            filename = rs_retrieve_file(file_key)
+            if filename is not None:
+                return f"{request.base_url}static/{filename}"
         test_results = TestResults(REGISTERED_STRATEGY[category][rendering],
                                    REGISTERED_OUTPUT[rendering][accept])
         result = await test_results.render(project_name, version, campaign_occurrence)
+
         if isinstance(result, dict):
             return JSONResponse(content=jsonable_encoder(result))
-        else:
-            return f"{request.base_url}static/{result}"
+
+        await rs_record_file(file_key, result)
+        return f"{request.base_url}static/{result}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, repr(exp)) from exp
 

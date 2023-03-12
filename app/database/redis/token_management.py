@@ -10,8 +10,7 @@ EXPIRE_LIMIT = 60 * int(config['TIMEDELTA'])
 def get_token_date(username):
     connection = redis_connection()
     count = connection.keys("*:token")
-    res =  connection.get(f"{username}:token")
-    return res
+    return connection.get(f"{username}:token")
 
 def renew_token_date(username):
     connection = redis_connection()
