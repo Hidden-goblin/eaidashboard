@@ -17,7 +17,7 @@ from app.database.postgre.pg_tickets import (get_ticket,
                                              get_tickets,
                                              update_ticket,
                                              update_values)
-from app.database.postgre.pg_versions import dashboard as db_dash
+from app.database.postgre.pg_versions import dashboard as db_dash, refresh_version_stats
 
 from app.schema.ticket_schema import UpdatedTicket
 from app.utils.log_management import log_error
@@ -34,11 +34,17 @@ async def dashboard(request: Request):
     try:
         if not is_updatable(request, ()):
             request.session.pop("token", None)
-        projects = await registered_projects()
-        return templates.TemplateResponse("dashboard.html",
-                                          {"request": request,
-                                           "project_version": await db_dash(),
-                                           "projects": projects or []})
+        if request.headers.get("eaid-request", None) is None:
+            projects = await registered_projects()
+
+            return templates.TemplateResponse("dashboard.html",
+                                              {"request": request,
+                                               # "project_version": await db_dash(),
+                                               "projects": projects or []})
+        if request.headers.get("eaid-request", None) == "table":
+            return templates.TemplateResponse("tables/dashboard_table.html",
+                                              {"request": request,
+                                               "project_version": await db_dash()})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -229,7 +235,6 @@ async def project_version_update_ticket(request: Request,
                                         background_task: BackgroundTasks):
     try:
         if not is_updatable(request, ("admin", "user")):
-            # TODO unify to the error_message template
             return templates.TemplateResponse("error_message.html",
                                               {
                                                   "request": request,
@@ -245,8 +250,8 @@ async def project_version_update_ticket(request: Request,
                                   UpdatedTicket(description=body["description"],
                                                 status=body["status"]))
         if not res.acknowledged:
-            logging.getLogger().error("No done")
-        background_task.add_task(update_values, project_name, project_version)
+            logging.getLogger().error("Not done")
+        background_task.add_task(refresh_version_stats, project_name, project_version)
         return templates.TemplateResponse("ticket_row.html",
                                           {"request": request,
                                            "ticket": await get_ticket(project_name,
@@ -254,7 +259,8 @@ async def project_version_update_ticket(request: Request,
                                                                       reference),
                                            "project_name": project_name,
                                            "project_name_alias": provide(project_name),
-                                           "project_version": project_version})
+                                           "project_version": project_version},
+                                          headers={"HX-Trigger": "update-dashboard"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)

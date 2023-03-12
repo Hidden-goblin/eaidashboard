@@ -14,16 +14,21 @@ from app.database.postgre.pg_projects import registered_projects
 
 from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
+from app.database.postgre.pg_versions import get_versions
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios,
                                                db_get_campaign_tickets,
                                                db_put_campaign_ticket_scenarios,
-                                               db_set_campaign_ticket_scenario_status)
+                                               db_set_campaign_ticket_scenario_status,
+                                               get_campaign_content)
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
 from app.database.postgre.testrepository import (db_project_epics,
                                                  db_project_features,
                                                  db_project_scenarios)
+from app.database.redis.rs_file_management import (rs_invalidate_file,
+                                                   rs_record_file,
+                                                   rs_retrieve_file)
 
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
@@ -71,8 +76,8 @@ async def front_project_management(project_name: str,
                                              limit,
                                              skip)
         if request.headers.get("eaid-request", "") == "form":
-            return front_new_campaign_form(project_name,
-                                           request)
+            return await front_new_campaign_form(project_name,
+                                                 request)
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
                                               {
@@ -117,16 +122,19 @@ async def front_project_table(project_name: str,
         return front_error_message(templates, request, exception)
 
 
-def front_new_campaign_form(project_name: str,
-                            request: Request):
+async def front_new_campaign_form(project_name: str,
+                                  request: Request):
     try:
         return templates.TemplateResponse("forms/add_campaign.html",
                                           {
                                               "request": request,
                                               "project_name": project_name,
-                                              "project_name_alias": provide(project_name)
+                                              "project_name_alias": provide(project_name),
+                                              "versions": await get_versions(project_name, True)
 
-                                          })
+                                          },
+                                          headers={
+                                              "HX-Trigger": request.headers.get("eaid-next", "")})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -204,17 +212,16 @@ async def front_get_campaign(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox",
                                                        "HX-Reswap": "innerHTML"})
-        if request.headers.get("eaid-request", "") == "REDIRECT":
-            return templates.TemplateResponse(
-                "void.html",
-                {
-                    "request": request
-                },
-                headers={
-                    "HX-Redirect": f"/front/v1/projects/"
-                                   f"{project_name}"
-                                   f"/campaigns/{version}/{occurrence}"})
-        campaign = await db_get_campaign_tickets(project_name, version, occurrence)
+        if request.headers.get("eaid-request", "") == "table":
+            campaign = await db_get_campaign_tickets(project_name, version, occurrence)
+            return templates.TemplateResponse("tables/campaign_board_table.html",
+                                              {"request": request,
+                                               "campaign": campaign,
+                                               "project_name": project_name,
+                                               "version": version,
+                                               "occurrence": occurrence})
+
+        campaign = await get_campaign_content(project_name, version, occurrence, True)
         projects = await registered_projects()
         return templates.TemplateResponse("campaign_board.html",
                                           {
@@ -518,16 +525,13 @@ async def front_campaign_add_tickets(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
         await add_tickets_to_campaign(project_name, version, occurrence, body)
-        return templates.TemplateResponse("error_message.html",
+        # TODO capture header and send empty response with headers
+        return templates.TemplateResponse("void.html",
                                           {
-                                              "request": request,
-                                              "highlight": "Reload the page",
-                                              "sequel": " to see your updates.",
-                                              "advise": (
-                                                  "Reload the page as auto-reloading feature has"
-                                                  " not been implemented yet.")
+                                              "request": request
                                           },
-                                          headers={"HX-Retarget": "#messageBox"})
+                                          headers={
+                                              "HX-Trigger": request.headers.get("eaid-next", "")})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -542,11 +546,17 @@ async def front_campaign_occurrence_status(project_name: str,
                                            occurrence: str,
                                            request: Request):
     try:
-        test_results = TestResults(
-            REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][
-                RestTestResultRenderingEnum.MAP],
-            REGISTERED_OUTPUT[RestTestResultRenderingEnum.MAP][RestTestResultHeaderEnum.HTML])
-        result = await test_results.render(project_name, version, occurrence)
+        result = await rs_retrieve_file(f"file:{provide(project_name)}:{version}:"
+                                        f"{occurrence}:scenarios:map:text/html")
+        if result is None:
+            test_results = TestResults(
+                REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][
+                    RestTestResultRenderingEnum.MAP],
+                REGISTERED_OUTPUT[RestTestResultRenderingEnum.MAP][RestTestResultHeaderEnum.HTML])
+            result = await test_results.render(project_name, version, occurrence)
+            await rs_record_file(f"file:{provide(project_name)}:{version}:"
+                                 f"{occurrence}:scenarios:map:text/html",
+                                 result)
         return templates.TemplateResponse("frame.html",
                                           {
                                               "request": request,
@@ -588,6 +598,8 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                  True,
                                  test_result_uuid,
                                  scenarios)
+        background_task.add_task(rs_invalidate_file,
+                                 f"file:{provide(project_name)}:{version}:{occurrence}:*")
         return templates.TemplateResponse("back_message.html",
                                           {
                                               "request": request,

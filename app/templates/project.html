@@ -10,13 +10,11 @@
             hx-target="#dialog">Add a new version</button>
     <div id="versionsTable"
          hx-get="/front/v1/projects/{{project_name}}/versions"
-         hx-trigger="load">
+         hx-trigger="load, update-version-table from:body">
     </div>
     <div id="versionTickets">
     </div>
     <div id="ticket">
     </div>
   </div>
-
-</div>
 {% endblock %}

@@ -1,5 +1,6 @@
 <form   hx-post="/front/v1/projects/{{project_name}}/versions/{{version}}"
-        hx-ext="json-enc">
+        hx-ext="json-enc"
+        hx-headers='{"eaid-next": "update-table"}'>
      <div class="mb-3">
         <label for="reference" class="form-label">Ticket reference:</label>
         <input type="text" id="reference" name="reference" value="" class="form-control"/>
@@ -19,8 +20,9 @@
     <button class="btn btn-primary"
             type="submit">Submit</button>
 <button class="btn btn-secondary"
-                hx-delete="/clear"
-                hx-target="#ticket"
+        hx-trigger="click, update-table from:body"
+        hx-delete="/clear"
+        hx-target="#ticket"
         >Dismiss</button>
 
 </form>

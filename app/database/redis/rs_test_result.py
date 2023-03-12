@@ -1,12 +1,10 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import datetime
 import json
 import uuid
 
 from app.schema.redis_schema import RdTestResult
 from fastapi.encoders import jsonable_encoder
-# from bson import json_util
 from app.utils.project_alias import provide
 from app.utils.redis import redis_connection
 
@@ -15,12 +13,6 @@ async def mg_insert_test_result(project_name, version, campaign_id, is_partial):
                         version=version,
                         is_partial=is_partial,
                         status="importing")
-    # data = {"campaign_id": campaign_id,
-    #         "version": version,
-    #         "is_partial": is_partial,
-    #         "status": "importing",
-    #         "created": datetime.datetime.now(),
-    #         "updated": datetime.datetime.now()}
     connection = redis_connection()
     key = f"{provide(project_name)}:{version}:{campaign_id}:{uuid.uuid4()}:result"
     connection.set(key, json.dumps(jsonable_encoder(data)))

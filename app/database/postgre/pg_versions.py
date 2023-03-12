@@ -8,6 +8,7 @@ from psycopg.rows import dict_row, tuple_row
 from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.project_schema import Statistics
+from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.utils.pgdb import pool
@@ -222,3 +223,53 @@ async def version_internal_id(project_name: str, version: str) -> int:
                                   " where pj.alias = %s"
                                   " and ve.version = %s;",
                                   (provide(project_name), version)).fetchone()[0]
+
+
+async def refresh_version_stats(project_name: str = None, version: str = None):
+    #TODO: Limit to project-version in general except for future cron task
+    with pool.connection() as connection:
+        connection.row_factory = tuple_row
+        query_version = "select ve.id from versions as ve {join} {where} {filter};"
+        query_join = ""
+        query_filter = ""
+        query_data = []
+        if project_name is not None:
+            query_join = "join projects as pj on pj.id = ve.project_id"
+            query_filter = "pj.alias = %s"
+            query_data.append(provide(project_name))
+        if version is not None:
+            query_filter = f"{query_filter} {'and' if query_filter else ''} ve.version = %s"
+            query_data.append(version)
+        full_query = query_version.format(join = query_join,
+                                          where = "where" if query_filter else "",
+                                          filter = query_filter)
+        versions = connection.execute(full_query, query_data).fetchall()
+
+        query = ("select count(tk.id)"
+                 " from tickets as tk"
+                 " where tk.current_version = %s"
+                 " and tk.status = %s;")
+        for version in versions:
+            count_open = connection.execute(query,
+                                            (version[0], TicketType.OPEN.value)).fetchone()[0]
+            count_in_progress = connection.execute(query,
+                                            (version[0], TicketType.IN_PROGRESS.value)).fetchone()[0]
+            count_blocked = connection.execute(query,
+                                            (version[0], TicketType.BLOCKED.value)).fetchone()[0]
+            count_cancelled = connection.execute(query,
+                                            (version[0], TicketType.CANCELLED.value)).fetchone()[0]
+            count_done = connection.execute(query,
+                                            (version[0], TicketType.DONE.value)).fetchone()[0]
+            connection.execute("update versions"
+                               " set open = %s,"
+                               " in_progress = %s,"
+                               " blocked = %s,"
+                               " cancelled = %s,"
+                               " done = %s"
+                               " where id = %s;",(count_open,
+                                                  count_in_progress,
+                                                  count_blocked,
+                                                  count_cancelled,
+                                                  count_done,
+                                                  version[0]))
+            connection.commit()

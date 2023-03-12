@@ -1,10 +1,7 @@
-{% extends "base.html" %}
-{% block titre %}  {% endblock %}
-{% block contenu %}
 <div id="project_{{project_name}}" class="container">
     <!-- Campaign Board -->
     <h1>Campaign for {{project_name}} version {{version}} (run {{occurrence}})</h1>
-    <h2>Status: {{campaign.status}}</h2>
+    <h2>Status: {{campaign.status.value}}</h2>
     <div class="hstack">
         <button class="btn"
                 hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/deliverables"
@@ -36,57 +33,14 @@
         </button>
     </div>
     <div id="campaignMessage"></div>
-    <div class="accordion" id="campaignTickets">
-        {% for ticket in campaign.tickets %}
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="heading{{ticket.reference}}">
-                <button class="accordion-button collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapse{{loop.index}}"
-                        aria-expanded="false"
-                        aria-controls="collapse{{loop.index}}"
-                        hx-trigger="click once"
-                        hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios"
-                        hx-target="#accordion-body{{loop.index}}"
-                >
-                    {{ticket.reference}}: {{ticket.description}}
-                </button>
-            </h2>
-            <div id="collapse{{loop.index}}"
-                 class="accordion-collapse collapse"
-                 aria-labelledby="heading{{loop.index}}"
-                 data-bs-parent="#campaignTickets">
-                <div>
-                    <button class="btn btn-secondary"
-                            hx-trigger="click"
-                            hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}"
-                            hx-target="#campaignMessage"
-                            >Add scenarios</button>
-                    <button class="btn"
-                            hx-trigger="click, add-scenario-{{loop.index}} from:body"
-                            hx-headers='{"eaid-next":"add-scenario-{{loop.index}}"}'
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios?initiator=add-scenario-{{loop.index}}"
-                            hx-target="#accordion-body{{loop.index}}">
-                        <img src="/assets/reload.svg"
-                                 alt="reload"
-                                 height="20px"
-                                 width="20px"/>
-                    </button>
-                    <button class="btn btn-secondary"
-                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/deliverables?deliverable_type=evidence&ticket_ref={{ticket.reference}}"
-                            hx-target="#addResults"
-                    >Evidence template</button>
-                </div>
-                <div class="accordion-body" id="accordion-body{{loop.index}}">
-                    <strong>{{ticket.reference}}</strong>
-                </div>
-            </div>
-          </div>
-        {% endfor %}
+    <div id="campaignTable"
+         hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
+         hx-headers='{"eaid-request": "table"}'
+         hx-trigger="load, update-table from:body">
+
     </div>
+
+
     <div class="hstack">
     <button class="btn btn-primary"
             hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets"
@@ -99,4 +53,3 @@
     <div id="addTickets"></div>
     <div id="addResults"></div>
 </div>
-{% endblock %}
