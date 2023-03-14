@@ -47,9 +47,11 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.2
+## Current: 3.2.1
 
 ## History
+- 3.2.1
+  - Fix issue on sql request for get_projects
 - 3.2
   - Fix front closing div
   - Fix missing feature name on ticket-scenario view
