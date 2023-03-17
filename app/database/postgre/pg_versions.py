@@ -11,6 +11,7 @@ from app.schema.project_schema import Statistics
 from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
 from app.schema.bugs_schema import Bugs, UpdateVersion
+from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
@@ -160,7 +161,7 @@ async def update_version_data(project_name: str, version: str, body: UpdateVersi
                                 datetime.now(),
                                 provide(project_name),
                                 version))
-        else:
+        elif body.started is None and body.end_forecast is not None:
             connection.execute("update versions ve "
                                " set end_forecast = %s, "
                                " updated = %s "
@@ -172,6 +173,8 @@ async def update_version_data(project_name: str, version: str, body: UpdateVersi
                                 datetime.now(),
                                 provide(project_name),
                                 version))
+        else:
+            log_message("No data to update")
 
     return await get_version(project_name, version)
 
