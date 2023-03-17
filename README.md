@@ -47,11 +47,13 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.2.1
+## Current: 3.2.2
 
 ## History
+- 3.2.2
+  - Fix issue on update version status TypeError strptime argument 1 must be str, not None
 - 3.2.1
-  - Fix issue on sql request for get_projects
+  - Fix issue on sql request for get_projects. CardinalityError with subquery
 - 3.2
   - Fix front closing div
   - Fix missing feature name on ticket-scenario view
