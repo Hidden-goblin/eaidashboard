@@ -220,6 +220,8 @@ async def campaign_deliverable(project_name: str,
                                occurrence: str,
                                deliverable_type: DeliverableTypeEnum,
                                ticket_ref: str = None):
+    # TODO register file
+    # file:project_alias:version:occurrence:type
     if deliverable_type == DeliverableTypeEnum.TEST_PLAN:
         campaign = await get_campaign_content(project_name, version, occurrence)
         filename = await test_plan_from_campaign(campaign)

@@ -16,8 +16,7 @@ from app.database.postgre.pg_projects import (create_project_version,
                                               get_project,
                                               registered_projects)
 from app.database.postgre.pg_tickets import (add_ticket,
-                                             get_tickets,
-                                             update_values)
+                                             get_tickets)
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.schema.project_schema import RegisterVersion
@@ -154,8 +153,7 @@ async def project_version_tickets(project_name: str,
 async def add_ticket_to_version(project_name: str,
                                 version: str,
                                 request: Request,
-                                body: dict,
-                                background_task: BackgroundTasks):
+                                body: dict):
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -169,7 +167,6 @@ async def add_ticket_to_version(project_name: str,
         result = await add_ticket(project_name, version, ToBeTicket(**body))
         if not result.inserted_id:
             return "error"
-        background_task.add_task(update_values, project_name, version)
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,

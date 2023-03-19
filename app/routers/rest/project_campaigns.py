@@ -23,6 +23,7 @@ from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                fill_campaign as db_fill_campaign)
 from app.database.postgre.pg_campaigns_management import (create_campaign,
                                                           retrieve_campaign)
+from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
@@ -257,9 +258,20 @@ async def retrieve_campaign_occurrence_deliverables(project_name: str,
                                                                          scopes=["admin", "user"])
                                                     ):
     try:
-        filename = await campaign_deliverable(project_name, version, occurrence, deliverable_type, ticket_ref)
+        if ticket_ref is not None:
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
+        else:
+            key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
+        filename = await rs_retrieve_file(key)
+        if filename is None:
+            filename = await campaign_deliverable(project_name,
+                                                  version,
+                                                  occurrence,
+                                                  deliverable_type,
+                                                  ticket_ref)
+            await rs_record_file(key, filename)
         return f"{request.base_url}static/{filename}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, repr(exp)) from exp

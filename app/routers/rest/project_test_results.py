@@ -84,6 +84,7 @@ async def rest_import_test_results(project_name: str,
                                   campaign_id,
                                   is_partial, res,
                                   rows)
+        # Invalidate current result files and remove them
         if campaign_occurrence is None:
             await rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
         else:
@@ -120,7 +121,6 @@ async def rest_export_results(project_name: str,
                               accept: RestTestResultHeaderEnum = Header()
                               ):
     try:
-        # TODO add triggered background task to remove old file [Trigger task]
         file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:{rendering}:{accept}"
         if accept != "application/json":
             filename = rs_retrieve_file(file_key)

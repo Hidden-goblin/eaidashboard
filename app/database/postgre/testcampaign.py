@@ -10,6 +10,7 @@ from app.database.postgre.pg_campaigns_management import is_campaign_exist, retr
 from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.postgre.pg_tickets import (get_ticket,
                                              get_tickets_by_reference)
+from app.database.redis.rs_file_management import rs_invalidate_file
 
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
@@ -21,6 +22,7 @@ from app.schema.campaign_schema import (CampaignFull,
                                         TicketScenario,
                                         TicketScenarioCampaign)
 from app.utils.pgdb import pool
+from app.utils.project_alias import provide
 
 
 async def fill_campaign(project_name: str,
@@ -275,6 +277,7 @@ async def db_put_campaign_ticket_scenarios(project_name,
                            " on conflict do nothing;", (campaign_ticket_id[0],
                                                        ScenarioStatusEnum.recorded.value,
                                                        scenarios_id))
+        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
 
 
 async def db_delete_campaign_ticket_scenario(project_name,
@@ -294,6 +297,7 @@ async def db_delete_campaign_ticket_scenario(project_name,
                            "and scenario_id = %s ",
                            (campaign_ticket_id[0],
                             scenario_internal_id))
+        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
 
 
 async def db_set_campaign_ticket_scenario_status(project_name,
@@ -305,6 +309,7 @@ async def db_set_campaign_ticket_scenario_status(project_name,
     campaign_ticket_id = await retrieve_campaign_ticket_id(project_name, version, occurrence, reference)
     with pool.connection() as connection:
         connection.row_factory = dict_row
+        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
         return connection.execute(
             "update campaign_ticket_scenarios as cts "
             "set status = %s "

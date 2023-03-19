@@ -3,7 +3,7 @@
 from typing import List, Union
 
 from app.app_exception import VersionNotFound
-from app.database.postgre.pg_versions import update_version_ticket_stats
+from app.database.postgre.pg_versions import update_status_for_ticket_in_version
 from app.schema.project_schema import RegisterVersionResponse
 from app.utils.pgdb import pool
 from psycopg.rows import dict_row, tuple_row
@@ -157,10 +157,10 @@ async def update_ticket(project_name: str,
                         updated_ticket: UpdatedTicket) -> RegisterVersionResponse:
     # SPEC: update the version ticket count status where ticket status is updated
     if updated_ticket.status is not None:
-        await update_version_ticket_stats(project_name,
-                                          project_version,
-                                          ticket_reference,
-                                          updated_ticket.status)
+        await update_status_for_ticket_in_version(project_name,
+                                                  project_version,
+                                                  ticket_reference,
+                                                  updated_ticket.status)
     # SPEC: update the values first then move the ticket to another version
     query = ("update tickets tk"
              " set")
@@ -193,8 +193,3 @@ async def update_ticket(project_name: str,
                               updated_ticket.version,
                               ticket_reference)
         return RegisterVersionResponse(inserted_id = ', '.join(result))
-
-async def update_values(project_name, version):
-    # Fake process
-    # TODO: remove
-    pass

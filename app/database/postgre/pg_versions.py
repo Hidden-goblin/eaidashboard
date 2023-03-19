@@ -5,6 +5,7 @@ from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
+from app.app_exception import VersionNotFound
 from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.project_schema import Statistics
@@ -26,7 +27,7 @@ async def version_exists(project_name: str, version: str) -> bool:
                                  (provide(project_name), version)).fetchone()
         return row is not None
 
-async def get_version(project_name: str, version: str):
+async def get_version(project_name: str, version: str) -> Version:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute("select * "
@@ -36,7 +37,7 @@ async def get_version(project_name: str, version: str):
                                  " and ve.version = %s;",
                                  (provide(project_name), version)).fetchone()
         if row is None:
-            raise Exception("Version not found")
+            raise VersionNotFound("Version not found")
 
         stats = Statistics(open=row["open"],
                            cancelled=row["cancelled"],
@@ -81,7 +82,6 @@ async def get_project_versions(project_name: str, exclude_archived: bool = False
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if exclude_archived:
-            alias = provide(project_name)
             rows = connection.execute("select * "
                                  " from versions as ve"
                                  " join projects as pjt on pjt.id = ve.project_id "
@@ -128,12 +128,12 @@ async def update_version_status(project_name: str, version: str, to_be_status: s
                            " and pjt.id = ve.project_id "
                            " and version = %s;",
                            (to_be_status, datetime.now(), provide(project_name), version))
+    await refresh_version_stats(project_name, version)
     return await get_version(project_name, version)
 
 
 async def update_version_data(project_name: str, version: str, body: UpdateVersion):
-    # if body.status is not None:
-    #     await update_version_status(project_name, version, body["status"])
+    # TODO Refactor with query/data build
     with pool.connection() as connection:
         if body.started is not None and body.end_forecast is not None:
             connection.execute("update versions ve"
@@ -189,13 +189,10 @@ async def dashboard():
     return result
 
 
-async def get_version_and_collection(project_name, version):
-    # TODO remove when migration done
-    result = await version_exists(project_name, version)
-    return (version, result) or (None, None)
-
-
-async def update_version_ticket_stats(project_name, version, ticket_reference, updated_status):
+async def update_status_for_ticket_in_version(project_name,
+                                              version,
+                                              ticket_reference,
+                                              updated_status):
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         current_ticket = connection.execute("select tk.status, tk.current_version"
