@@ -101,7 +101,8 @@ def _compute_status(scenarios):
     if (ScenarioStatusEnum.waiting_fix in status
             or ScenarioStatusEnum.waiting_answer in status):
         return TestResultStatusEnum.failed
-    if all(ScenarioStatusEnum.done == stat for stat in status):
+    if all(ScenarioStatusEnum(stat) in [ScenarioStatusEnum.done, ScenarioStatusEnum.cancelled]
+           for stat in status):
         return TestResultStatusEnum.passed
     return TestResultStatusEnum.skipped
 

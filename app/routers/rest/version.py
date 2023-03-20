@@ -4,7 +4,6 @@ from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
 
-from starlette.background import BackgroundTasks
 
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
@@ -12,8 +11,7 @@ from app.database.authorization import authorize_user
 from app.database.postgre.pg_tickets import (add_ticket,
                                                  get_ticket,
                                                  get_tickets,
-                                                 update_ticket,
-                                                 update_values)
+                                                 update_ticket)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)
