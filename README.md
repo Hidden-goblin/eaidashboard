@@ -47,9 +47,12 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.2.2
+## Current: 3.3
 
 ## History
+- 3.3
+  - Use cache to lower the document generation trigger
+  - Remove unnecessary function used with MongoDb
 - 3.2.2
   - Fix issue on update version status TypeError strptime argument 1 must be str, not None
 - 3.2.1
