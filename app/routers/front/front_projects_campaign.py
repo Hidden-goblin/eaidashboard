@@ -140,7 +140,10 @@ async def front_new_campaign_form(project_name: str,
         return front_error_message(templates, request, exception)
 
 
-@router.post("/{project_name}/campaigns")
+@router.post("/{project_name}/campaigns",
+             tags=["Front - Project"],
+             include_in_schema=False
+             )
 async def front_new_campaign(project_name: str,
                              request: Request,
                              version: str = Form(...)
@@ -636,13 +639,23 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                   "advise": "Try to log again"
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
-        result = await campaign_deliverable(project_name, version, occurrence, deliverable_type,
+        if ticket_ref is not None:
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
+        else:
+            key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
+        filename = await rs_retrieve_file(key)
+        if filename is None:
+            filename = await campaign_deliverable(project_name,
+                                                  version,
+                                                  occurrence,
+                                                  deliverable_type,
                                             ticket_ref)
+            await rs_record_file(key, filename)
 
         return templates.TemplateResponse("download_link.html",
                                           {
                                               "request": request,
-                                              "link": f"{request.base_url}static/{result}"
+                                              "link": f"{request.base_url}static/{filename}"
                                           })
     except Exception as exception:
         log_error(repr(exception))

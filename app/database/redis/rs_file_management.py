@@ -1,6 +1,11 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from pathlib import Path
+
+from app.utils.log_management import log_message
 from app.utils.redis import redis_connection
+from app.conf import BASE_DIR
+from os import remove
 
 
 async def rs_record_file(file_key: str, filename: str) -> str:
@@ -12,12 +17,27 @@ async def rs_record_file(file_key: str, filename: str) -> str:
 
 async def rs_invalidate_file(file_key_pattern: str):
     # SPEC: remove file_key from storage
+    # SPEC: remove real file if file exists
     connection = redis_connection()
     keys = connection.keys(file_key_pattern)
+    for key in keys:
+        filename = Path(f"{BASE_DIR}/static/{connection.get(key).decode()}")
+        if filename.exists():
+            remove(filename)
+        else:
+            log_message(f"File {filename.name} does not exist anymore")
     connection.delete(*keys)
 
 async def rs_retrieve_file(file_key: str):
     # SPEC: return stored filename or None if not exists
+    # SPEC: check real file exists invalidate and return None if not
     connection = redis_connection()
-    filename = connection.get(file_key)
-    return filename.decode() if filename is not None else None
+    _filename = connection.get(file_key)
+    filename = _filename.decode() if _filename is not None else None
+    if filename is not None:
+        filepath = Path(f"{BASE_DIR}/static/{filename}")
+        if filepath.exists():
+            return filename
+        else:
+            await rs_invalidate_file(file_key)
+    return None

@@ -4,7 +4,6 @@ from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
 
-from starlette.background import BackgroundTasks
 
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
@@ -12,8 +11,7 @@ from app.database.authorization import authorize_user
 from app.database.postgre.pg_tickets import (add_ticket,
                                                  get_ticket,
                                                  get_tickets,
-                                                 update_ticket,
-                                                 update_values)
+                                                 update_ticket)
 
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.schema.project_schema import (ErrorMessage)
@@ -40,11 +38,9 @@ router = APIRouter(
 async def create_ticket(project_name: str,
                         version: str,
                         ticket: ToBeTicket,
-                        background_task: BackgroundTasks,
                         user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
         result = await add_ticket(project_name, version, ticket)
-        background_task.add_task(update_values, project_name, version)
         return str(result.inserted_id)
     except VersionNotFound as pnr:
         log_error(repr(pnr))
@@ -130,15 +126,11 @@ async def update_one_ticket(project_name: str,
                             version: str,
                             reference: str,
                             ticket: UpdatedTicket,
-                            background_task: BackgroundTasks,
                             user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
         res = await update_ticket(project_name, version, reference, ticket)
         if not res.acknowledged:
             raise Exception("update not made")
-        background_task.add_task(update_values, project_name, version)
-        if "version" in ticket.dict() and ticket.dict()["version"] is not None:
-            background_task.add_task(update_values, project_name, ticket.dict()["version"])
         return str(res.inserted_id)
     except VersionNotFound as pnr:
         log_error(repr(pnr))

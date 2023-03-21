@@ -6,7 +6,7 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import VersionNotFound
 
-from app.database.postgre.pg_versions import get_version_and_collection
+from app.database.postgre.pg_versions import version_exists
 
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
@@ -15,8 +15,7 @@ from app.utils.pgdb import pool
 
 async def create_campaign(project_name, version, status: str = "recorded") -> dict:
     """Insert into campaign a new empty occurrence"""
-    _version, __ = await get_version_and_collection(project_name, version)
-    if _version is None:
+    if not await version_exists(project_name, version):
         raise VersionNotFound(f"{version} does not belong to {project_name}.")
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -27,10 +26,10 @@ async def create_campaign(project_name, version, status: str = "recorded") -> di
                                   "version as version, occurrence as occurrence, "
                                   "description as description, status as status;",
                                   (project_name.casefold(),
-                                   _version,
+                                   version,
                                    CampaignStatusEnum(status),
                                    project_name.casefold(),
-                                   _version)).fetchone()
+                                   version)).fetchone()
 
         connection.commit()
         return conn

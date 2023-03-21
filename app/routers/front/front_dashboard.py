@@ -15,8 +15,7 @@ from app.database.authorization import is_updatable
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_tickets import (get_ticket,
                                              get_tickets,
-                                             update_ticket,
-                                             update_values)
+                                             update_ticket)
 from app.database.postgre.pg_versions import dashboard as db_dash, refresh_version_stats
 
 from app.schema.ticket_schema import UpdatedTicket

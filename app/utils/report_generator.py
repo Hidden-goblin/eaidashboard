@@ -101,7 +101,8 @@ def _compute_status(scenarios):
     if (ScenarioStatusEnum.waiting_fix in status
             or ScenarioStatusEnum.waiting_answer in status):
         return TestResultStatusEnum.failed
-    if all(ScenarioStatusEnum.done == stat for stat in status):
+    if all(ScenarioStatusEnum(stat) in [ScenarioStatusEnum.done, ScenarioStatusEnum.cancelled]
+           for stat in status):
         return TestResultStatusEnum.passed
     return TestResultStatusEnum.skipped
 
@@ -220,6 +221,8 @@ async def campaign_deliverable(project_name: str,
                                occurrence: str,
                                deliverable_type: DeliverableTypeEnum,
                                ticket_ref: str = None):
+    # TODO register file
+    # file:project_alias:version:occurrence:type
     if deliverable_type == DeliverableTypeEnum.TEST_PLAN:
         campaign = await get_campaign_content(project_name, version, occurrence)
         filename = await test_plan_from_campaign(campaign)

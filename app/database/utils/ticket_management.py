@@ -8,7 +8,7 @@ from app.app_exception import CampaignNotFound, NonUniqueError
 from app.utils.project_alias import provide
 
 from app.database.postgre.pg_tickets import get_ticket
-from app.database.postgre.pg_versions import get_version_and_collection
+from app.database.postgre.pg_versions import version_exists
 from app.database.postgre.pg_campaigns_management import retrieve_campaign_id
 from app.utils.pgdb import pool
 
@@ -57,8 +57,8 @@ async def add_ticket_to_campaign(project_name, version, occurrence, ticket_refer
 async def move_ticket(project_name, version, current_ticket, target_version):
     # Exist
     async with asyncio.TaskGroup() as tg:
-        version_exist = tg.create_task(get_version_and_collection(project_name, version))
-        target_version_exist = tg.create_task(get_version_and_collection(project_name,
+        version_exist = tg.create_task(version_exists(project_name, version))
+        target_version_exist = tg.create_task(version_exists(project_name,
                                                                          target_version))
         ticket_in_campaign = tg.create_task()
     #
