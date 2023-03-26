@@ -17,10 +17,22 @@ from app.database.postgre.pg_users import init_user
 from app.database.postgre.postgres import postgre_register
 
 
-from app.routers.rest import (auth, bugs, project_campaigns, project_repository, projects,
-                              settings, users, version, project_test_results)
-from app.routers.front import (front_dashboard, front_projects, front_projects_campaign,
-                               front_projects_bug, front_projects_repository, front_forms)
+from app.routers.rest import (auth,
+                              bugs,
+                              project_campaigns,
+                              project_repository,
+                              projects,
+                              settings,
+                              users,
+                              version,
+                              project_test_results)
+from app.routers.front import (front_dashboard,
+                               front_projects,
+                               front_projects_campaign,
+                               front_projects_bug,
+                               front_projects_repository,
+                               front_forms,
+                               front_documentation)
 from app.utils.openapi_tags import DESCRIPTION
 
 
@@ -62,6 +74,7 @@ app.include_router(front_projects_campaign.router)
 app.include_router(front_projects_bug.router)
 app.include_router(front_projects_repository.router)
 app.include_router(front_forms.router)
+app.include_router(front_documentation.router)
 
 init_user()
 

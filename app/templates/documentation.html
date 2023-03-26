@@ -1,0 +1,11 @@
+{% extends "base_head.html" %}
+{% block body %}
+  <div class="container"
+       hx-get="/documentation/{{first}}"
+       hx-trigger="load"
+       hx-swap="innerHtml"
+       id="docContainer">
+
+  </div>
+
+{% endblock %}
