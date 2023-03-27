@@ -1,6 +1,7 @@
 # Workflows
-
+<< prev | next >>
 [TOC]
+
 
 Which work process could you use with this tool? In this section, I will provide some thoughts on how you could work 
 when you want to make both manual and automated testing campaign using open or used by development team tools.
@@ -74,3 +75,40 @@ and validate acceptance criteria for software testing and quality assurance purp
 Overall, scenarios are an important tool in software development to ensure that the software application is developed 
 with the end user in mind and meets their specific needs and requirements.
 ```
+
+### Project
+
+A project is the application under test. 
+
+Currently, the project is a way to sandbox items. There is no specific workflow management, nor user right management.
+
+I use the name of the application as the project's name. You can use nearly any name.
+
+### Version
+
+A version is an increment of the application under test. The application versioning is free and should be the 
+versioning convention used on the project. 
+
+I use the version as way to track test work.
+
+### Ticket
+
+The ticket is anything describing work onto the project-version. I only record a reference and a title for each 
+ticket as this tool is not currently a ticket management tool. 
+
+A good process is, in my humble opinion, to have one version per ticket. If the ticket release is postponed then the 
+ticket release version is updated.
+
+
+### Campaign
+
+A campaign is a set of ticket which need to be validated through executing (manually or automatically) scenarios.
+
+The campaign tracks tickets and bugs.
+
+### Occurrence
+
+Occurrence is a way to divide workload into phases. It can be used to record regression test results from automated 
+tests.
+
+It may be useful if the campaign scope as frequent updates.  
