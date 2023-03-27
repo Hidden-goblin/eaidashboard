@@ -134,9 +134,9 @@ The docker-hub link for [app image](https://hub.docker.com/r/hiddengob/eaidashbo
 
 ## <img height="10" src="/assets/camera.svg" width="10"/> Topics
 
-<a class="link-primary" hx-get="/documentation/workflows.md">Designed workflows</a>
+<a class="link-primary" hx-get="/documentation/00-workflows.md">Designed workflows</a>
 
-<a class="link-primary" hx-get="/documentation/how_to.md">How-to page</a>
+<a class="link-primary" hx-get="/documentation/00-how_to.md">How-to page</a>
 
 
 
