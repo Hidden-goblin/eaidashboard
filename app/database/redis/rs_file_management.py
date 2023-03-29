@@ -26,7 +26,8 @@ async def rs_invalidate_file(file_key_pattern: str):
             remove(filename)
         else:
             log_message(f"File {filename.name} does not exist anymore")
-    connection.delete(*keys)
+    if keys:
+        connection.delete(*keys)
 
 async def rs_retrieve_file(file_key: str):
     # SPEC: return stored filename or None if not exists
