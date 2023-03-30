@@ -1,13 +1,27 @@
-FROM python:3.11.0-slim
+FROM python:3.11.0-slim-buster AS builder
 
-RUN apt-get -y update &&  pip install pipenv
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y build-essential
+RUN pip install pipenv
+
+COPY Pipfile ./
+RUN pipenv install
+RUN pipenv requirements > requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app ./app
+RUN rm -f ./app/static/*
+
+# Stage 2 - Build final image
+FROM python:3.11.0-slim-buster
 
 WORKDIR /usr/src/dashboard
 
-COPY Pipfile main.py ./
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-RUN pipenv install
+COPY main.py ./
 
-COPY app app/
+COPY --from=builder /app/app app/
 
-CMD pipenv run python main.py
+CMD ["python", "main.py"]

@@ -47,9 +47,11 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.3
+## Current: 3.3.1
 
 ## History
+- 3.3.1
+  - Fix issue on deleting keys in redis where keys is an empty list. 
 - 3.3
   - Use cache to lower the document generation trigger
   - Remove unnecessary function used with MongoDb

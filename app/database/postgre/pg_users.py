@@ -5,21 +5,28 @@ from psycopg.rows import dict_row
 from app.database.utils.password_management import get_password_hash
 from app.utils.pgdb import pool
 from app.database.redis.token_management import revoke
+from app.utils.log_management import log_error, log_message
 
 
 def init_user():
     with pool.connection() as conn:
-        row = conn.execute("select id from users where username='admin@admin.fr'")
+        log_message("Init user")
+        row = conn.execute("select id from users where username='admin@admin.fr'").fetchone()
+        log_message(f"{row}")
         if row is None:
             create_user("admin@admin.fr", "admin", ["admin"])
 
 
 def create_user(username, password, scopes):
-    
-    with pool.connection() as conn:
-        conn.execute("insert into users (username, password, scopes) "
-                     " values (%s, %s, %s);",
-                     (username, get_password_hash(password), scopes))
+    try:
+        with pool.connection() as conn:
+            log_message(f"Create user {username} with {scopes}")
+            conn.execute("insert into users (username, password, scopes) "
+                         " values (%s, %s, %s);",
+                         (username, get_password_hash(password), scopes))
+    except Exception as exception:
+        log_error("\n".join(exception.args))
+        raise
 
 
 def get_user(username):
