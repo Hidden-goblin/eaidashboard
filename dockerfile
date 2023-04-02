@@ -21,9 +21,11 @@ RUN rm -f ./app/assets/documentation/*
 FROM openjdk:8-jre-slim AS plantuml-builder
 
 RUN apt-get update && apt-get install -y graphviz wget
-RUN wget https://sourceforge.net/projects/plantuml/files/plantuml.jar/download -O plantuml.jar
 
 WORKDIR /app
+
+RUN wget https://sourceforge.net/projects/plantuml/files/plantuml.jar/download -O plantuml.jar
+
 COPY documentation/doc_diag/*.puml ./diagrams/
 RUN java -jar plantuml.jar -tsvg diagrams/*.puml
 
