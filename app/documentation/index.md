@@ -1,6 +1,9 @@
 # Dashboard documentation
+
 [TOC]
+
 ## Foreword
+
 This tool's purpose is to help building and conducting test campaigns. One of the main goal is to provide transparency on the test status.
 
 A second goal is to aggregate tests results on the long term, and display scenarios or features or epics which are prone to failure.

@@ -1,5 +1,7 @@
 {% extends "base_head.html" %}
 {% block body %}
+
+  <div class="container"><div class="hstack"><div class="ms-auto">Application version: {{app_version}}</div> </div> </div>
   <div class="container"
        hx-get="/documentation/{{first}}"
        hx-trigger="load"

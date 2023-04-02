@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from app.database.postgre.postgres import init_postgres, update_postgres
-from app.conf import config
+from app.conf import config, APP_VERSION
 from app.database.utils.password_management import generate_keys
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
@@ -40,9 +40,12 @@ from app.utils.openapi_tags import DESCRIPTION
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
 """
+
+
+
 app = FastAPI(title="Eaidashboard",
               description=description,
-              version="3.3.1",
+              version=APP_VERSION,
               license_info={
                   "name": "GNU GPL v3",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
