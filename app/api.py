@@ -40,9 +40,6 @@ from app.utils.openapi_tags import DESCRIPTION
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
 """
-
-
-
 app = FastAPI(title="Eaidashboard",
               description=description,
               version=APP_VERSION,
