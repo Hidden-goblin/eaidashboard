@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Start the version as in the simple or single occurrence workflow;
+if (is there a new ticket added to the version?) then (Yes)
+    :On version;
+    -> Record the new ticket;
+    :On the campaign;
+    -> Create a new occurrence for the update\nAttach scenarios;
+    :On the campaign occurrence monitor
+    this sub-campaign as in the single occurrence workflow;
+endif
+:Close the campaign as in the simple or single occurrence workflow;
+end
+
+@enduml

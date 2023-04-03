@@ -1,0 +1,42 @@
+@startuml
+'https://plantuml.com/state-diagram
+
+hide empty description
+
+state "Test plan writing" as TP_W
+state "Test plan sent" as TP_S
+state "Test plan accepted" as TP_A
+state "Campaign started" as C_S
+state "Campaign ended" as C_E
+state "TER writing" as TER_W
+state "TER sent" as TER_S
+
+
+[*] --> Recorded : New version
+Recorded --> TP_W : Plan campaign
+Recorded --> Cancelled : Version is cancelled
+TP_W --> TP_S : Planning is done
+TP_W --> Cancelled : Version is cancelled
+TP_S --> TP_A : Inform stakeholder
+TP_S --> Cancelled : Version is cancelled
+TP_S --> C_S : No approval required
+TP_A --> C_S : Accepted by stakeholder
+TP_A --> Cancelled : Refused by stakeholder
+C_S --> C_E : All activities are done
+C_S --> Cancelled : Plan to update, stop testing activities
+C_E --> TER_W : Start campaign reporting
+C_E --> Cancelled : Plan to update, might need retest
+TER_W --> TER_S : Campaign reporting sent to stakeholder
+TER_S --> Archived : Campaign is done\nOpen new one if updates to be made
+Archived --> [*]
+
+Cancelled --> Recorded : Restart the version from the very beginning
+Cancelled --> TP_W : Re-plan the campaign
+Cancelled --> TP_S : The plan was correct
+Cancelled --> TP_A : Stakeholder has reconsidered the test plan
+Cancelled --> C_E : Eventually end the campaign
+Cancelled --> C_S : Ok you can start as planned
+Cancelled --> TER_W : Campaign need a final status
+Cancelled --> TER_S : Nothing to update, send to stakeholder
+Cancelled --> Cancelled
+@enduml

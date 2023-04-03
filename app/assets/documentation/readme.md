@@ -1,0 +1,1 @@
+This folder is meant to receive plantUml diagram exported as svg.

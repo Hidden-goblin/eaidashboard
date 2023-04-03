@@ -39,7 +39,7 @@ You must use the 3.0 version to migrate data from mongodb to postgresql.
 
 Ensure you have set a redis database. 
 
-Use the migration endpoint `GET /api/v1/admin/redis_migration`. The migration process must be launch by an admin.
+Use the migration endpoint `GET /api/v1/admin/redis_migration`. The migration process must be launched by an admin.
 
 After the migration is done, restart the application to be sure not to use the mongodb connector. You can even shutdown the mongodb database.
 
@@ -47,9 +47,13 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.3.1
+## Current: 3.4
 
 ## History
+
+- 3.4
+  - Add some basic documentation and the basics for future documentation.
+  - Add plantUml build stage
 - 3.3.1
   - Fix issue on deleting keys in redis where keys is an empty list. 
 - 3.3

@@ -1,0 +1,43 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+start
+:New Version for a project;
+-> Record version;
+:On the new version page;
+->Record tickets linked to the version;
+:The version contains tickets to qualify;
+-> Create a campaign;
+:On the campaign management;
+-> Associate tickets to the current occurrence;
+:On the campaign occurrence;
+-> Associate each ticket with scenario;
+:The campaign filling is complete;
+-> Communicate on the test scope\nSet the test execution start date\nEstimate the execution end date;
+while (Is there ticket in non-terminal status \nor Is there still time for test execution?) is (Yes)
+    :Check test advancement;
+    switch (Event)
+        case (Ticket test start)
+            :Update status to **In progress**;
+        case (End of day work)
+            :Snapshot the test advancement;
+            :Send the tests results;
+        case (All tests passed for a ticket)
+            :Update ticket status to **Done**;
+            :Store evidences of the test execution;
+        case (Ticket is not testable)
+            :Update status to **Out of scope**;
+        case (Ticket test reveals a defect)
+            :Update status to **Blocked**;
+        case (Ticket defect has been fixed)
+            :Update status to **Open**;
+        case (Test execution will be delayed)
+            :Update **end forecast date**;
+    endswitch
+end while (No)
+:Test campaign is nearly done;
+-> Write Test exit Report from campaign template\nSend TER;
+:Test campaign is done;
+-> Close campaign;
+end
+
+@enduml
