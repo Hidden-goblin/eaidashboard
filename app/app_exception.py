@@ -92,7 +92,7 @@ class DuplicateTestResults(Exception):
     """To be raised when an existing test campaign result is already in database"""
     pass
 
-def front_error_message(templates, request, exception):
+def front_error_message(templates, request, exception, retarget: str = "#messageBox"):
     log_error(repr(exception))
     return templates.TemplateResponse(
         "error_message.html",
@@ -102,5 +102,6 @@ def front_error_message(templates, request, exception):
             "sequel": " to perform this action.",
             "advise": f"Try to reload the page. \n Error message is {repr(exception)}",
         },
-        headers={"HX-Retarget": "#messageBox"}
+        headers={"HX-Retarget": retarget,
+                 "HX-Reswap": "innerHTML"}
     )

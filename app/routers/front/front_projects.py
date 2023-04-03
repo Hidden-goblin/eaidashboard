@@ -1,30 +1,76 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form
 from psycopg.errors import UniqueViolation
-from starlette.background import BackgroundTasks
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.utils.log_management import log_error
+from app.utils.log_management import log_error, log_message
 
 from app.database.postgre.pg_projects import (create_project_version,
                                               get_project,
-                                              registered_projects)
+                                              register_project, registered_projects)
 from app.database.postgre.pg_tickets import (add_ticket,
                                              get_tickets)
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
-from app.schema.project_schema import RegisterVersion
+from app.schema.project_schema import RegisterProject, RegisterVersion
 from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import ToBeTicket
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
+
+@router.get("",
+            tags=["Front - Project"],
+            include_in_schema=False)
+async def front_project(request: Request):
+    try:
+        if not is_updatable(request, ("admin", )):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+        if request.headers.get("eaid-request") == "FORM":
+            return templates.TemplateResponse("forms/create_project.html",
+                                              {"request": request})
+
+    except Exception as exception:
+        log_error(repr(exception))
+        return front_error_message(templates, request, exception)
+
+@router.post("",
+            tags=["Front - Project"],
+            include_in_schema=False)
+async def front_create_project(body: RegisterProject,
+                               request: Request):
+    try:
+        if not is_updatable(request, ("admin", )):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+        log_message(body)
+        await register_project(body.name)
+        return templates.TemplateResponse("void.html",
+                                          {"request": request},
+                                          headers={"HX-Trigger": "modalClear"})
+    except Exception as exception:
+        return front_error_message(templates,
+                                   request,
+                                   exception,
+                                   "#modalErrorMessage")
 
 
 @router.get("/{project_name}",

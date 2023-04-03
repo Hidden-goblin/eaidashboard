@@ -36,7 +36,10 @@
                        hx-headers='{"eaid-request":"REDIRECT"}'>{{project}}</a></li>
               {% endfor %}
               <li><hr class="dropdown-divider"></li>
-              <li>Use <a _="on click go to url /docs">API docs</a> to create new project </li>
+              <li><a hx-trigger="click"
+                     hx-get="/front/v1/projects"
+                     hx-headers='{"eaid-request":"FORM"}'
+                     hx-target="#modals-here">New project</a></li>
           </ul>
         </li>
             {%endif%}
