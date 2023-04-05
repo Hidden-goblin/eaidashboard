@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import json
 import logging
 
 from fastapi import APIRouter, Form, HTTPException
@@ -34,12 +35,8 @@ async def dashboard(request: Request):
         if not is_updatable(request, ()):
             request.session.pop("token", None)
         if request.headers.get("eaid-request", None) is None:
-            projects = await registered_projects()
-
             return templates.TemplateResponse("dashboard.html",
-                                              {"request": request,
-                                               # "project_version": await db_dash(),
-                                               "projects": projects or []})
+                                              {"request": request})
         if request.headers.get("eaid-request", None) == "table":
             return templates.TemplateResponse("tables/dashboard_table.html",
                                               {"request": request,
@@ -102,8 +99,9 @@ async def return_void(request: Request):
             )
 async def login(request: Request):
     try:
-        return templates.TemplateResponse("login_modal.html",
-                                          {"request": request})
+        return templates.TemplateResponse("forms/login_modal.html",
+                                          {"request": request,
+                                           "message": None})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -120,7 +118,7 @@ async def post_login(request: Request,
     try:
         sub, scopes = authenticate_user(username, password)
         if sub is None:
-            raise HTTPException(401, detail="Unrecognized credentials")
+            raise Exception("Unrecognized credentials")
         access_token = create_access_token(
             data={"sub": sub,
                   "scopes": scopes})
@@ -128,10 +126,20 @@ async def post_login(request: Request,
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request
-                                          })
+                                          },
+                                          headers={"HX-Trigger": "modalClear",
+                                                   "HX-Trigger-After-Swap": json.dumps({"navRefresh": '',
+                                                                             "update-dashboard": ""})}
+                                          )
     except Exception as exception:
         log_error(repr(exception))
-        return front_error_message(templates, request, exception)
+        return templates.TemplateResponse("forms/login_modal.html",
+                                          {"request": request,
+                                           "message": "\n".join(exception.args),
+                                           "username": username},
+                                          headers={"HX-Retarget": "#modal",
+                                                   "HX-Reswap": "beforeend"}
+                                          )
 
 
 @router.delete("/login",
@@ -144,7 +152,9 @@ async def logout(request: Request):
             invalidate_token(request.session["token"])
         request.session.clear()
         return templates.TemplateResponse("void.html",
-                                          {"request": request})
+                                          {"request": request},
+                                          headers={"HX-Trigger": "navRefresh"}
+                                          )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -263,6 +273,18 @@ async def project_version_update_ticket(request: Request,
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
+
+@router.get("/front/v1/navigation",
+            response_class=HTMLResponse,
+            tags=["Front - Campaign"],
+            include_in_schema=False
+            )
+async  def get_navigation_bar(request: Request):
+    projects = await registered_projects()
+    return templates.TemplateResponse("navigation.html",
+                                      {"request": request,
+                                       "projects": projects or []}
+                                      )
 
 @router.get("/testResults",
             response_class=HTMLResponse,

@@ -40,7 +40,9 @@ async def front_project(request: Request):
                                               headers={"HX-Retarget": "#messageBox"})
         if request.headers.get("eaid-request") == "FORM":
             return templates.TemplateResponse("forms/create_project.html",
-                                              {"request": request})
+                                              {"request": request,
+                                               "name": None,
+                                               "error_message": ""})
 
     except Exception as exception:
         log_error(repr(exception))
@@ -65,12 +67,18 @@ async def front_create_project(body: RegisterProject,
         await register_project(body.name)
         return templates.TemplateResponse("void.html",
                                           {"request": request},
-                                          headers={"HX-Trigger": "modalClear"})
+                                          headers={"HX-Trigger": "modalClear",
+                                                   "HX-Trigger-After-Swap": "navRefresh"})
     except Exception as exception:
-        return front_error_message(templates,
-                                   request,
-                                   exception,
-                                   "#modalErrorMessage")
+        log_error("\n".join(exception.args))
+        return templates.TemplateResponse("forms/create_project.html",
+                                          {
+                                              "request": request,
+                                              "name": body.name,
+                                              "message":"\n".join(exception.args)
+                                          },
+                                          headers={"HX-Retarget": "#modal",
+                                                   "HX-Reswap": "beforeend"})
 
 
 @router.get("/{project_name}",

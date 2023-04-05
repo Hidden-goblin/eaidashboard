@@ -46,12 +46,12 @@
             <td>{{item.bugs.closed_blocking}}</td>
             <td>{{item.bugs.closed_major}}</td>
             <td>{{item.bugs.closed_minor}}</td>
-            <td><button type="button"
+            <td>{% if request.session.token is defined %}<button type="button"
                         class="btn btn-primary"
                         data-toggle="collapse"
                         href="#dashboard-table"
                     hx-get="/{{item.name}}/versions/{{item.version}}/tickets"
-                    hx-target="#tickets">+</button></td>
+                    hx-target="#tickets">+</button>{% endif %}</td>
         </tr>
     {% endfor %}
     </tbody>

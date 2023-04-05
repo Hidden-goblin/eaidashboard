@@ -19,7 +19,7 @@ async def register_project(project_name: str):
     # Add check that project name does not contain \ / $ symbols raise an error
     forbidden_char = ["\\", "/", "$"]
     if any(char in project_name for char in forbidden_char):
-        raise ProjectNameInvalid("Project name must not be contains \\ / $ characters")
+        raise ProjectNameInvalid("Project name must not contain \\ / $ characters")
     if contains(project_name):
         raise DuplicateProject(f"Project name '{project_name}' "
                                f"already exists. Please update the name "
