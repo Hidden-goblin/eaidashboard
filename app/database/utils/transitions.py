@@ -3,13 +3,7 @@
 from app.app_exception import StatusTransitionForbidden, UnknownStatusException
 from app.schema.status_enum import StatusEnum
 
-
-def version_transition(current_status, to_be_status):
-    if not StatusEnum.in_enum(to_be_status):
-        raise UnknownStatusException("Status is not accepted")
-
-    # Todo: set definition outside the function
-    authorized_transition = {
+authorized_transition = {
         StatusEnum.RECORDED: [
             StatusEnum.TEST_PLAN_WRITING,
             StatusEnum.CANCELLED
@@ -55,6 +49,14 @@ def version_transition(current_status, to_be_status):
             StatusEnum.CANCELLED
         ]
     }
+
+
+def version_transition(current_status, to_be_status):
+    if not StatusEnum.in_enum(to_be_status):
+        raise UnknownStatusException("Status is not accepted")
+
+    # Todo: set definition outside the function
+
     _to_be_status = StatusEnum(to_be_status)
     _current_status = StatusEnum(current_status)
     _transition = authorized_transition[_current_status]

@@ -2,12 +2,15 @@
 # -*- Author: E.Aivayan -*-
 
 from fastapi import APIRouter, Form
-from psycopg.errors import UniqueViolation
+from psycopg.errors import CheckViolation, UniqueViolation
 from starlette.requests import Request
 
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
+from app.database.postgre.pg_versions import get_version, update_version_data
+from app.database.utils.transitions import authorized_transition
+from app.schema.bugs_schema import UpdateVersion
 from app.utils.log_management import log_error, log_message
 
 from app.database.postgre.pg_projects import (create_project_version,
@@ -18,7 +21,7 @@ from app.database.postgre.pg_tickets import (add_ticket,
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.schema.project_schema import RegisterProject, RegisterVersion
-from app.schema.status_enum import TicketType
+from app.schema.status_enum import StatusEnum, TicketType
 from app.schema.ticket_schema import ToBeTicket
 from app.utils.project_alias import provide
 
@@ -187,6 +190,17 @@ async def project_version_tickets(project_name: str,
                                                   "version": version,
                                                   "status": [status.value for status in TicketType]
                                               })
+        if request.headers.get("eaid-request", "") == "versionUpdate":
+            version = await get_version(project_name, version)
+            log_message(repr(version))
+            return templates.TemplateResponse("forms/update_version_modal.html",
+                                              {
+                                                  "request": request,
+                                                  "project_name": project_name,
+                                                  "version": version,
+                                                  "transitions": authorized_transition[StatusEnum(
+                                                      version.status)]
+                                              })
         tickets = await get_tickets(project_name, version)
         tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
         return templates.TemplateResponse("tables/version_tickets.html",
@@ -242,6 +256,63 @@ async def add_ticket_to_version(project_name: str,
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
+@router.put("/{project_name}/versions/{version}",
+            tags=["Front - Project"],
+            include_in_schema=False)
+async def project_version_update(project_name: str,
+                                 version: str,
+                                 body: dict,
+                                 request: Request):
+    version = await get_version(project_name, version)
+    try:
+        if not is_updatable(request, ("admin", "user")):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+        log_message(body)
+
+        cleaned_body = {key: value for key, value in body.items() if value}
+        await update_version_data(project_name, version.version, UpdateVersion(**cleaned_body))
+
+        return templates.TemplateResponse("void.html",
+                                   {
+                                       "request": request
+                                   },
+                                   headers={"HX-Trigger": "modalClear",
+                                            "HX-Trigger-After-Swap": "update-dashboard"}
+                                   )
+    except CheckViolation as chk_violation:
+        log_error(repr(chk_violation))
+        return templates.TemplateResponse("forms/update_version_modal.html",
+                                          {
+                                              "request": request,
+                                              "project_name": project_name,
+                                              "version": version,
+                                              "transitions": authorized_transition[StatusEnum(
+                                                  version.status)],
+                                              "message": "Started date could not be "
+                                                         "after end forecast date"
+                                          },
+                                          headers={"HX-Retarget": "#modal",
+                                                   "HX-Reswap": "beforeend"})
+    except Exception as exception:
+        log_error(repr(exception))
+        return templates.TemplateResponse("forms/update_version_modal.html",
+                                          {
+                                              "request": request,
+                                              "project_name": project_name,
+                                              "version": version,
+                                              "transitions": authorized_transition[StatusEnum(
+                                                  version.status)],
+                                              "message": ", ".join(exception.args)
+                                          },
+                                          headers={"HX-Retarget": "#modal",
+                                                   "HX-Reswap": "beforeend"})
 
 @router.get("/{project_name}/forms/version",
             tags=["Front - Project"],

@@ -17,10 +17,11 @@ from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_tickets import (get_ticket,
                                              get_tickets,
                                              update_ticket)
-from app.database.postgre.pg_versions import dashboard as db_dash, refresh_version_stats
+from app.database.postgre.pg_versions import dashboard as db_dash, get_version, \
+    refresh_version_stats
 
 from app.schema.ticket_schema import UpdatedTicket
-from app.utils.log_management import log_error
+from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
 router = APIRouter()
@@ -153,7 +154,8 @@ async def logout(request: Request):
         request.session.clear()
         return templates.TemplateResponse("void.html",
                                           {"request": request},
-                                          headers={"HX-Trigger": "navRefresh"}
+                                          headers={"HX-Trigger": json.dumps({"navRefresh": '',
+                                                                             "update-dashboard": ""})}
                                           )
     except Exception as exception:
         log_error(repr(exception))
@@ -308,4 +310,33 @@ async def get_test_results(request: Request):
                                            "results": result})
     except Exception as exception:
         log_error(repr(exception))
+        return front_error_message(templates, request, exception)
+
+
+@router.get("front/v1/projects/{project}/versions/{version}",
+            response_class=HTMLResponse,
+            tags=["Front - Campaign"],
+            include_in_schema=False
+            )
+async def get_project_version(project: str,
+                              version: str,
+                              request: Request):
+    try:
+        if not is_updatable(request, ("admin", "user")):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You're not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try reconnect",
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+        version = get_version(project, version)
+        log_message(repr(version))
+        return templates.TemplateResponse("forms/update_version_modal.html",
+                                          {
+                                              "request": request,
+                                              "version": repr(version)
+                                          })
+    except Exception as exception:
         return front_error_message(templates, request, exception)
