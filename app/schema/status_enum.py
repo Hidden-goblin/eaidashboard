@@ -2,19 +2,24 @@
 # -*- Author: E.Aivayan -*-
 from enum import Enum
 
+class DashTypeEnum(Enum):
+    def __str__(self):
+        return self.value
 
-class TicketType(Enum):
+    @classmethod
+    def in_enum(cls, item):
+        return item in [str(val) for val in cls.__members__.values()]
+
+class TicketType(DashTypeEnum):
     OPEN = "open"
     CANCELLED = "cancelled"
     BLOCKED = "blocked"
     IN_PROGRESS = "in_progress"
     DONE = "done"
 
-    def __str__(self):
-        return self.value
 
 
-class StatusEnum(Enum):
+class StatusEnum(DashTypeEnum):
     IN_PROGRESS = "in progress"
     RECORDED = "recorded"
     CAMPAIGN_STARTED = "campaign started"
@@ -28,11 +33,3 @@ class StatusEnum(Enum):
     BLOCKED = "blocked"
     CANCELLED = "cancelled"
     ARCHIVED = "archived"
-
-    def __str__(self):
-        return self.value
-
-
-    @classmethod
-    def in_enum(cls, item):
-        return item in [str(val) for val in StatusEnum.__members__.values()]

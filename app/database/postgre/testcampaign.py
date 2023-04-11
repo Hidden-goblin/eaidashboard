@@ -13,14 +13,16 @@ from app.database.postgre.pg_tickets import (get_ticket,
 from app.database.redis.rs_file_management import rs_invalidate_file
 
 from app.database.utils.ticket_management import add_ticket_to_campaign
+from app.database.utils.transitions import ticket_authorized_transition, version_transition
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.campaign_schema import (CampaignFull,
-                                        Scenario,
+                                        CampaignPatch, Scenario,
                                         ScenarioCampaign,
                                         ScenarioInternal,
                                         Scenarios,
                                         TicketScenario,
                                         TicketScenarioCampaign)
+from app.schema.status_enum import TicketType
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
@@ -332,3 +334,18 @@ def db_is_scenario_internal_id_exist(project_name,
                                   "and ft.project_id = %s",
                                   [scenario_internal_id, project_name]).fetchone()
         return rows["sc_count"] == 1
+
+
+async def db_update_campaign_occurrence(project_name: str,
+                                        version: str,
+                                        occurrence: str,
+                                        update: CampaignPatch):
+    campaign = await get_campaign_content(project_name, version, occurrence, True)
+    version_transition(campaign.status,
+                       update.status,
+                       TicketType,
+                       ticket_authorized_transition
+                       )
+
+    with pool.connection() as connection:
+        connection.row_factory = dict_row

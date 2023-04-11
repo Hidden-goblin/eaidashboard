@@ -1,0 +1,20 @@
+@startuml
+'https://plantuml.com/state-diagram
+
+hide empty description
+
+state "In Progress" as IN_PROG
+
+[*] -> OPEN : create element
+OPEN --> IN_PROG : working\n on element
+IN_PROG --> DONE : work done
+IN_PROG ---> BLOCKED : work blocked\n awaiting external input
+BLOCKED --> IN_PROG : resume work
+IN_PROG -> CANCELLED : element not needed anymore
+OPEN -> CANCELLED : element not needed anymore
+BLOCKED -> CANCELLED : element not needed anymore
+
+CANCELLED -> IN_PROG : resume work
+CANCELLED -> OPEN : to be considered as new
+
+@enduml

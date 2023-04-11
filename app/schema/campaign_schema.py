@@ -81,3 +81,7 @@ class TicketScenario(BaseModel):
 
 class CampaignFull(CampaignLight):
     tickets: Optional[list[TicketScenario]] = []
+
+
+class CampaignPatch(BaseModel):
+    status: TicketType

@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from app.schema.repository_schema import (Feature, Scenario, TestFeature, TestScenario)
 from app.utils.pgdb import pool
@@ -237,7 +237,7 @@ async def db_project_scenarios(project: str,
 async def db_get_scenarios_id(project_name,
                         epic_name,
                         feature_name,
-                        scenarios_ref: list,
+                        scenarios_ref: list | str,
                         feature_filename=None) -> List[int]:
     if isinstance(scenarios_ref, str):
         scenarios_ref = [scenarios_ref]
