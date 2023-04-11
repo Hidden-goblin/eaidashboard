@@ -7,7 +7,7 @@ hx-get="/documentation/index.md"> Index </a>
 
 ## Create a new project
 
-Currently only via the API with admin rights.
+Via the API with admin rights.
 
 ```commandline
 curl -X 'POST' \
@@ -22,6 +22,14 @@ curl -X 'POST' \
 
 You can access the API swagger for a graphical interface.
 
+Via the GUI once logged in as administrator, select the `New project` entry in the `Projects` menu and then submit 
+the form.
+
+<img alt="Location of the new project button" src="/assets/howto/create_project_button_HT.png" title="Create project" width="800"/>
+
+<img alt="The create project form" src="/assets/howto/create_project_form_HT.png" title="Create project 
+form" width="400"/>
+
 ## Create a new project's version
 
 On the GUI, you need to be connected with admin rights.
@@ -29,8 +37,8 @@ On the GUI, you need to be connected with admin rights.
 Select the project.
 
 Then create a new version. The **version** is plain text so that you could enter the version number whatever the 
-application versioning system is. 
+application versioning system is.
 
-![](/assets/howto/create_version_HT.png)
+<img src="/assets/howto/create_version_HT.png" title="Create a version UI" width="800"/>
 
-![](/assets/howto/create_version_fill_version_HT.png)
+<img alt="Form to fill a version" src="/assets/howto/create_version_fill_version_HT.png" title="Fill version UI" width="800"/>

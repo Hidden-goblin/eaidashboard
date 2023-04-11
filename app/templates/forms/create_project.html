@@ -1,0 +1,84 @@
+{% if name %}
+   <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-post="/front/v1/projects"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}' >
+                        <!--                        <form action="/login" method="post">-->
+                        <div class="mb-3" >
+                            <label for="project_name" class="form-label">Project name</label>
+                            <input id="project_name" name="name" value="{{name}}" class="form-control"/>
+                            <span class="text-danger" >
+                                      {{message}}
+                            </span>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+{% else %}
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-post="/front/v1/projects"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}'>
+                        <!--                        <form action="/login" method="post">-->
+                        <div class="mb-3" >
+                            <label for="project_name" class="form-label">Project name</label>
+                            <input id="project_name" name="name" value="" class="form-control"/>
+                           <!--     <div class="invalid-feedback">
+                                      {{error_message}}
+                                </div> -->
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,76 @@
+{% if message %}
+<div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modal title</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <form hx-post="/login" hx-swap="none">
+<!--                        <form action="/login" method="post">-->
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Email :</label>
+                                <input type="email" id="username" name="username" value="{{username}}" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password:</label>
+                                <input type="password" id="password" name="password" class="form-control">
+                            </div>
+                            <div class="button">
+                                <button type="submit" class="btn btn-secondary">Login</button>
+                            </div>
+                        </form>
+                    </div>
+                    <span class="text-danger" >
+                                      {{message}}
+                            </span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-swap="innerHTML"
+                        hx-target="#modals-here">Dismiss</button>
+                </div>
+            </div>
+        </div>
+{% else %}
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modal title</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <form hx-post="/login">
+<!--                        <form action="/login" method="post">-->
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Email :</label>
+                                <input type="email" id="username" name="username" value="" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password:</label>
+                                <input type="password" id="password" name="password" class="form-control">
+                            </div>
+                            <div class="button">
+                                <button type="submit" class="btn btn-secondary">Login</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-swap="innerHTML"
+                        hx-target="#modals-here">Dismiss</button>
+                </div>
+            </div>
+        </div>
+</div>
+{%endif%}

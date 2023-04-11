@@ -1,54 +1,11 @@
 {% extends "base_head.html" %}
 {% block body %}
-<nav class="navbar navbar-expand-lg navbar-light bg-light hstack">
-    <div class="container-fluid">
-        <ul class="navbar-nav mr-auto">
-            {%if not request.session["token"]%}
-            <li id="log">
-                <button hx-get="/login"
-                        hx-target="#modals-here"
-                        hx-trigger="click"
-                        class="btn btn-primary"
-                       _="on htmx:afterOnLoad wait 10ms then add .show to #modal">
-
-                    Log
-                </button>
-            </li>
-            {%else%}
-            <li id="deco">
-                <button hx-delete="/login"
-                        hx-trigger="click"
-                        class="btn btn-primary"
-                       _="on htmx:afterRequest wait 1s then go to url /">
-
-                    Logout
-                </button>
-            </li>
-            <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Projects
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              {% for project in projects %}
-                <li><a class="dropdown-item"
-                       hx-trigger="click"
-                       hx-get="/front/v1/projects/{{project}}"
-                       hx-headers='{"eaid-request":"REDIRECT"}'>{{project}}</a></li>
-              {% endfor %}
-              <li><hr class="dropdown-divider"></li>
-              <li>Use <a _="on click go to url /docs">API docs</a> to create new project </li>
-          </ul>
-        </li>
-            {%endif%}
-<!--            <li>-->
-<!--                <a href="/testResults"  class="btn btn-primary" role="button">Test results</a>-->
-<!--            </li>-->
-        </ul>
-    </div>
-            <a role="button" class="btn btn-secondary"
-                    href="/documentation"
-                    target="_blank">?</a>
-            <button class="btn btn-secondary ms-auto text-nowrap" _="on click go to url /">Back to main</button>
+<nav class="navbar navbar-expand-lg navbar-light bg-light hstack"
+     id="navigationBar"
+     hx-get="/front/v1/navigation"
+     hx-target="this"
+     hx-swap="innerHTML"
+     hx-trigger="load, navRefresh from:body">
 
 </nav>
 

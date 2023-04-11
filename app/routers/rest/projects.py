@@ -19,8 +19,7 @@ from app.database.postgre.pg_projects import (create_project_version,
                                                   get_project,
                                                   get_projects)
 from app.database.postgre.pg_versions import (get_version,
-                                                  update_version_data,
-                                                  update_version_status)
+                                                  update_version_data)
 
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
@@ -155,11 +154,6 @@ async def update_version(project_name: str,
                          body: UpdateVersion,
                          user: Any = Security(authorize_user, scopes=["admin", "user"])):
     try:
-        result = None
-        if "status" in body.dict() and body.dict()["status"] is not None:
-            result = await update_version_status(project_name, version, body.dict()["status"])
-        # Check it's ok :/
-
         return await update_version_data(project_name.casefold(), version.casefold(), body)
     except Exception as exp:
         raise HTTPException(500, repr(exp))

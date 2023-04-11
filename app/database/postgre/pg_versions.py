@@ -116,65 +116,29 @@ async def get_project_versions(project_name: str, exclude_archived: bool = False
                            bugs=bugs))
     return result
 
-async def update_version_status(project_name: str, version: str, to_be_status: str):
-    _version = await get_version(project_name, version)
-    version_transition(_version["status"], to_be_status)
-    with pool.connection() as connection:
-        connection.execute("update versions ve "
-                           " set status = %s, "
-                           " updated = %s "
-                           " from projects pjt "
-                           " where pjt.alias = %s "
-                           " and pjt.id = ve.project_id "
-                           " and version = %s;",
-                           (to_be_status, datetime.now(), provide(project_name), version))
-    await refresh_version_stats(project_name, version)
-    return await get_version(project_name, version)
-
 
 async def update_version_data(project_name: str, version: str, body: UpdateVersion):
-    # TODO Refactor with query/data build
-    with pool.connection() as connection:
-        if body.started is not None and body.end_forecast is not None:
-            connection.execute("update versions ve"
-                               " set started = %s,"
-                               "  end_forecast = %s, "
-                               "  updated = %s "
-                               " from projects pjt "
-                               " where pjt.alias = %s "
-                               " and pjt.id = ve.project_id "
-                               " and version = %s;",
-                               (datetime.strptime(body.started, "%Y-%m-%d"),
-                                datetime.strptime(body.end_forecast, "%Y-%m-%d"),
-                                datetime.now(),
-                                provide(project_name),
-                                version))
-        elif body.started is not None and body.end_forecast is None:
-            connection.execute("update versions ve "
-                               " set started = %s,"
-                               " updated = %s "
-                               " from projects pjt "
-                               " where pjt.alias = %s "
-                               " and pjt.id = ve.project_id "
-                               " and version = %s;",
-                               (datetime.strptime(body.started, "%Y-%m-%d"),
-                                datetime.now(),
-                                provide(project_name),
-                                version))
-        elif body.started is None and body.end_forecast is not None:
-            connection.execute("update versions ve "
-                               " set end_forecast = %s, "
-                               " updated = %s "
-                               " from projects pjt "
-                               " where pjt.alias = %s "
-                               " and pjt.id = ve.project_id "
-                               " and version = %s;",
-                               (datetime.strptime(body.end_forecast, "%Y-%m-%d"),
-                                datetime.now(),
-                                provide(project_name),
-                                version))
-        else:
-            log_message("No data to update")
+    updates = {}
+    if body.started is not None:
+        updates["started"] = datetime.strptime(body.started, "%Y-%m-%d")
+    if body.end_forecast is not None:
+        updates["end_forecast"] = datetime.strptime(body.end_forecast, "%Y-%m-%d")
+    if body.status is not None:
+        _version = await get_version(project_name, version)
+        version_transition(_version["status"], body.status)
+        updates["status"] = body.status
+    if updates:
+        updates["updated"] = datetime.now()
+        with pool.connection() as connection:
+            query = ("update versions ve"
+                     " set " + ", ".join(f"{k} = %s" for k in updates) +
+                     " from projects pjt"
+                     " where pjt.alias = %s"
+                     " and pjt.id = ve.project_id"
+                     " and version = %s")
+            log_message(query)
+            data = [*updates.values(), provide(project_name), version]
+            connection.execute(query, data)
 
     return await get_version(project_name, version)
 

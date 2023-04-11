@@ -1,0 +1,125 @@
+{% if message %}
+<div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Version</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <form hx-ext="json-enc">
+                            <div class="mb-3">
+                                <label for="started"
+                                       class="form-label">Start date:</label>
+                                <input type="date"
+                                       id="started"
+                                       name="started"
+                                       class="from-control"
+                                       value="{{version.started}}"
+                                       pattern="\d{4}-\d{2}-\d{2}"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="end_forecast"
+                                       class="form-label">Forecast date:</label>
+                                <input type="date"
+                                       id="end_forecast"
+                                       name="end_forecast"
+                                       class="from-control"
+                                       value="{{version.end_forecast}}"
+                                       pattern="\d{4}-\d{2}-\d{2}"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transition"
+                                       class="form-label">Transition to:</label>
+                                <select id="transition"
+                                        class="form-select"
+                                        name="status">
+                                        <option value="">No update</option>
+                                    {% for transition in transitions %}
+                                        <option value="{{transition}}">{{transition | capitalize}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit"
+                                    class="btn btn-secondary"
+                                    hx-put="/front/v1/projects/{{project_name}}/versions/{{version.version}}">
+                                    Update
+                            </button>
+                        </form>
+                        <span class="text-danger">{{message}}</span>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-swap="innerHTML"
+                        hx-target="#modals-here">Dismiss</button>
+                </div>
+            </div>
+        </div>
+{% else %}
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Version</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <form hx-ext="json-enc">
+                            <div class="mb-3">
+                                <label for="started"
+                                       class="form-label">Start date:</label>
+                                <input type="date"
+                                       id="started"
+                                       name="started"
+                                       class="from-control"
+                                       value="{{version.started}}"
+                                       pattern="\d{4}-\d{2}-\d{2}"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="end_forecast"
+                                       class="form-label">Forecast date:</label>
+                                <input type="date"
+                                       id="end_forecast"
+                                       name="end_forecast"
+                                       class="from-control"
+                                       value="{{version.end_forecast}}"
+                                       pattern="\d{4}-\d{2}-\d{2}"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transition"
+                                       class="form-label">Transition to:</label>
+                                <select id="transition"
+                                        class="form-select"
+                                        name="status">
+                                        <option selected value="">No update</option>
+                                    {% for transition in transitions %}
+                                        <option value="{{transition}}">{{transition | capitalize}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit"
+                                    class="btn btn-secondary"
+                                    hx-put="/front/v1/projects/{{project_name}}/versions/{{version.version}}">
+                                    Update
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-swap="innerHTML"
+                        hx-target="#modals-here">Dismiss</button>
+                </div>
+            </div>
+        </div>
+</div>
+{%endif%}

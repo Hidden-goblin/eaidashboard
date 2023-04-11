@@ -289,5 +289,11 @@ POSTGRE_UPDATES = [
          set closed_minor = 0
          where closed_minor is NULL""",
         "description": "Fix null value in versions"
+    },
+    {
+        "request":"""alter table versions
+        add constraint check_started_before_end_forecast
+        check (started is NULL or end_forecast is NULL or started < end_forecast);""",
+        "description": "Add constraint on started and end_forecast on versions table"
     }
 ]
