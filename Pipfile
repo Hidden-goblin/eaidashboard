@@ -23,6 +23,7 @@ markdown = "*"
 
 [dev-packages]
 pydeps = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.11"

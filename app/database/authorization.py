@@ -56,6 +56,8 @@ def authorize_user(security_scopes: SecurityScopes,
         token_data = TokenData(scopes=token_scopes, email=email)
     except jwt.InvalidSignatureError:
         raise credentials_exception
+    except Exception:
+        raise credentials_exception
     if (all(scope not in security_scopes.scopes for scope in token_data.scopes)
             and security_scopes.scopes):
         raise credentials_exception
