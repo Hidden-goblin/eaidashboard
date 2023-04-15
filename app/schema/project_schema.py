@@ -36,13 +36,14 @@ class TicketProject(BaseModel):
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
-        
-        
+
+
 class RegisterVersion(BaseModel):
     version: str
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
 
 class RegisterVersionResponse(BaseModel):
     inserted_id: int

@@ -1,56 +1,55 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from enum import Enum
 
 from app.app_exception import StatusTransitionForbidden, UnknownStatusException
 from app.schema.status_enum import DashTypeEnum, StatusEnum, TicketType
 
 authorized_transition = {
-        StatusEnum.RECORDED: [
-            StatusEnum.TEST_PLAN_WRITING,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.TEST_PLAN_WRITING: [
-            StatusEnum.TEST_PLAN_SENT,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.TEST_PLAN_SENT: [
-            StatusEnum.TEST_PLAN_ACCEPTED,
-            StatusEnum.CAMPAIGN_STARTED,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.TEST_PLAN_ACCEPTED: [
-            StatusEnum.CAMPAIGN_STARTED,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.CAMPAIGN_STARTED: [
-            StatusEnum.CAMPAIGN_ENDED,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.CAMPAIGN_ENDED: [
-            StatusEnum.TER_WRITING,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.TER_WRITING: [
-            StatusEnum.TER_SENT,
-            StatusEnum.CANCELLED
-        ],
-        StatusEnum.TER_SENT: [
-            StatusEnum.ARCHIVED
-        ],
-        StatusEnum.CANCELLED: [
-            StatusEnum.ARCHIVED,
-            StatusEnum.RECORDED,
-            StatusEnum.CAMPAIGN_STARTED,
-            StatusEnum.CAMPAIGN_ENDED,
-            StatusEnum.TEST_PLAN_WRITING,
-            StatusEnum.TEST_PLAN_SENT,
-            StatusEnum.TEST_PLAN_ACCEPTED,
-            StatusEnum.TER_WRITING,
-            StatusEnum.TER_SENT,
-            StatusEnum.CANCELLED
-        ]
-    }
+    StatusEnum.RECORDED: [
+        StatusEnum.TEST_PLAN_WRITING,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.TEST_PLAN_WRITING: [
+        StatusEnum.TEST_PLAN_SENT,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.TEST_PLAN_SENT: [
+        StatusEnum.TEST_PLAN_ACCEPTED,
+        StatusEnum.CAMPAIGN_STARTED,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.TEST_PLAN_ACCEPTED: [
+        StatusEnum.CAMPAIGN_STARTED,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.CAMPAIGN_STARTED: [
+        StatusEnum.CAMPAIGN_ENDED,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.CAMPAIGN_ENDED: [
+        StatusEnum.TER_WRITING,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.TER_WRITING: [
+        StatusEnum.TER_SENT,
+        StatusEnum.CANCELLED
+    ],
+    StatusEnum.TER_SENT: [
+        StatusEnum.ARCHIVED
+    ],
+    StatusEnum.CANCELLED: [
+        StatusEnum.ARCHIVED,
+        StatusEnum.RECORDED,
+        StatusEnum.CAMPAIGN_STARTED,
+        StatusEnum.CAMPAIGN_ENDED,
+        StatusEnum.TEST_PLAN_WRITING,
+        StatusEnum.TEST_PLAN_SENT,
+        StatusEnum.TEST_PLAN_ACCEPTED,
+        StatusEnum.TER_WRITING,
+        StatusEnum.TER_SENT,
+        StatusEnum.CANCELLED
+    ]
+}
 
 ticket_authorized_transition = {
     TicketType.OPEN: [TicketType.CANCELLED,
@@ -63,6 +62,7 @@ ticket_authorized_transition = {
     TicketType.CANCELLED: [TicketType.OPEN,
                            TicketType.IN_PROGRESS]
 }
+
 
 def version_transition(current_status,
                        to_be_status,

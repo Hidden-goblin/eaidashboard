@@ -1,7 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-
 from pydantic import BaseModel
 
 

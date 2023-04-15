@@ -39,6 +39,7 @@ class UpdatedTicket(BaseModel):
     def __getitem__(self, index):
         return self.dict().get(index, None)
 
+
 class EnrichedTicket(Ticket):
     campaign_occurrences: Optional[List[str]]
 

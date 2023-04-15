@@ -1,8 +1,9 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
+
 
 class Feature(BaseModel):
     name: str
@@ -11,6 +12,7 @@ class Feature(BaseModel):
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
 
 class Scenario(BaseModel):
     epic: str
@@ -24,6 +26,7 @@ class Scenario(BaseModel):
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
 
 class TestFeature(BaseModel):
     epic_name: str

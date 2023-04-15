@@ -5,9 +5,7 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import VersionNotFound
-
 from app.database.postgre.pg_versions import version_exists
-
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
@@ -36,10 +34,10 @@ async def create_campaign(project_name, version, status: str = "recorded") -> di
 
 
 async def retrieve_campaign(project_name,
-                      version: str = None,
-                      status: str = None,
-                      limit: int = 10,
-                      skip: int = 0):
+                            version: str = None,
+                            status: str = None,
+                            limit: int = 10,
+                            skip: int = 0):
     """Get raw campaign with version, occurrence, description and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -138,7 +136,7 @@ async def enrich_tickets_with_campaigns(project_name: str,
                                       " and cpt.ticket_reference = %s",
                                       (version, project_name, ticket.reference))
             _tickets.append(EnrichedTicket(**{**ticket.dict(),
-                                           "campaign_occurrences": [row['occurrence'] for row in rows]}))
+                                              "campaign_occurrences": [row['occurrence'] for row in
+                                                                       rows]}))
 
     return _tickets
-

@@ -5,6 +5,3 @@ from app.conf import config
 
 pool = ConnectionPool(f"host={config['PG_URL']} port={config['PG_PORT']} user={config['PG_USR']}"
                       f" password={config['PG_PWD']} dbname={config['PG_DB']}")
-
-
-

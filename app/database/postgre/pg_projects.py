@@ -7,7 +7,6 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid)
 from app.schema.project_enum import DashCollection
-
 from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
 from app.utils.pgdb import pool
 from app.utils.project_alias import contains, provide, register
@@ -30,6 +29,7 @@ async def register_project(project_name: str):
                            (project_name.casefold(), provide(project_name)))
 
     return project_name
+
 
 async def registered_projects():
     with pool.connection() as connection:
@@ -71,15 +71,16 @@ async def create_project_version(project_name: str, project: RegisterVersion):
         with pool.connection() as connection:
             connection.row_factory = dict_row
             row = connection.execute("insert into versions (project_id, version) "
-                               " select id, %s from projects where alias = %s"
-                               " returning id;",
-                               (project.version, provide(project_name))).fetchone()
+                                     " select id, %s from projects where alias = %s"
+                                     " returning id;",
+                                     (project.version, provide(project_name))).fetchone()
 
             return RegisterVersionResponse(inserted_id=row["id"])
     except IntegrityError as ie:
         raise DuplicateVersion(', '.join(ie.args)) from ie
     except DatabaseError as de:
         raise DuplicateVersion(', '.join(de.args)) from de
+
 
 async def get_project(project_name: str, sections: Optional[List[str]]):
     result = {"name": project_name.casefold()}
@@ -88,27 +89,31 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
         _sections = [sec.casefold() for sec in sections] if sections is not None else []
         result = {"name": project_name}
         if DashCollection.CURRENT.value in _sections or not _sections:
-            current = connection.execute("select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
-                                         " from versions as ve"
-                                         " join projects as pj on pj.id = ve.project_id"
-                                         " where ve.status not in ('recorded', 'done')"
-                                         " and pj.alias = %s;", (provide(project_name),))
+            current = connection.execute(
+                "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
+                " from versions as ve"
+                " join projects as pj on pj.id = ve.project_id"
+                " where ve.status not in ('recorded', 'done')"
+                " and pj.alias = %s;", (provide(project_name),))
             result[DashCollection.CURRENT.value] = list(current.fetchall())
         if DashCollection.FUTURE.value in _sections or not _sections:
-            future = connection.execute("select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
-                                         " from versions as ve"
-                                         " join projects as pj on pj.id = ve.project_id"
-                                         " where ve.status = 'recorded'"
-                                         " and pj.alias = %s;", (provide(project_name),))
+            future = connection.execute(
+                "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
+                " from versions as ve"
+                " join projects as pj on pj.id = ve.project_id"
+                " where ve.status = 'recorded'"
+                " and pj.alias = %s;", (provide(project_name),))
             result[DashCollection.FUTURE.value] = list(future.fetchall())
         if DashCollection.ARCHIVED.value in _sections or not _sections:
-            archived = connection.execute("select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
-                                         " from versions as ve"
-                                         " join projects as pj on pj.id = ve.project_id"
-                                         " where ve.status = 'done'"
-                                         " and pj.alias = %s;", (provide(project_name),))
+            archived = connection.execute(
+                "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
+                " from versions as ve"
+                " join projects as pj on pj.id = ve.project_id"
+                " where ve.status = 'done'"
+                " and pj.alias = %s;", (provide(project_name),))
             result[DashCollection.ARCHIVED.value] = list(archived.fetchall())
     return result
+
 
 async def set_index(project_name):
     # Fake temporary function

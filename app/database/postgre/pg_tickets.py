@@ -2,12 +2,13 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Union
 
+from psycopg.rows import dict_row, tuple_row
+
 from app.app_exception import VersionNotFound
 from app.database.postgre.pg_versions import update_status_for_ticket_in_version
 from app.schema.project_schema import RegisterVersionResponse
-from app.utils.pgdb import pool
-from psycopg.rows import dict_row, tuple_row
 from app.schema.ticket_schema import (Ticket, ToBeTicket, UpdatedTicket)
+from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
@@ -58,10 +59,10 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
                                      " tk.updated"
                                      " from tickets as tk"
                                      " join versions as ve on tk.current_version = ve.id"
-                                    " join projects as pj on pj.id = ve.project_id"
-                                    " where pj.alias = %s"
-                                    " and ve.version = %s",
-                                    (provide(project_name), project_version))
+                                     " join projects as pj on pj.id = ve.project_id"
+                                     " where pj.alias = %s"
+                                     " and ve.version = %s",
+                                     (provide(project_name), project_version))
         return [Ticket(**result) for result in results.fetchall()]
 
 
@@ -82,10 +83,11 @@ async def get_tickets_by_reference(project_name: str, project_version: str,
         ).fetchall()
         return [Ticket(**row) for row in rows]
 
+
 async def move_tickets(project_name,
                        version,
                        target_version: str,
-                       tickets_reference: List[str] | str)->List[str]:
+                       tickets_reference: List[str] | str) -> List[str]:
     current_version_id = None
     target_version_id = None
     with pool.connection() as connection:
@@ -113,7 +115,8 @@ async def move_tickets(project_name,
     _ticket_id = []
 
     with pool.connection() as connection:
-        _ticket_references = tickets_reference if isinstance(tickets_reference, list) else [tickets_reference,]
+        _ticket_references = tickets_reference if isinstance(tickets_reference, list) else [
+            tickets_reference, ]
         for _ticket in _ticket_references:
             connection.row_factory = tuple_row
             ticket_id = connection.execute(
@@ -186,10 +189,10 @@ async def update_ticket(project_name: str,
                 f"Ticket {ticket_reference} does not exist in project {project_name}"
                 f" version {project_version}")
         if updated_ticket.version is None:
-            return RegisterVersionResponse(inserted_id = row["id"])
+            return RegisterVersionResponse(inserted_id=row["id"])
 
         result = await move_tickets(project_name,
-                              project_version,
-                              updated_ticket.version,
-                              ticket_reference)
-        return RegisterVersionResponse(inserted_id = ', '.join(result))
+                                    project_version,
+                                    updated_ticket.version,
+                                    ticket_reference)
+        return RegisterVersionResponse(inserted_id=', '.join(result))

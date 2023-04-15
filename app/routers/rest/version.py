@@ -4,16 +4,13 @@ from typing import Any, List
 
 from fastapi import APIRouter, HTTPException, Security
 
-
 from app.app_exception import (IncorrectTicketCount, VersionNotFound)
 from app.database.authorization import authorize_user
-
-from app.database.postgre.pg_tickets import (add_ticket,
-                                                 get_ticket,
-                                                 get_tickets,
-                                                 update_ticket)
-
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
+from app.database.postgre.pg_tickets import (add_ticket,
+                                             get_ticket,
+                                             get_tickets,
+                                             update_ticket)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
 from app.utils.log_management import log_error
@@ -110,7 +107,7 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
             },
             tags=["Tickets"],
             description="""Update one ticket of a version
-            
+
 **status** is one of:
 
     - open
@@ -118,9 +115,9 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
     - blocked
     - in_progress
     - done
-            
+
 Only admin or user can update.
-            
+
 Update version statistics as a background task""")
 async def update_one_ticket(project_name: str,
                             version: str,

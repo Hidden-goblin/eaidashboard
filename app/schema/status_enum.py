@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from enum import Enum
 
+
 class DashTypeEnum(Enum):
     def __str__(self):
         return self.value
@@ -10,13 +11,13 @@ class DashTypeEnum(Enum):
     def in_enum(cls, item):
         return item in [str(val) for val in cls.__members__.values()]
 
+
 class TicketType(DashTypeEnum):
     OPEN = "open"
     CANCELLED = "cancelled"
     BLOCKED = "blocked"
     IN_PROGRESS = "in_progress"
     DONE = "done"
-
 
 
 class StatusEnum(DashTypeEnum):

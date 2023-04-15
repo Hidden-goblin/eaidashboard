@@ -36,7 +36,7 @@ class StakedHtml(OutputStrategy):
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.html"
         output_file(filename=filename, title="Stacked status over time")
         p = figure(y_range=(0, max_y), x_axis_type="datetime", width=800,
-                   height=800 )
+                   height=800)
         p.varea_stack(stackers=["failed", "skipped", "passed"],
                       x="run_date",
                       color=["red", "gray", "green"],
@@ -44,6 +44,7 @@ class StakedHtml(OutputStrategy):
                       source=ColumnDataSource(_json))
         save(p, resources=resources.INLINE)
         return filename.name
+
 
 class StakedCsv(OutputStrategy):
     @staticmethod
@@ -53,7 +54,7 @@ class StakedCsv(OutputStrategy):
         with open(filename,
                   "w",
                   newline="") as file:
-            _csv = csv.writer(file,quoting=csv.QUOTE_ALL)
+            _csv = csv.writer(file, quoting=csv.QUOTE_ALL)
             _csv.writerow(("run_date", "passed", "failed", "skipped"))
             _csv.writerows(table_rows)
         return filename.name
@@ -81,8 +82,9 @@ class MapHtml(OutputStrategy):
 
         mapper = CategoricalColorMapper(palette=["red", "green", "gray"],
                                         factors=["failed", "passed", "skipped"])
-        item: datetime
-        _dates_range = [item.strftime("%Y-%m-%dT%H:%M:%S") for item in sorted(set(_json["run_date"]))]
+        item: datetime  # noqa: F842
+        _dates_range = [item.strftime("%Y-%m-%dT%H:%M:%S") for item in
+                        sorted(set(_json["run_date"]))]
         _dates = [item.strftime("%Y-%m-%dT%H:%M:%S") for item in _json["run_date"]]
         _json["run_date"] = _dates
         _elements_names = sorted(list(set(_json["element_name"])))
@@ -112,8 +114,9 @@ class MapHtml(OutputStrategy):
                source=_json,
                fill_color={'field': 'element_status', 'transform': mapper},
                line_color=None)
-        save(p,resources=resources.INLINE)
+        save(p, resources=resources.INLINE)
         return filename.name
+
 
 class MapCsv(OutputStrategy):
     @staticmethod
@@ -132,10 +135,10 @@ class MapJson(OutputStrategy):
     @staticmethod
     async def render(table_rows):
         result = {
-        "run_date": [],
-        "element_id": [],
-        "element_status": [],
-        "element_name": []}
+            "run_date": [],
+            "element_id": [],
+            "element_status": [],
+            "element_name": []}
         for row in table_rows:
             result["run_date"].append(row[0])
             result["element_id"].append(row[1])
@@ -143,12 +146,13 @@ class MapJson(OutputStrategy):
             result["element_name"].append(row[3])
         return result
 
+
 REGISTERED_OUTPUT = {"map": {
     "text/csv": MapCsv,
     "application/json": MapJson,
     "text/html": MapHtml},
-"stacked": {
-"text/csv": StakedCsv,
-    "application/json": StakedJson,
-    "text/html": StakedHtml
-}}
+    "stacked": {
+        "text/csv": StakedCsv,
+        "application/json": StakedJson,
+        "text/html": StakedHtml
+    }}

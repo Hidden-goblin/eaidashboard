@@ -4,6 +4,7 @@ import re
 
 PROJECT_ALIAS = {}
 
+
 def _compute_alias(project_name: str) -> str:
     _alias = re.sub(r"[/\\\. \"\$\*\<\>\:\|\?]",
                     "",
@@ -11,6 +12,7 @@ def _compute_alias(project_name: str) -> str:
     if len(_alias) > 63:
         _alias = _alias[:62]
     return _alias
+
 
 def register(project_name: str, alias: str = None):
     forbidden_char = ['/', '\\', '.', ' ', '"', '$', '*', '<', '>', ':', '|', '?']
@@ -26,7 +28,6 @@ def register(project_name: str, alias: str = None):
         PROJECT_ALIAS[alias.casefold()] = alias.casefold()
     else:
         PROJECT_ALIAS[project_name.casefold()] = project_name.casefold()
-
 
 
 def provide(project_name: str):

@@ -5,9 +5,10 @@ from typing import Optional
 from psycopg.rows import dict_row, tuple_row
 
 from app.database.postgre.pg_versions import version_internal_id
+from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
-from app.schema.bugs_schema import BugTicket, UpdateBugTicket, BugTicketFull
 from app.schema.project_schema import RegisterVersionResponse
+from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
@@ -70,6 +71,7 @@ async def db_get_bug(project_name: str,
                                  (int(internal_id), provide(project_name))).fetchone()
     return BugTicketFull(**row)
 
+
 async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -77,18 +79,21 @@ async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket)
         current_bug = connection.execute("select criticality, status, version_id"
                                          " from bugs where id = %s;",
                                          (internal_id,)).fetchone()
-        if "status" in bug_ticket_dict.keys() or "criticality" in bug_ticket_dict.keys():
+        if ("status" in bug_ticket_dict.keys()
+                or "criticality" in bug_ticket_dict.keys()):
             current_status_criticality = f"{current_bug['status']}_{current_bug['criticality']}"
             to_be_status_criticality = (
-                f"{bug_ticket_dict['status'] if 'status' in bug_ticket_dict else current_bug['status']}"
-                f"_{bug_ticket_dict['criticality'] if 'criticality' in bug_ticket_dict else current_bug['criticality']}")
+                f"{bug_ticket_dict.get('status', current_bug['status'])}"
+                f"_{bug_ticket_dict.get('criticality', current_bug['criticality'])}")
             if current_status_criticality != to_be_status_criticality:
-                update_query = ("update versions"
-                                f" set {current_status_criticality} = {current_status_criticality} - 1,"
-                                f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
-                                f" where id = %s;")
+                update_query = (
+                    "update versions"
+                    f" set {current_status_criticality} = {current_status_criticality} - 1,"
+                    f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
+                    f" where id = %s;")
                 up_version = connection.execute(update_query,
-                                                (current_bug["version_id"], ))
+                                                (current_bug["version_id"],))
+                log_message(up_version)
         to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys() if key != "version")
         values = [value for key, value in bug_ticket_dict.items() if key != "version"]
         # TIPS: convert string version into internal id version
@@ -103,7 +108,7 @@ async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket)
                                  f" where id = %s"
                                  f" returning id;",
                                  values)
-
+        log_message(row)
     return await db_get_bug(project_name, internal_id)
 
 

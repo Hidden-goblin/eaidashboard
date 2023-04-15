@@ -1,7 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional, Union
-from dataclasses import dataclass
 
 from pydantic import BaseModel
 
@@ -68,16 +67,20 @@ class Scenario(BaseModel):
     def get(self, index, default):
         return self.dict().get(index, default)
 
+
 class ScenarioInternal(Scenario):
     internal_id: int
+
 
 class TicketScenario(BaseModel):
     reference: str
     summary: str
     status: Optional[TicketType] = TicketType.OPEN
     scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
+
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
 
 class CampaignFull(CampaignLight):
     tickets: Optional[list[TicketScenario]] = []

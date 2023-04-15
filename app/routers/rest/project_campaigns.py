@@ -15,22 +15,23 @@ from app.app_exception import (CampaignNotFound, DuplicateTestResults, Incorrect
                                MalformedCsvFile, NonUniqueError,
                                VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
-                                               db_get_campaign_ticket_scenarios, db_get_campaign_tickets,
-                                               db_put_campaign_ticket_scenarios,
-                                               db_set_campaign_ticket_scenario_status, get_campaign_content,
-
-                                               fill_campaign as db_fill_campaign)
 from app.database.postgre.pg_campaigns_management import (create_campaign,
                                                           retrieve_campaign)
+from app.database.postgre.pg_test_results import insert_result as pg_insert_result
+from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
+                                               db_get_campaign_ticket_scenarios,
+                                               db_get_campaign_tickets,
+                                               db_put_campaign_ticket_scenarios,
+                                               db_set_campaign_ticket_scenario_status,
+                                               fill_campaign as db_fill_campaign,
+                                               get_campaign_content)
 from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
 from app.database.utils.test_result_management import register_manual_campaign_result
-from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
-from app.schema.project_schema import (ErrorMessage)
 from app.schema.campaign_schema import (CampaignFull, CampaignLight, CampaignPatch, Scenarios,
                                         TicketScenarioCampaign,
                                         ToBeCampaign)
-from app.database.postgre.pg_test_results import insert_result as pg_insert_result
+from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
+from app.schema.project_schema import (ErrorMessage)
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.log_management import log_error
 from app.utils.report_generator import campaign_deliverable
@@ -124,6 +125,7 @@ async def update_campaign_occurrence(project_name: str,
     except Exception as exp:
         raise HTTPException(500, repr(exp)) from exp
 
+
 # Retrieve campaign for project
 @router.get("/{project_name}/campaigns",
             tags=["Campaign"],
@@ -205,6 +207,7 @@ async def put_campaign_ticket_scenarios(project_name: str,
     except Exception as exp:
         raise HTTPException(500, repr(exp))
 
+
 # Retrieve scenario_internal_id for specific campaign and ticket
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/"
             "tickets/{reference}/scenarios/{scenario_id}",
@@ -222,6 +225,7 @@ async def get_campaign_ticket_scenario(project_name: str,
                                                      scenario_id)
     except Exception as exp:
         raise HTTPException(500, repr(exp))
+
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/"
             "tickets/{reference}/scenarios/{scenario_id}/status",
@@ -243,6 +247,7 @@ async def update_campaign_ticket_scenario_status(project_name: str,
                                                             new_status)
     except Exception as exp:
         raise HTTPException(500, repr(exp))
+
 
 @router.post("/{project_name}/campaigns/{version}/{occurrence}/",
              tags=["Campaign"])
@@ -284,14 +289,16 @@ async def retrieve_campaign_occurrence_deliverables(project_name: str,
                                                     version: str,
                                                     occurrence: str,
                                                     request: Request,
-                                                    deliverable_type: DeliverableTypeEnum = DeliverableTypeEnum.TEST_PLAN,
+                                                    deliverable_type: DeliverableTypeEnum =
+                                                    DeliverableTypeEnum.TEST_PLAN,
                                                     ticket_ref: str = None,
                                                     user: Any = Security(authorize_user,
                                                                          scopes=["admin", "user"])
                                                     ):
     try:
         if ticket_ref is not None:
-            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" \
+                  f"{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
         filename = await rs_retrieve_file(key)

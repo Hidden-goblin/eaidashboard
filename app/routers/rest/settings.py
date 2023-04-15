@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post("/projects",
              response_model=Project,
              tags=["Settings"],
-             description="""Create a new project. \n project name must be strictly less than 64 
+             description="""Create a new project. \n project name must be strictly less than 64
              characters""",
              responses={
                  400: {"model": ErrorMessage,

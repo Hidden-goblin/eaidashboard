@@ -5,9 +5,7 @@ import uuid
 from docx import Document
 
 from app.conf import BASE_DIR
-
 from app.database.postgre.pg_bugs import get_bugs
-
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
 from app.schema.campaign_schema import CampaignFull, TicketScenario
@@ -19,8 +17,9 @@ from app.utils.project_alias import provide
 async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Plan", 0)
-    subtitle = document.add_paragraph(f"Campaign for {campaign.project_name} "
-                                      f"in version {campaign.version}", style="Subtitle")
+    document.add_paragraph(f"Campaign for {campaign.project_name} "
+                           f"in version {campaign.version}",
+                           style="Subtitle")
     document.add_page_break()
     document.add_heading("Test scope")
     # Create table of tickets with a default column for acceptance criteria
@@ -36,7 +35,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test environment")
     # Add test environment
-    environment = document.add_paragraph("Here add data about test environment")
+    document.add_paragraph("Here add data about test environment")
 
     document.add_heading("Test scope impediments and non-testable items")
     # Create table of ticket with two column for testability and reason
@@ -63,11 +62,11 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
         row_cells[0].text = ticket.reference
         row_cells[1].text = ticket.summary
     # Add total estimation
-    estimation = document.add_paragraph("The total test execution estimation is <your estimation>md.")
+    document.add_paragraph("The total test execution estimation is <your estimation>md.")
     # Add start and end forecast
-    forecast = document.add_paragraph("We plan a test execution start at <start date> "
-                                      "and with the current estimation expect an end forecast date "
-                                      "on <end date>.")
+    document.add_paragraph("We plan a test execution start at <start date> "
+                           "and with the current estimation expect an end forecast date "
+                           "on <end date>.")
 
     document.add_heading("Campaign scenario")
     # Create subsection for each tickets with table of scenario
@@ -88,8 +87,8 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
             row_cells[3].text = scenario.epic_id
             row_cells[4].text = scenario.steps
 
-
-    filename = BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_{campaign.version}_{uuid.uuid4()}.docx"
+    filename = BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_" \
+                                     f"{campaign.version}_{uuid.uuid4()}.docx"  # pragma:noqa
 
     document.save(filename)
 
@@ -110,8 +109,8 @@ def _compute_status(scenarios):
 async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Exit Report", 0)
-    subtitle = document.add_paragraph(f"Campaign for {campaign.project_name} "
-                                      f"in version {campaign.version}", style="Subtitle")
+    document.add_paragraph(f"Campaign for {campaign.project_name} "
+                           f"in version {campaign.version}", style="Subtitle")
     document.add_page_break()
     document.add_heading("Test campaign overview")
     # Add go/no go sentence
@@ -160,7 +159,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     document.add_heading("Defect status")
     # Create table of defect within the version
     bugs = await get_bugs(project_name=campaign.project_name,
-                    version=campaign.version)
+                          version=campaign.version)
     table = document.add_table(rows=1, cols=3, style="TableGrid")
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Title"
@@ -172,18 +171,21 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
         row_cells[1].text = bug["criticality"]
         row_cells[2].text = bug["status"]
 
-    filename = BASE_DIR / "static" / f"TER_{provide(campaign.project_name)}_{campaign.version}_{campaign.occurrence}{uuid.uuid4()}.docx"
+    filename = BASE_DIR / "static" / (f"TER_{provide(campaign.project_name)}"
+                                      f"_{campaign.version}_"
+                                      f"{campaign.occurrence}{uuid.uuid4()}.docx")  # pragma:noqa
 
     document.save(filename)
 
     return filename.name
 
+
 async def evidence_from_ticket(ticket: TicketScenario):
     document = Document()
     document.add_heading("Test Evidence", 0)
 
-    subtitle = document.add_paragraph(f"Ticket {ticket.reference} test execution evidence",
-                                      style="Subtitle")
+    document.add_paragraph(f"Ticket {ticket.reference} test execution evidence",
+                           style="Subtitle")
 
     document.add_page_break()
     document.add_heading("Scenarios")

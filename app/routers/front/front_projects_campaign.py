@@ -9,10 +9,9 @@ from starlette.requests import Request
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
-
+from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
 from app.database.postgre.pg_projects import registered_projects
-
-from app.database.postgre.pg_test_results import TestResults
+from app.database.postgre.pg_test_results import insert_result as pg_insert_result, TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
 from app.database.postgre.pg_versions import get_versions
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
@@ -22,17 +21,14 @@ from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenari
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status,
                                                get_campaign_content)
-from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
 from app.database.postgre.testrepository import (db_project_epics,
                                                  db_project_features,
                                                  db_project_scenarios)
 from app.database.redis.rs_file_management import (rs_invalidate_file,
                                                    rs_record_file,
                                                    rs_retrieve_file)
-
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
-
 from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.campaign_schema import Scenarios
@@ -41,10 +37,9 @@ from app.schema.rest_enum import (DeliverableTypeEnum,
                                   RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
                                   RestTestResultRenderingEnum)
-from app.utils.log_management import log_error
+from app.utils.log_management import log_error, log_message
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
-from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 from app.utils.report_generator import campaign_deliverable
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -318,6 +313,7 @@ async def front_get_campaign_ticket(project_name: str,
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
+
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
             "{ticket_reference}/scenarios/{scenario_id}",
             tags=["Front - Campaign"],
@@ -345,6 +341,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                               ticket_reference,
                                                               scenario_id,
                                                               updated_status["new_status"])
+        log_message(result)
 
         return templates.TemplateResponse("void.html",
                                           {"request": request},
@@ -640,7 +637,8 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
         if ticket_ref is not None:
-            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" \
+                  f"{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
         filename = await rs_retrieve_file(key)
@@ -649,7 +647,7 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                   version,
                                                   occurrence,
                                                   deliverable_type,
-                                            ticket_ref)
+                                                  ticket_ref)
             await rs_record_file(key, filename)
 
         return templates.TemplateResponse("download_link.html",

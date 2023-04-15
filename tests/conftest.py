@@ -6,8 +6,6 @@ from pytest import fixture
 from starlette.testclient import TestClient
 
 
-
-
 @fixture(autouse=True, scope='session')
 def application():
     # Override the environment variable
@@ -27,6 +25,7 @@ def application():
         conn = psycopg.connect(postgre_setting_string, autocommit=True)
         cur = conn.cursor()
         cur.execute("DROP DATABASE IF EXISTS test_db")
+
 
 @fixture(scope='function')
 def logged(application):

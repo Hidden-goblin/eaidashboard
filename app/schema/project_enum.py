@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from enum import Enum
 
+
 class DashCollection(Enum):
     CURRENT = "current"
     FUTURE = "future"

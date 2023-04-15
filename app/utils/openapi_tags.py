@@ -55,4 +55,3 @@ DESCRIPTION = [
     # }
 ]
 # https://fastapi.tiangolo.com/tutorial/metadata/?h=tag+desc#metadata-for-tags
-

@@ -1,10 +1,11 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Tuple, Union
+from typing import List, Tuple
+
+from psycopg.rows import dict_row, tuple_row
 
 from app.schema.repository_schema import (Feature, Scenario, TestFeature, TestScenario)
 from app.utils.pgdb import pool
-from psycopg.rows import dict_row, tuple_row
 
 
 async def add_epic(project: str, epic_name: str):
@@ -81,7 +82,7 @@ async def clean_scenario_with_fake_id(project: str):
             "where "
             " project_id = %s and scenario_id like  %s;",
             (project, "XXX-application-undefined-id-%")
-                           )
+        )
         connection.commit()
 
 
@@ -153,7 +154,7 @@ async def db_project_scenarios(project: str,
                                        f"%{feature}%", limit, offset)
             )
             count = connection.execute(
-                "select count(*) as total from scenarios " 
+                "select count(*) as total from scenarios "
                 "full join features on features.id = scenarios.feature_id "
                 "full join epics on epics.id = features.epic_id "
                 "where scenarios.project_id = %s "
@@ -174,8 +175,8 @@ async def db_project_scenarios(project: str,
                 "order by epics.name,"
                 " features.filename,"
                 " scenarios.scenario_id "
-                "limit %s offset %s"
-                , (project.casefold(), f"%{epic}%", limit, offset)
+                "limit %s offset %s",
+                (project.casefold(), f"%{epic}%", limit, offset)
             )
             count = connection.execute(
                 "select count(*) as total from scenarios "
@@ -198,8 +199,8 @@ async def db_project_scenarios(project: str,
                 "order by epics.name,"
                 " features.filename,"
                 " scenarios.scenario_id "
-                "limit %s offset %s"
-                , (project.casefold(),  f"%{feature}%", limit, offset)
+                "limit %s offset %s",
+                (project.casefold(), f"%{feature}%", limit, offset)
             )
             count = connection.execute(
                 "select count(*) as total from scenarios "
@@ -222,8 +223,8 @@ async def db_project_scenarios(project: str,
                 "order by epics.name,"
                 " features.filename,"
                 " scenarios.scenario_id "
-                "limit %s offset %s"
-                , (project.casefold(), limit, offset)
+                "limit %s offset %s",
+                (project.casefold(), limit, offset)
             )
             count = connection.execute(
                 "select count(*) as total from scenarios "
@@ -235,10 +236,10 @@ async def db_project_scenarios(project: str,
 
 
 async def db_get_scenarios_id(project_name,
-                        epic_name,
-                        feature_name,
-                        scenarios_ref: list | str,
-                        feature_filename=None) -> List[int]:
+                              epic_name,
+                              feature_name,
+                              scenarios_ref: list | str,
+                              feature_filename=None) -> List[int]:
     if isinstance(scenarios_ref, str):
         scenarios_ref = [scenarios_ref]
     with pool.connection() as connection:

@@ -10,14 +10,18 @@ class InsertionError(Exception):
 class DuplicateProject(Exception):
     pass
 
+
 class DuplicateVersion(Exception):
     pass
+
 
 class ProjectNotRegistered(Exception):
     pass
 
+
 class ProjectNameInvalid(Exception):
     pass
+
 
 class VersionNotFound(Exception):
     pass
@@ -88,9 +92,11 @@ class MalformedCsvFile(Exception):
     """To be raised when csv misses header or field header"""
     pass
 
+
 class DuplicateTestResults(Exception):
     """To be raised when an existing test campaign result is already in database"""
     pass
+
 
 def front_error_message(templates, request, exception, retarget: str = "#messageBox"):
     log_error(repr(exception))

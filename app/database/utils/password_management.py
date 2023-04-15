@@ -13,6 +13,7 @@ from app.conf import config
 ACCESS_TOKEN_EXPIRE_MINUTES = timedelta(minutes=int(config["TIMEDELTA"]))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -34,8 +35,8 @@ def generate_keys():
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
     conf.SECRET_KEY = serialization.load_pem_private_key(private_pem,
-                                                     password=None,
-                                                     backend=default_backend())
+                                                         password=None,
+                                                         backend=default_backend())
     conf.PUBLIC_KEY = serialization.load_pem_public_key(public_pem,
-                                                   backend=default_backend())
+                                                        backend=default_backend())
     conf.ALGORITHM = "RS256"
