@@ -11,12 +11,17 @@ from fastapi import (APIRouter,
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 
-from app.app_exception import (CampaignNotFound, DuplicateTestResults, IncorrectFieldsRequest,
-                               MalformedCsvFile, NonUniqueError,
-                               VersionNotFound)
+from app.app_exception import (CampaignNotFound,
+                               DuplicateTestResults,
+                               IncorrectFieldsRequest,
+                               MalformedCsvFile,
+                               NonUniqueError,
+                               ProjectNotRegistered, VersionNotFound)
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_campaigns_management import (create_campaign,
-                                                          retrieve_campaign)
+from app.database.postgre.pg_campaigns_management import (
+    create_campaign,
+    retrieve_campaign,
+    update_campaign_occurrence as pg_update_campaign_occurrence)
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                db_get_campaign_ticket_scenarios,
@@ -26,11 +31,16 @@ from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                fill_campaign as db_fill_campaign,
                                                get_campaign_content)
 from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
+from app.database.utils.object_existence import project_version_exists
 from app.database.utils.test_result_management import register_manual_campaign_result
-from app.schema.campaign_schema import (CampaignFull, CampaignLight, CampaignPatch, Scenarios,
+from app.schema.campaign_schema import (CampaignFull,
+                                        CampaignLight,
+                                        CampaignPatch,
+                                        Scenarios,
                                         TicketScenarioCampaign,
                                         ToBeCampaign)
-from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
+from app.schema.postgres_enums import (CampaignStatusEnum,
+                                       ScenarioStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.log_management import log_error
@@ -107,26 +117,6 @@ async def fill_campaign(project_name: str,
         raise HTTPException(500, repr(exp)) from exp
 
 
-@router.patch("/{project_name}/campaigns/{version}/{occurrence}",
-              tags=["Campaign"], )
-async def update_campaign_occurrence(project_name: str,
-                                     version: str,
-                                     occurrence: str,
-                                     campaign_update: CampaignPatch,
-                                     user: Any = Security(authorize_user, scopes=["admin"])):
-    try:
-        res = await db_fill_campaign(project_name, version, occurrence, content)
-    except VersionNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except CampaignNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except NonUniqueError as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except Exception as exp:
-        raise HTTPException(500, repr(exp)) from exp
-
-
-# Retrieve campaign for project
 @router.get("/{project_name}/campaigns",
             tags=["Campaign"],
             description="Retrieve campaign")
@@ -143,6 +133,46 @@ async def get_campaigns(project_name: str,
         return campaigns
     except Exception as exp:
         raise HTTPException(500, repr(exp))
+
+
+@router.patch("/{project_name}/campaigns/{version}/{occurrence}",
+              tags=["Campaign"],
+              description="Update the status of an occurrence",
+              responses={
+                400: {"model": ErrorMessage,
+                      "description": "version already exist"},
+                401: {"model": ErrorMessage,
+                      "description": "You are not authenticated"},
+                404: {"model": ErrorMessage,
+                        "description": "Project name is not registered (ignore case),"
+                                       " the version does not exist,"
+                                       " the campaign-occurrence does not exist"},
+                422: {"model": ErrorMessage,
+                      "description": "The payload does not match the expected schema"}
+
+              })
+async def update_campaign_occurrence(project_name: str,
+                                     version: str,
+                                     occurrence: str,
+                                     campaign_update: CampaignPatch,
+                                     user: Any = Security(authorize_user, scopes=["admin"])):
+    try:
+        await project_version_exists(project_name, version)
+        res = await pg_update_campaign_occurrence(project_name,
+                                                  version,
+                                                  occurrence,
+                                                  campaign_update)
+    except ProjectNotRegistered as ppnr:
+        raise HTTPException(404, detail=" ".join(ppnr.args)) from ppnr
+    except VersionNotFound as pnr:
+        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+    except CampaignNotFound as pnr:
+        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+    except NonUniqueError as pnr:
+        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+    except Exception as exp:
+        raise HTTPException(500, repr(exp)) from exp
+# Retrieve campaign for project
 
 
 # Retrieve campaign for project-version

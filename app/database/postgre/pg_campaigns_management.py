@@ -4,8 +4,10 @@ from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import VersionNotFound
+from app.app_exception import OccurrenceNotFound, VersionNotFound
 from app.database.postgre.pg_versions import version_exists
+from app.database.utils.object_existence import project_version_exists
+from app.schema.campaign_schema import CampaignPatch
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
@@ -93,14 +95,18 @@ async def retrieve_campaign(project_name,
 
 async def retrieve_campaign_id(project_name: str, version: str, occurrence: str) -> Tuple[int, str]:
     """get campaign internal id and status"""
+    await project_version_exists(project_name, version)
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        return connection.execute("select id, status"
-                                  " from campaigns"
-                                  " where project_id = %s "
-                                  " and version = %s "
-                                  " and occurrence = %s;",
-                                  (project_name, version, occurrence)).fetchone()
+        row = connection.execute("select id, status"
+                                 " from campaigns"
+                                 " where project_id = %s "
+                                 " and version = %s "
+                                 " and occurrence = %s;",
+                                 (project_name, version, occurrence)).fetchone()
+        if row is None:
+            raise OccurrenceNotFound(f"Occurrence '{occurrence}' not found")
+        return row
 
 
 async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
@@ -116,7 +122,10 @@ async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
 
 async def is_campaign_exist(project_name: str, version: str, occurrence: str):
     """Check if campaign exist"""
-    return bool(await retrieve_campaign_id(project_name, version, occurrence))
+    try:
+        return bool(await retrieve_campaign_id(project_name, version, occurrence))
+    except Exception:
+        return False
 
 
 async def enrich_tickets_with_campaigns(project_name: str,
@@ -140,3 +149,10 @@ async def enrich_tickets_with_campaigns(project_name: str,
                                                                        rows]}))
 
     return _tickets
+
+
+async def update_campaign_occurrence(project_name,
+                                     version,
+                                     occurrence,
+                                     update_occurrence: CampaignPatch):
+    pass

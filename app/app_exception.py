@@ -27,6 +27,10 @@ class VersionNotFound(Exception):
     pass
 
 
+class OccurrenceNotFound(Exception):
+    pass
+
+
 class UnknownStatusException(Exception):
     pass
 

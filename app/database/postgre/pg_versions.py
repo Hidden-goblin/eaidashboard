@@ -5,7 +5,7 @@ from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import VersionNotFound
+from app.app_exception import TicketNotFound, VersionNotFound
 from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
@@ -29,6 +29,8 @@ async def version_exists(project_name: str, version: str) -> bool:
 
 
 async def get_version(project_name: str, version: str) -> Version:
+    """Assuming that project_name and version exists
+    :raise TypeError: 'NoneType' object is not subscriptable"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute("select * "
@@ -37,8 +39,6 @@ async def get_version(project_name: str, version: str) -> Version:
                                  " where pjt.alias = %s "
                                  " and ve.version = %s;",
                                  (provide(project_name), version)).fetchone()
-        if row is None:
-            raise VersionNotFound("Version not found")
 
         stats = Statistics(open=row["open"],
                            cancelled=row["cancelled"],
@@ -173,13 +173,16 @@ async def update_status_for_ticket_in_version(project_name,
                                             (provide(project_name),
                                              version,
                                              ticket_reference)).fetchone()
+        if current_ticket is None:
+            raise TicketNotFound(
+                f"Ticket '{ticket_reference}' does not exist in project '{project_name}'"
+                f" version '{version}'")
         if current_ticket[0] != updated_status:
             row = connection.execute("update versions"
                                      f" set {current_ticket[0]} = {current_ticket[0]} -1,"
                                      f" {updated_status} = {updated_status} + 1"
                                      f" where id = %s", (current_ticket[1],))
             log_message(row)
-            return True
         return True
 
 

@@ -5,7 +5,8 @@ from typing import (List, Optional)
 from psycopg import (DatabaseError, IntegrityError)
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid)
+from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid,
+                               ProjectNotRegistered)
 from app.schema.project_enum import DashCollection
 from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
 from app.utils.pgdb import pool
@@ -93,7 +94,7 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
                 "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
                 " from versions as ve"
                 " join projects as pj on pj.id = ve.project_id"
-                " where ve.status not in ('recorded', 'done')"
+                " where ve.status not in ('recorded', 'archived')"
                 " and pj.alias = %s;", (provide(project_name),))
             result[DashCollection.CURRENT.value] = list(current.fetchall())
         if DashCollection.FUTURE.value in _sections or not _sections:
@@ -109,13 +110,7 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
                 "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
                 " from versions as ve"
                 " join projects as pj on pj.id = ve.project_id"
-                " where ve.status = 'done'"
+                " where ve.status = 'archived'"
                 " and pj.alias = %s;", (provide(project_name),))
             result[DashCollection.ARCHIVED.value] = list(archived.fetchall())
     return result
-
-
-async def set_index(project_name):
-    # Fake temporary function
-    # TODO: Remove
-    pass

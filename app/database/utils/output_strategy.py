@@ -35,8 +35,9 @@ class StakedHtml(OutputStrategy):
         )
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.html"
         output_file(filename=filename, title="Stacked status over time")
-        p = figure(y_range=(0, max_y), x_axis_type="datetime", width=800,
-                   height=800)
+        p = figure(y_range=(0, max_y),
+                   x_axis_type="datetime",
+                   sizing_mode="stretch_both")
         p.varea_stack(stackers=["failed", "skipped", "passed"],
                       x="run_date",
                       color=["red", "gray", "green"],
@@ -95,8 +96,7 @@ class MapHtml(OutputStrategy):
                    x_range=_dates_range,
                    y_range=_elements_names,
                    x_axis_location="above",
-                   width=800,
-                   height=800,
+                   sizing_mode="stretch_both",
                    tools=TOOLS,
                    toolbar_location='below',
                    tooltips=[('Test: ', '@element_name'),

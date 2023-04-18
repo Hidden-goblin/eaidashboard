@@ -2,32 +2,42 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Union
 
+from psycopg import IntegrityError
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import VersionNotFound
-from app.database.postgre.pg_versions import update_status_for_ticket_in_version
+from app.app_exception import ProjectNotRegistered, TicketNotFound, VersionNotFound
+from app.database.postgre.pg_versions import update_status_for_ticket_in_version, version_exists
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.ticket_schema import (Ticket, ToBeTicket, UpdatedTicket)
+from app.utils.log_management import log_error
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
 async def add_ticket(project_name, project_version, ticket: ToBeTicket) -> RegisterVersionResponse:
-    with pool.connection() as connection:
-        connection.row_factory = tuple_row
-        row = connection.execute(
-            "insert into tickets (reference, description, status, current_version, project_id)"
-            " select %s, %s, %s, ve.id, pj.id"
-            " from projects as pj "
-            " join versions as ve on ve.project_id = pj.id"
-            " where ve.version = %s and pj.alias = %s"
-            " returning id;",
-            (ticket.reference,
-             ticket.description,
-             ticket.status,
-             project_version,
-             provide(project_name))).fetchone()
-        return RegisterVersionResponse(inserted_id=row[0])
+    if provide(project_name) is None:
+        raise ProjectNotRegistered(f"'{project_name}' is not registered")
+    if not await version_exists(project_name, project_version):
+        raise VersionNotFound(f"Version '{project_version}' is not found")
+    try:
+        with pool.connection() as connection:
+            connection.row_factory = tuple_row
+            row = connection.execute(
+                "insert into tickets (reference, description, status, current_version, project_id)"
+                " select %s, %s, %s, ve.id, pj.id"
+                " from projects as pj "
+                " join versions as ve on ve.project_id = pj.id"
+                " where ve.version = %s and pj.alias = %s"
+                " returning id;",
+                (ticket.reference,
+                 ticket.description,
+                 ticket.status,
+                 project_version,
+                 provide(project_name))).fetchone()
+            return RegisterVersionResponse(inserted_id=row[0])
+    except IntegrityError as ie:
+        log_error(repr(ie))
+        raise
 
 
 async def get_ticket(project_name, project_version, reference) -> Ticket:
@@ -44,8 +54,8 @@ async def get_ticket(project_name, project_version, reference) -> Ticket:
             (provide(project_name), project_version, reference)
         ).fetchone()
         if row is None:
-            raise VersionNotFound(f"Ticket {reference} does not exist in project {project_name}"
-                                  f" version {project_version}")
+            raise TicketNotFound(f"Ticket '{reference}' does not exist in project '{project_name}'"
+                                  f" version '{project_version}'")
         return Ticket(**row)
 
 

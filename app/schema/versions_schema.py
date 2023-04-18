@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.schema.bugs_schema import Bugs
 from app.schema.project_schema import Statistics
+from app.schema.status_enum import StatusEnum
 
 
 class Version(BaseModel):
@@ -15,7 +16,7 @@ class Version(BaseModel):
     updated: datetime
     started: Optional[datetime]
     end_forecast: Optional[datetime]
-    status: str
+    status: StatusEnum
     statistics: Statistics
     bugs: Bugs
 
