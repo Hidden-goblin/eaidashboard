@@ -41,15 +41,6 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --dev
-      - name: Set up databases
-        env:
-          PG_PORT: ${{ secrets.PG_PORT }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
-        run: |
-          docker run --name postgres-test -e POSTGRES_PASSWORD=${{ secrets.PG_PWD }} -p 5432:5432 -d postgres
-          docker run --name redis-test -p 6379:6379 -d redis
-          sleep 10
       - name: Run tests with coverage
         env:
           PG_USR: ${{ secrets.PG_USR }}
