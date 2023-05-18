@@ -26,6 +26,7 @@ pydeps = "*"
 coverage = "*"
 pytest-order = "*"
 flake8 = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.11"
