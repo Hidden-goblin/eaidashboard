@@ -47,8 +47,8 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
         run: |
-          docker run --name postgres-test -e POSTGRES_PASSWORD=${{ secrets.PG_PWD }} -p "$PG_PORT":5432 -d postgres
-          docker run --name redis-test -p "$REDIS_PORT":6379 -d redis
+          docker run --name postgres-test -e POSTGRES_PASSWORD=${{ secrets.PG_PWD }} -p "${{ secrets.PG_PORT }}":5432 -d postgres
+          docker run --name redis-test -p "${{ secrets.REDIS_PORT }}":6379 -d redis
           sleep 10
       - name: Run tests with coverage
         env:
