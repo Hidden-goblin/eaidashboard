@@ -52,6 +52,7 @@ jobs:
           TIMEDELTA: 3600
           SESSION_KEY: poiuytrezz
         run: |
+            mkdir app/static
             pipenv run coverage run -m pytest
             pipenv run coverage xml
         continue-on-error: true
