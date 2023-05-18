@@ -46,6 +46,7 @@ class UpdatedTicket(BaseModel, extra=Extra.forbid):
             raise ValueError(f"UpdatedTicket must have at least one key of '{keys}'")
         return values
 
+
 class EnrichedTicket(Ticket):
     campaign_occurrences: Optional[List[str]]
 

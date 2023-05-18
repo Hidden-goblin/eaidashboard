@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.mark.order(after="tests/test_rest_settings.py::TestSettings")
 class TestRestProjects:
     def test_get_projects(self, application):
         response = application.get("/api/v1/projects")
@@ -157,7 +156,6 @@ class TestRestProjects:
                                    headers=logged)
         assert response.status_code == 200
         assert response.json()["status"] == status
-
 
     def test_update_versions_empty_payload(self, application, logged):
         response = application.put("/api/v1/projects/test/versions/1.0.2",

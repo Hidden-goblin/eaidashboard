@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import datetime
+import json
 
 from fastapi import APIRouter, Form
 from starlette.background import BackgroundTasks
@@ -9,7 +10,8 @@ from starlette.requests import Request
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
+from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign, \
+    update_campaign_occurrence
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result, TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
@@ -31,8 +33,9 @@ from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
-from app.schema.campaign_schema import Scenarios
-from app.schema.postgres_enums import ScenarioStatusEnum
+from app.schema.campaign_schema import CampaignPatch, Scenarios
+from app.schema.error_code import ApplicationError
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.rest_enum import (DeliverableTypeEnum,
                                   RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
@@ -218,6 +221,16 @@ async def front_get_campaign(project_name: str,
                                                "project_name": project_name,
                                                "version": version,
                                                "occurrence": occurrence})
+        if request.headers.get("eaid-request", "") == "form":
+            campaign = await get_campaign_content(project_name, version, occurrence, True)
+            return templates.TemplateResponse("forms/update_campaign_occurrence.html",
+                                              {"request": request,
+                                               "campaign": campaign,
+                                               "statuses": CampaignStatusEnum.list(),
+                                               "project_name": project_name,
+                                               "version": version,
+                                               "occurrence": occurrence,
+                                               "update": False})
 
         campaign = await get_campaign_content(project_name, version, occurrence, True)
         projects = await registered_projects()
@@ -234,6 +247,55 @@ async def front_get_campaign(project_name: str,
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
+
+
+@router.patch("/{project_name}/campaigns/{version}/{occurrence}",
+              tags=["Front - Campaign"],
+              include_in_schema=False)
+async def front_update_campaign(project_name: str,
+                                version: str,
+                                occurrence: str,
+                                body: dict,
+                                request: Request):
+    try:
+        if not is_updatable(request, ("admin", "user")):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+            # Do the treatment here
+        res = await update_campaign_occurrence(project_name,
+                                               version,
+                                               occurrence,
+                                               CampaignPatch(**body))
+        if isinstance(res, ApplicationError):
+            raise Exception(f"{res.error}\n{res.message}")
+            # Success
+        return templates.TemplateResponse("void.html",
+                                          {"request": request},
+                                          headers={"HX-Trigger": json.dumps({"modalClear": "",
+                                                                             "form-delete": ""})})
+    except Exception as exception:
+        log_error("\n".join(exception.args))
+        campaign = await get_campaign_content(project_name, version, occurrence, True)
+        return templates.TemplateResponse("forms/update_campaign_occurrence.html",
+                                          {
+                                              "request": request,
+                                              "project_name": project_name,
+                                              "version": version,
+                                              "occurrence": occurrence,
+                                              "campaign": campaign,
+                                              "statuses": CampaignStatusEnum.list(),
+                                              "update": True,
+                                              "message": "\n".join(exception.args)
+                                              # Add the error message
+                                          },
+                                          headers={"HX-Retarget": "#modal",  # Retarget
+                                                   "HX-Reswap": "beforeend"})  # Change swap
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}",

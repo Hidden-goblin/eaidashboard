@@ -15,8 +15,7 @@ from app.app_exception import (CampaignNotFound,
                                DuplicateTestResults,
                                IncorrectFieldsRequest,
                                MalformedCsvFile,
-                               NonUniqueError,
-                               ProjectNotRegistered, VersionNotFound)
+                               VersionNotFound)
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_campaigns_management import (
     create_campaign,
@@ -31,7 +30,7 @@ from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
                                                fill_campaign as db_fill_campaign,
                                                get_campaign_content)
 from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
-from app.database.utils.object_existence import project_version_exists
+from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.schema.campaign_schema import (CampaignFull,
                                         CampaignLight,
@@ -63,10 +62,10 @@ log = logging.getLogger(__name__)
                  404: {"model": ErrorMessage,
                        "description": "Project name is not registered (ignore case),"
                                       " the version does not exist"},
-                 400: {"model": ErrorMessage,
-                       "description": "version already exist"},
                  401: {"model": ErrorMessage,
                        "description": "You are not authenticated"},
+                 422: {"model": ErrorMessage,
+                       "description": "Payload does not match the expected schema"},
                  500: {"model": ErrorMessage,
                        "description": "The server could not compute the result."}
              }
@@ -74,14 +73,12 @@ log = logging.getLogger(__name__)
 async def create_campaigns(project_name: str,
                            campaign: ToBeCampaign,
                            user: Any = Security(authorize_user, scopes=["admin"])):
+    await project_version_raise(project_name, campaign.version)
     try:
-        log.info("api: create_campaigns")
         return await create_campaign(project_name, campaign.version)
-    except VersionNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exp:
         log_error(repr(exp))
-        raise HTTPException(500, repr(exp)) from exp
+        raise HTTPException(500, " ".join(exp.args)) from exp
 
 
 # Link tickets & scenarios to campaign
@@ -94,8 +91,6 @@ async def create_campaigns(project_name: str,
                       "description": "Project name is not registered (ignore case),"
                                      " the version does not exist,"
                                      " the campaign-occurrence does not exist"},
-                400: {"model": ErrorMessage,
-                      "description": "version already exist"},
                 401: {"model": ErrorMessage,
                       "description": "You are not authenticated"}
             }
@@ -105,16 +100,18 @@ async def fill_campaign(project_name: str,
                         occurrence: str,
                         content: TicketScenarioCampaign,
                         user: Any = Security(authorize_user, scopes=["admin"])):
+    await project_version_raise(project_name, version)
     try:
-        res = await db_fill_campaign(project_name, version, occurrence, content)
-    except VersionNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except CampaignNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except NonUniqueError as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+        campaign_ticket_id, errors = await db_fill_campaign(project_name,
+                                                            version,
+                                                            occurrence,
+                                                            content)
     except Exception as exp:
-        raise HTTPException(500, repr(exp)) from exp
+        log_error(repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
+
+    return {"campaign_ticket_id": if_error_raise_http(campaign_ticket_id),
+            "errors": errors}
 
 
 @router.get("/{project_name}/campaigns",
@@ -126,29 +123,36 @@ async def get_campaigns(project_name: str,
                         status: CampaignStatusEnum = None,
                         limit: int = 10,
                         skip: int = 0):
+    await project_version_raise(project_name, version)
     try:
-        campaigns, count = await retrieve_campaign(project_name, version, status, limit=limit,
+        campaigns, count = await retrieve_campaign(project_name,
+                                                   version,
+                                                   status,
+                                                   limit=limit,
                                                    skip=skip)
-        response.headers["X-total-count"] = str(count)  # TODO check reason it don't work
+        response.headers["X-total-count"] = str(
+            count)  # TODO check reason it doesn't work wthout cast
         return campaigns
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        log_error(repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
 
 
 @router.patch("/{project_name}/campaigns/{version}/{occurrence}",
               tags=["Campaign"],
+              response_model=CampaignLight,
               description="Update the status of an occurrence",
               responses={
-                400: {"model": ErrorMessage,
-                      "description": "version already exist"},
-                401: {"model": ErrorMessage,
-                      "description": "You are not authenticated"},
-                404: {"model": ErrorMessage,
+                  400: {"model": ErrorMessage,
+                        "description": "version already exist"},
+                  401: {"model": ErrorMessage,
+                        "description": "You are not authenticated"},
+                  404: {"model": ErrorMessage,
                         "description": "Project name is not registered (ignore case),"
                                        " the version does not exist,"
                                        " the campaign-occurrence does not exist"},
-                422: {"model": ErrorMessage,
-                      "description": "The payload does not match the expected schema"}
+                  422: {"model": ErrorMessage,
+                        "description": "The payload does not match the expected schema"}
 
               })
 async def update_campaign_occurrence(project_name: str,
@@ -156,22 +160,20 @@ async def update_campaign_occurrence(project_name: str,
                                      occurrence: str,
                                      campaign_update: CampaignPatch,
                                      user: Any = Security(authorize_user, scopes=["admin"])):
+    await project_version_raise(project_name, version)
     try:
-        await project_version_exists(project_name, version)
         res = await pg_update_campaign_occurrence(project_name,
                                                   version,
                                                   occurrence,
                                                   campaign_update)
-    except ProjectNotRegistered as ppnr:
-        raise HTTPException(404, detail=" ".join(ppnr.args)) from ppnr
-    except VersionNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except CampaignNotFound as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except NonUniqueError as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+        if res.statusmessage != 'UPDATE 1':
+            raise Exception(f"Request has not been computed.\nGet '{res.statusmessage}'")
+        res = await get_campaign_content(project_name, version, occurrence, True)
     except Exception as exp:
-        raise HTTPException(500, repr(exp)) from exp
+        raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(res)
+
+
 # Retrieve campaign for project
 
 
@@ -179,14 +181,25 @@ async def update_campaign_occurrence(project_name: str,
 @router.get("/{project_name}/campaigns/{version}/{occurrence}",
             response_model=CampaignFull,
             tags=["Campaign"],
-            description="Retrieve the full campaign")
+            description="Retrieve the full campaign",
+            responses={
+                404: {"model": ErrorMessage,
+                      "description": "Project name is not registered (ignore case),"
+                                     " the version does not exist,"
+                                     " the campaign-occurrence does not exist"},
+                500: {"model": ErrorMessage,
+                      "description": "The server could not compute the result."}
+            }
+            )
 async def get_campaign(project_name: str,
                        version: str,
                        occurrence: str):
+    await project_version_raise(project_name, version)
     try:
-        return await get_campaign_content(project_name, version, occurrence)
+        result = await get_campaign_content(project_name, version, occurrence)
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 # Retrieve scenarios for project-version-campaign-ticket
@@ -196,12 +209,13 @@ async def get_campaign(project_name: str,
 async def get_campaign_tickets(project_name: str,
                                version: str,
                                occurrence: str):
+    await project_version_raise(project_name, version)
     try:
         return await db_get_campaign_tickets(project_name, version, occurrence)
     except CampaignNotFound as cnf:
         raise HTTPException(404, detail=" ".join(cnf.args)) from cnf
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, repr(exp)) from exp
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",

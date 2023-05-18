@@ -5,10 +5,11 @@ from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import TicketNotFound, VersionNotFound
+from app.app_exception import StatusTransitionForbidden, UnknownStatusException
 from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import Statistics
 from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
@@ -120,15 +121,31 @@ async def get_project_versions(project_name: str, exclude_archived: bool = False
     return result
 
 
-async def update_version_data(project_name: str, version: str, body: UpdateVersion):
+async def update_version_data(project_name: str,
+                              version: str,
+                              body: UpdateVersion) -> Version | ApplicationError:
     updates = {}
-    if body.started is not None:
-        updates["started"] = datetime.strptime(body.started, "%Y-%m-%d")
-    if body.end_forecast is not None:
-        updates["end_forecast"] = datetime.strptime(body.end_forecast, "%Y-%m-%d")
+
+    try:
+        if body.started is not None:
+            updates["started"] = datetime.strptime(body.started, "%Y-%m-%d")
+        if body.end_forecast is not None:
+            updates["end_forecast"] = datetime.strptime(body.end_forecast, "%Y-%m-%d")
+    except ValueError as ve:
+        return ApplicationError(error=ApplicationErrorCode.unknown_status,
+                                message=" ".join(ve.args))
+
     if body.status is not None:
         _version = await get_version(project_name, version)
-        version_transition(_version["status"], body.status)
+        try:
+            version_transition(_version["status"], body.status)
+        except StatusTransitionForbidden as stf:
+            return ApplicationError(error=ApplicationErrorCode.transition_forbidden,
+                                    message=" ".join(stf.args))
+        except UnknownStatusException as ve:
+            return ApplicationError(error=ApplicationErrorCode.unknown_status,
+                                    message=" ".join(ve.args))
+
         updates["status"] = body.status
     if updates:
         updates["updated"] = datetime.now()
@@ -174,9 +191,10 @@ async def update_status_for_ticket_in_version(project_name,
                                              version,
                                              ticket_reference)).fetchone()
         if current_ticket is None:
-            raise TicketNotFound(
-                f"Ticket '{ticket_reference}' does not exist in project '{project_name}'"
-                f" version '{version}'")
+            return ApplicationError(error=ApplicationErrorCode.ticket_not_found,
+                                    message=f"Ticket '{ticket_reference}' does not exist in "
+                                            f"project '{project_name}'"
+                                            f" version '{version}'")
         if current_ticket[0] != updated_status:
             row = connection.execute("update versions"
                                      f" set {current_ticket[0]} = {current_ticket[0]} -1,"

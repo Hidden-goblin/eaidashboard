@@ -5,15 +5,13 @@ from typing import Any, List
 from fastapi import APIRouter, HTTPException, Security
 from psycopg import IntegrityError
 
-from app.app_exception import (ProjectNotRegistered, TicketNotFound, UpdateException,
-                               VersionNotFound)
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.pg_tickets import (add_ticket,
                                              get_ticket,
                                              get_tickets,
                                              update_ticket)
-from app.database.utils.object_existence import project_version_exists
+from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
 from app.utils.log_management import log_error
@@ -37,25 +35,20 @@ router = APIRouter(
              },
              tags=["Tickets"],
              description="Add one ticket to a version. Admin ou user can do so."
-                         )
+             )
 async def create_ticket(project_name: str,
                         version: str,
                         ticket: ToBeTicket,
                         user: Any = Security(authorize_user, scopes=["admin", "user"])):
+    await project_version_raise(project_name, version)
     try:
         result = await add_ticket(project_name, version, ticket)
-        return str(result.inserted_id)
-    except ProjectNotRegistered as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except VersionNotFound as vnf:
-        log_error(repr(vnf))
-        raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
     except IntegrityError as ie:
         raise HTTPException(400, detail=" ".join(ie.args)) from ie
     except Exception as exception:
         log_error(repr(exception))
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
+    return str(if_error_raise_http(result).inserted_id)
 
 
 @router.get("/projects/{project_name}/versions/{version}/tickets/",
@@ -72,17 +65,11 @@ async def create_ticket(project_name: str,
             tags=["Tickets"],
             description="Retrieve all tickets in a version")
 async def router_get_tickets(project_name, version):
+    await project_version_raise(project_name, version)
     try:
-        await project_version_exists(project_name, version)
         tickets = await get_tickets(project_name, version)
         tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
         return tickets
-    except ProjectNotRegistered as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except VersionNotFound as vnf:
-        log_error(repr(vnf))
-        raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
     except Exception as exception:
         log_error(repr(exception))
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
@@ -101,21 +88,15 @@ async def router_get_tickets(project_name, version):
             tags=["Tickets"],
             description="Retrieve one ticket of a version")
 async def get_one_ticket(project_name: str, version: str, reference: str):
+    await project_version_raise(project_name, version)
+
     try:
-        await project_version_exists(project_name, version)
-        return await get_ticket(project_name, version, reference)
-    except ProjectNotRegistered as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except VersionNotFound as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except TicketNotFound as tnf:
-        log_error(repr(tnf))
-        raise HTTPException(404, detail=" ".join(tnf.args)) from tnf
+        result = await get_ticket(project_name, version, reference)
     except Exception as exception:
         log_error(repr(exception))
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
+
+    return if_error_raise_http(result)
 
 
 @router.put("/projects/{project_name}/versions/{version}/tickets/{reference}",
@@ -143,26 +124,17 @@ async def get_one_ticket(project_name: str, version: str, reference: str):
     - done
 
 Only admin or user can update.
-
-Update version statistics as a background task""")
+""")
 async def update_one_ticket(project_name: str,
                             version: str,
                             reference: str,
                             ticket: UpdatedTicket,
                             user: Any = Security(authorize_user, scopes=["admin", "user"])):
+    await project_version_raise(project_name, version)
     try:
-        await project_version_exists(project_name, version)
         res = await update_ticket(project_name, version, reference, ticket)
-        return str(res.inserted_id)
-    except ProjectNotRegistered as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except VersionNotFound as pnr:
-        log_error(repr(pnr))
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except TicketNotFound as tnf:
-        log_error(repr(tnf))
-        raise HTTPException(404, detail=" ".join(tnf.args)) from tnf
     except Exception as exception:
         log_error(repr(exception))
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
+
+    return str(if_error_raise_http(res).inserted_id)

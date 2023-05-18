@@ -5,8 +5,8 @@ from typing import (List, Optional)
 from psycopg import (DatabaseError, IntegrityError)
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import (DuplicateProject, DuplicateVersion, ProjectNameInvalid,
-                               ProjectNotRegistered)
+from app.app_exception import (DuplicateProject, ProjectNameInvalid)
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_enum import DashCollection
 from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
 from app.utils.pgdb import pool
@@ -67,7 +67,9 @@ async def get_projects(skip: int = 0, limit: int = 10):
         return list(rows.fetchall())
 
 
-async def create_project_version(project_name: str, project: RegisterVersion):
+async def create_project_version(project_name: str,
+                                 project: RegisterVersion) -> RegisterVersionResponse | \
+                                                              ApplicationError:
     try:
         with pool.connection() as connection:
             connection.row_factory = dict_row
@@ -76,11 +78,15 @@ async def create_project_version(project_name: str, project: RegisterVersion):
                                      " returning id;",
                                      (project.version, provide(project_name))).fetchone()
 
-            return RegisterVersionResponse(inserted_id=row["id"])
+            result = RegisterVersionResponse(inserted_id=row["id"])
     except IntegrityError as ie:
-        raise DuplicateVersion(', '.join(ie.args)) from ie
+        result = ApplicationError(error=ApplicationErrorCode.duplicate_element,
+                                  message=', '.join(ie.args))
     except DatabaseError as de:
-        raise DuplicateVersion(', '.join(de.args)) from de
+        result = ApplicationError(error=ApplicationErrorCode.duplicate_element,
+                                  message=', '.join(de.args))
+
+    return result
 
 
 async def get_project(project_name: str, sections: Optional[List[str]]):

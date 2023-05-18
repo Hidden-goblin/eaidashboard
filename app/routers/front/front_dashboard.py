@@ -290,29 +290,29 @@ async def get_navigation_bar(request: Request):
                                       )
 
 
-@router.get("/testResults",
-            response_class=HTMLResponse,
-            tags=["Front - Campaign"],
-            include_in_schema=False)
-async def get_test_results(request: Request):
-    try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
-        projects = await registered_projects()
-        result = {project: await get_project_results(project) for project in projects}
-        return templates.TemplateResponse("test_results.html",
-                                          {"request": request,
-                                           "results": result})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
+# @router.get("/testResults",
+#             response_class=HTMLResponse,
+#             tags=["Front - Campaign"],
+#             include_in_schema=False)
+# async def get_test_results(request: Request):
+#     try:
+#         if not is_updatable(request, tuple()):
+#             return templates.TemplateResponse("error_message.html",
+#                                               {
+#                                                   "request": request,
+#                                                   "highlight": "You are not authorized",
+#                                                   "sequel": " to perform this action.",
+#                                                   "advise": "Try to log again."
+#                                               },
+#                                               headers={"HX-Retarget": "#messageBox"})
+#         projects = await registered_projects()
+#         result = {project: await get_project_results(project) for project in projects}
+#         return templates.TemplateResponse("test_results.html",
+#                                           {"request": request,
+#                                            "results": result})
+#     except Exception as exception:
+#         log_error(repr(exception))
+#         return front_error_message(templates, request, exception)
 
 
 @router.get("front/v1/projects/{project}/versions/{version}",

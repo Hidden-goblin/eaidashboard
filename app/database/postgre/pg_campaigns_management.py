@@ -4,19 +4,16 @@ from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import OccurrenceNotFound, VersionNotFound
-from app.database.postgre.pg_versions import version_exists
-from app.database.utils.object_existence import project_version_exists
-from app.schema.campaign_schema import CampaignPatch
+from app.schema.campaign_schema import CampaignLight, CampaignPatch
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
+from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 
 
-async def create_campaign(project_name, version, status: str = "recorded") -> dict:
+async def create_campaign(project_name, version, status: str = "recorded") -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
-    if not await version_exists(project_name, version):
-        raise VersionNotFound(f"{version} does not belong to {project_name}.")
     with pool.connection() as connection:
         connection.row_factory = dict_row
         conn = connection.execute("insert into campaigns (project_id, version, status, occurrence) "
@@ -32,7 +29,7 @@ async def create_campaign(project_name, version, status: str = "recorded") -> di
                                    version)).fetchone()
 
         connection.commit()
-        return conn
+        return CampaignLight(**conn)
 
 
 async def retrieve_campaign(project_name,
@@ -93,9 +90,10 @@ async def retrieve_campaign(project_name,
         return conn.fetchall(), count.fetchone()["total"]
 
 
-async def retrieve_campaign_id(project_name: str, version: str, occurrence: str) -> Tuple[int, str]:
+async def retrieve_campaign_id(project_name: str,
+                               version: str,
+                               occurrence: str) -> Tuple[int, str] | ApplicationError:
     """get campaign internal id and status"""
-    await project_version_exists(project_name, version)
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute("select id, status"
@@ -105,7 +103,8 @@ async def retrieve_campaign_id(project_name: str, version: str, occurrence: str)
                                  " and occurrence = %s;",
                                  (project_name, version, occurrence)).fetchone()
         if row is None:
-            raise OccurrenceNotFound(f"Occurrence '{occurrence}' not found")
+            return ApplicationError(error=ApplicationErrorCode.occurrence_not_found,
+                                    message=f"Occurrence '{occurrence}' not found")
         return row
 
 
@@ -155,4 +154,26 @@ async def update_campaign_occurrence(project_name,
                                      version,
                                      occurrence,
                                      update_occurrence: CampaignPatch):
-    pass
+    campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
+    if isinstance(campaign_id, ApplicationError):
+        return campaign_id
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        query = []
+        values = []
+        if update_occurrence.status is not None:
+            query.append("status = %s")
+            values.append(update_occurrence.status.value)
+        if update_occurrence.description is not None:
+            query.append("description = %s")
+            values.append(update_occurrence.description)
+        values.append(campaign_id[0])
+        query_full = ("update campaigns"
+                      f" set {', '.join(query)}"
+                      " where id = %s;")
+        rows = connection.execute(query_full,
+                                  values)
+        log_message(rows.statusmessage)
+        connection.commit()
+
+    return rows

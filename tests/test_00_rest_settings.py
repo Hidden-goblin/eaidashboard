@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.mark.order("first")
 class TestSettings:
 
     def test_log_in(self, application):

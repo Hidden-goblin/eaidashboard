@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List
+from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
@@ -19,6 +19,7 @@ from app.schema.campaign_schema import (CampaignFull,
                                         Scenarios,
                                         TicketScenario,
                                         TicketScenarioCampaign)
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
 from app.schema.status_enum import TicketType
 from app.utils.log_management import log_message
@@ -29,19 +30,23 @@ from app.utils.project_alias import provide
 async def fill_campaign(project_name: str,
                         version: str,
                         occurrence: str,
-                        content: TicketScenarioCampaign):
+                        content: TicketScenarioCampaign) -> Tuple[int,
+                                                                  list] | Tuple[ApplicationError,
+                                                                                list]:
     """Attach ticket to campaign
     Attach scenarios to campaign"""
     campaign_ticket_id = await add_ticket_to_campaign(project_name,
                                                       version,
                                                       occurrence,
                                                       content.ticket_reference)
+    if isinstance(campaign_ticket_id, ApplicationError):
+        return campaign_ticket_id, []
     if isinstance(content.scenarios, list):
         scenarios = content.scenarios
     elif isinstance(content.scenarios, ScenarioCampaign):
         scenarios = [content.scenarios]
     else:
-        return
+        return campaign_ticket_id, []
 
     errors = []
     with pool.connection() as connection:
@@ -69,6 +74,7 @@ async def fill_campaign(project_name: str,
             log_message(result)
 
         # I must do something with it
+    return campaign_ticket_id, errors
 
 
 async def retrieve_campaign_ticket_id(project_name: str,
@@ -97,27 +103,31 @@ async def retrieve_campaign_ticket_id(project_name: str,
 async def get_campaign_content(project_name: str,
                                version: str,
                                occurrence: str,
-                               only_status: bool = False):
-    """Retrieve the campaign fully (tickets and scenarios). No pagination."""
-    if not await is_campaign_exist(project_name, version, occurrence):
-        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                               f"for project {project_name} in version {version} not found")
+                               only_status: bool = False) -> ApplicationError | CampaignFull:
+    """Retrieve the campaign fully (tickets and scenarios). No pagination yet."""
     # Unique id for project/version/occurrence triplet
     campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
+    if isinstance(campaign_id, ApplicationError):
+        return campaign_id
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-
+        result = connection.execute("select description from campaigns where id = %s",
+                                    (campaign_id[0],))
         # Prepare the result
         camp = CampaignFull(project_name=project_name,
                             version=version,
+                            description=result.fetchone()["description"],
                             occurrence=int(occurrence),
                             status=campaign_id[1])
         if only_status:
             return camp
         # Select all sql data related to the campaign
         result = connection.execute("select ct.ticket_reference as reference, "
-                                    "ct.id as campaign_id "
+                                    "ct.id as campaign_id,"
+                                    "tk.description as summary "
                                     "from campaign_tickets as ct "
+                                    "join tickets as tk on ct.ticket_id = tk.id "
                                     "where ct.campaign_id = %s "
                                     "order by ct.ticket_reference desc;",
                                     (campaign_id[0],))
@@ -131,7 +141,7 @@ async def get_campaign_content(project_name: str,
                     camp.tickets.append(current_ticket)
                 tickets.add(row['reference'])
                 current_ticket = TicketScenario(reference=row['reference'],
-                                                summary="",
+                                                summary=row['summary'],
                                                 scenarios=await db_get_campaign_ticket_scenarios(
                                                     project_name,
                                                     version,
@@ -141,14 +151,6 @@ async def get_campaign_content(project_name: str,
         if current_ticket is not None:
             camp.tickets.append(current_ticket)
 
-        # Retrieve data from mongo
-        tickets_data = {tick["reference"]: tick["description"]
-                        for tick in await get_tickets_by_reference(project_name, version, tickets)}
-
-        # Update the tickets with their summary
-        for tick in camp.tickets:
-            if tick and tickets_data[tick["reference"]]:
-                tick.summary = tickets_data[tick["reference"]]
         return camp
 
 
@@ -174,11 +176,13 @@ def db_get_campaign_scenarios(campaign_id: int) -> List[Scenario]:
 
 async def db_get_campaign_tickets(project_name,
                                   version,
-                                  occurrence):
+                                  occurrence) -> CampaignFull | ApplicationError:
     """"""
     if not await is_campaign_exist(project_name, version, occurrence):
-        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
-                               f"for project {project_name} in version {version} not found")
+        return ApplicationError(error=ApplicationErrorCode.campaign_not_found,
+                                message=f"Campaign occurrence {occurrence} "
+                                        f"for project {project_name} in version {version} not "
+                                        f"found")
     campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
 
     with pool.connection() as connection:
@@ -193,11 +197,11 @@ async def db_get_campaign_tickets(project_name,
                                                               version,
                                                               [ticket[0] for ticket in tickets]))
 
-        return {"project": project_name,
-                "version": version,
-                "occurrence": occurrence,
-                "status": campaign_id[1],
-                "tickets": updated_tickets}
+        return CampaignFull(project_name=project_name,
+                            version=version,
+                            occurrence=occurrence,
+                            status=campaign_id[1],
+                            tickets=updated_tickets)
 
 
 async def db_get_campaign_ticket_scenarios(project_name: str,

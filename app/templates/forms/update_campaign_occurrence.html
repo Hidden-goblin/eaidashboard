@@ -1,18 +1,25 @@
-{% if name %}
+{% if update %}
    <div class="modal-dialog modal-dialog-centered">
+       <!-- form update campaign occurrence -->
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Register project</h5>
+                <h5 class="modal-title">Update occurrence</h5>
             </div>
             <div class="modal-body">
                 <div class="container">
-                    <form hx-post="/front/v1/projects"
+                    <form hx-patch="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
                           hx-ext='json-enc'
                           hx-headers='{"eaid-next": "modalClear"}' >
-                        <!--                        <form action="/login" method="post">-->
                         <div class="mb-3" >
-                            <label for="project_name" class="form-label">Project name</label>
-                            <input id="project_name" name="name" value="{{name}}" class="form-control"/>
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" name="status" class="form-select" aria-label="status">
+                                {% for value in statuses %}
+                                    <option value="{{value}}" {% if value==campaign.status %} selected {% endif %}>{{value}}</option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control">{{description}}</textarea>
                             <span class="text-danger" >
                                       {{message}}
                             </span>
@@ -20,7 +27,7 @@
                         <div id="modalErrorMessage" class="container show"></div>
                         <div class="button">
                             <button type="submit" class="btn btn-secondary">
-                                Create
+                                Update
                             </button>
                         </div>
                     </form>
@@ -48,16 +55,20 @@
             </div>
             <div class="modal-body">
                 <div class="container">
-                    <form hx-post="/front/v1/projects"
+                    <form hx-patch="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
                           hx-ext='json-enc'
                           hx-headers='{"eaid-next": "modalClear"}'>
-                        <!--                        <form action="/login" method="post">-->
+
                         <div class="mb-3" >
-                            <label for="project_name" class="form-label">Project name</label>
-                            <input id="project_name" name="name" value="" class="form-control"/>
-                           <!--     <div class="invalid-feedback">
-                                      {{error_message}}
-                                </div> -->
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" name="status" class="form-select" aria-label="status">
+                                {% for value in statuses %}
+                                    <option value="{{value}}" {% if value==campaign.status %} selected {% endif %}>{{value}}</option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control"></textarea>
                         </div>
                         <div id="modalErrorMessage" class="container show"></div>
                         <div class="button">

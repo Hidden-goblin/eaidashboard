@@ -52,7 +52,7 @@ After the migration is done, restart the application to be sure not to use the m
 ## History
 - 3.6
   - Campaign occurrence status management
-  - 
+  - Update html export
 - 3.5
   - Create project (GUI)
   - Update version (GUI)

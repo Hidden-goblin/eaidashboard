@@ -11,6 +11,10 @@ class DashTypeEnum(Enum):
     def in_enum(cls, item):
         return item in [str(val) for val in cls.__members__.values()]
 
+    @classmethod
+    def list(cls):
+        return [str(val) for val in cls.__members__.values()]
+
 
 class TicketType(DashTypeEnum):
     OPEN = "open"

@@ -2,6 +2,8 @@
 # -*- Author: E.Aivayan -*-
 from enum import Enum
 
+from app.schema.status_enum import DashTypeEnum
+
 
 class RepositoryEnum(str, Enum):
     epics = "epics"
@@ -9,7 +11,7 @@ class RepositoryEnum(str, Enum):
     scenarios = "scenarios"
 
 
-class CampaignStatusEnum(str, Enum):
+class CampaignStatusEnum(str, DashTypeEnum):
     recorded = "recorded"
     in_progress = "in progress"
     cancelled = "cancelled"

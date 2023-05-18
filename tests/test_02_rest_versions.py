@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.mark.order(after="tests/test_rest_settings.py::TestRestProjects")
 class TestRestVersions:
     def test_add_ticket(self, application, logged):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
@@ -123,7 +122,6 @@ class TestRestVersions:
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
-
     def test_update_ticket(self, application, logged):
         response = application.put("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
                                    json={"description": "Updated description",
@@ -150,7 +148,6 @@ class TestRestVersions:
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
-
     @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
     def test_update_ticket_errors_404(self, application, logged, project, version, ticket, message):
         response = application.put(
@@ -170,7 +167,7 @@ class TestRestVersions:
         assert response.status_code == 200
 
         response = application.put(
-            f"/api/v1/projects/test/versions/1.0.1/tickets/mv-001",
+            "/api/v1/projects/test/versions/1.0.1/tickets/mv-001",
             json={"version": "1.0.2"},
             headers=logged
         )
@@ -179,7 +176,7 @@ class TestRestVersions:
 
     def test_update_ticket_errors_404_payload(self, application, logged):
         response = application.put(
-            f"/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+            "/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
             json={"version": "2.0.0"},
             headers=logged
         )
