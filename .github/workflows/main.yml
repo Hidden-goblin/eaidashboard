@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test:
+    environment: eaidashboard
     runs-on: ubuntu-latest
     env:
       PG_USR: ${{ secrets.PG_USR }}
@@ -18,7 +19,7 @@ jobs:
       postgres:
         image: postgres
         ports:
-          - 5432:5432
+          - ${{ secrets.PG_PORT }}:5432
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -26,7 +27,7 @@ jobs:
       redis:
         image: redis
         ports:
-          - 6379:6379
+          - ${{ secrets.REDIS_PORT }}:6379
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
