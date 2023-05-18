@@ -9,6 +9,7 @@ from app.conf import redis_dict
 
 redis_pool = None
 
+
 def redis_health():
     try:
         conn = redis_connection()
@@ -21,7 +22,5 @@ def redis_health():
 def redis_connection():
     if app.utils.redis.redis_pool is None:
         app.utils.redis.redis_pool = redis.ConnectionPool(**redis_dict, db=0)
-    
+
     return redis.Redis(connection_pool=app.utils.redis.redis_pool)
-
-

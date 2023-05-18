@@ -23,6 +23,9 @@ markdown = "*"
 
 [dev-packages]
 pydeps = "*"
+coverage = "*"
+pytest-order = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.11"

@@ -1,0 +1,95 @@
+{% if update %}
+   <div class="modal-dialog modal-dialog-centered">
+       <!-- form update campaign occurrence -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update occurrence</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-patch="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}' >
+                        <div class="mb-3" >
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" name="status" class="form-select" aria-label="status">
+                                {% for value in statuses %}
+                                    <option value="{{value}}" {% if value==campaign.status %} selected {% endif %}>{{value}}</option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control">{{description}}</textarea>
+                            <span class="text-danger" >
+                                      {{message}}
+                            </span>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+{% else %}
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-patch="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}'>
+
+                        <div class="mb-3" >
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" name="status" class="form-select" aria-label="status">
+                                {% for value in statuses %}
+                                    <option value="{{value}}" {% if value==campaign.status %} selected {% endif %}>{{value}}</option>
+                                {% endfor %}
+                            </select>
+
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control"></textarea>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

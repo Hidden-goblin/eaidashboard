@@ -42,3 +42,23 @@ application versioning system is.
 <img src="/assets/howto/create_version_HT.png" title="Create a version UI" width="800"/>
 
 <img alt="Form to fill a version" src="/assets/howto/create_version_fill_version_HT.png" title="Fill version UI" width="800"/>
+
+## Create a campaign for the project-version
+
+On the GUI, you need to be connected with admin rights. Your project needs to have versions.
+
+Select the project. 
+
+Go to the `Campaign` tab.
+
+Select the `Create new` button.
+
+<img src="/assets/howto/create_campaign_HT.png" title="Create a new campaign" alt="New campaign form" width="800"/>
+
+On the displayed form, select the version you want to create a new campaign.
+
+<img src="/assets/howto/create_campaign_select_version_HT.png" title="Create a new campaign - Select version" 
+alt="Select version in the form" width="800"/>
+
+If the version does not have already a campaign you will create the first occurrence. Otherwise, you will create the 
+next occurrence.

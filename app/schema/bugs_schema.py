@@ -3,8 +3,8 @@
 from datetime import datetime
 from typing import Optional
 
-
 from pydantic import BaseModel
+
 from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
 
 
@@ -44,6 +44,7 @@ class BugTicket(BaseModel):
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
 
 class BugTicketFull(BugTicket):
     internal_id: int

@@ -1,0 +1,10 @@
+[run]
+command_line = -m pytest
+branch = True
+
+[report]
+include = app/*
+show_missing = True
+
+[html]
+directory = cov_html

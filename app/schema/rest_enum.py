@@ -14,6 +14,7 @@ class RestTestResultCategoryEnum(str, Enum):
     FEATURES = "features"
     SCENARIOS = "scenarios"
 
+
 class RestTestResultRenderingEnum(str, Enum):
     STACKED = "stacked"
     MAP = "map"

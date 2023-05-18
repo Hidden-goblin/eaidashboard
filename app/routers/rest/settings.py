@@ -2,12 +2,12 @@
 # -*- Author: E.Aivayan -*-
 from typing import Any, List
 
-from fastapi import (APIRouter, HTTPException, Security, BackgroundTasks)
+from fastapi import (APIRouter, HTTPException, Security)
 
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
 from app.schema.project_schema import (ErrorMessage, Project, RegisterProject)
-from app.database.postgre.pg_projects import (set_index, register_project, registered_projects)
+from app.database.postgre.pg_projects import (register_project, registered_projects)
 
 router = APIRouter(
     prefix="/api/v1/settings"
@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post("/projects",
              response_model=Project,
              tags=["Settings"],
-             description="""Create a new project. \n project name must be strictly less than 64 
+             description="""Create a new project. \n project name must be strictly less than 64
              characters""",
              responses={
                  400: {"model": ErrorMessage,
@@ -32,11 +32,9 @@ router = APIRouter(
              }
              )
 async def post_register_projects(project: RegisterProject,
-                                 background_task: BackgroundTasks,
                                  user: Any = Security(authorize_user, scopes=["admin"])):
     try:
         _project_name = await register_project(project.dict()["name"])
-        background_task.add_task(set_index, _project_name)
         return {"name": _project_name}
     except ProjectNameInvalid as pni:
         raise HTTPException(400, detail=" ".join(pni.args)) from pni

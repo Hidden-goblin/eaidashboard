@@ -1,13 +1,13 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import logging
-from jwt import encode, decode
+
+from jwt import decode, encode
 
 from app import conf
-from app.database.utils.password_management import generate_keys, verify_password
-
-from app.database.redis.token_management import register_connection, revoke
 from app.database.postgre.pg_users import get_user
+from app.database.redis.token_management import register_connection, revoke
+from app.database.utils.password_management import generate_keys, verify_password
 
 
 def authenticate_user(username, password):
@@ -21,6 +21,7 @@ def authenticate_user(username, password):
         log = logging.getLogger("uvicorn.access")
         log.warning(msg=" ".join(exception.args))
         return None, []
+
 
 def create_access_token(data: dict):
     to_encode = data.copy()

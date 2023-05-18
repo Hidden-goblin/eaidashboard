@@ -3,14 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import (APIRouter,
-                     HTTPException,
-                     Response,
-                     Security,
-                     UploadFile,
-                     File,
-                     Form,
-                     Header)
+from fastapi import (APIRouter, File, Form, Header, HTTPException, Response, Security, UploadFile)
 from fastapi.encoders import jsonable_encoder
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
@@ -21,16 +14,15 @@ from app.app_exception import (DuplicateTestResults,
                                MalformedCsvFile,
                                VersionNotFound)
 from app.database.authorization import authorize_user
+from app.database.postgre.pg_test_results import (insert_result as pg_insert_result,
+                                                  TestResults)
 from app.database.postgre.pg_versions import version_exists
 from app.database.redis.rs_file_management import rs_invalidate_file, rs_record_file, \
     rs_retrieve_file
-
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
-from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.database.utils.test_result_management import insert_result
+from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.project_schema import ErrorMessage
-from app.database.postgre.pg_test_results import (insert_result as pg_insert_result,
-                                                  TestResults)
 from app.schema.rest_enum import (RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
                                   RestTestResultRenderingEnum)
@@ -78,20 +70,21 @@ async def rest_import_test_results(project_name: str,
                                                      decoded,
                                                      part_of_campaign_occurrence=campaign_occurrence)
         background_task.add_task(pg_insert_result,
-                                  result_date,
-                                  project_name,
-                                  version,
-                                  campaign_id,
-                                  is_partial, res,
-                                  rows)
+                                 result_date,
+                                 project_name,
+                                 version,
+                                 campaign_id,
+                                 is_partial, res,
+                                 rows)
         # Invalidate current result files and remove them
         if campaign_occurrence is None:
             await rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
         else:
-            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
+            await rs_invalidate_file(
+                f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
         return res
     except IncorrectFieldsRequest as ifr:
-        raise HTTPException(400, detail="".join(ifr.args)) from  ifr
+        raise HTTPException(400, detail="".join(ifr.args)) from ifr
     except DuplicateTestResults as dtr:
         raise HTTPException(400, detail=" ".join(dtr.args)) from dtr
     except MalformedCsvFile as mcf:
@@ -104,11 +97,12 @@ async def rest_import_test_results(project_name: str,
 
 @router.get("/{project_name}/testResults",
             description="""Provide test results for a project.
-            
-            **Partial test repository result** can be retrieved when providing a campaign execution (version and occurrence).
-            
+
+            **Partial test repository result** can be retrieved when providing a campaign
+            execution (version and occurrence).
+
             **Complete test repository results** are retrieved on the all other cases.
-            
+
             Please note that partial results are not counted in the application results.
             """,
             tags=["Test Results"])
@@ -121,7 +115,8 @@ async def rest_export_results(project_name: str,
                               accept: RestTestResultHeaderEnum = Header()
                               ):
     try:
-        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:{rendering}:{accept}"
+        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:" \
+                   f"{rendering}:{accept}"
         if accept != "application/json":
             filename = rs_retrieve_file(file_key)
             if filename is not None:
@@ -139,4 +134,3 @@ async def rest_export_results(project_name: str,
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf
     except Exception as exp:
         raise HTTPException(500, repr(exp)) from exp
-

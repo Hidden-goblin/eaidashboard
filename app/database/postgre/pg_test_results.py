@@ -7,9 +7,7 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import DuplicateTestResults
-
 from app.database.redis.rs_test_result import mg_insert_test_result_done
-
 from app.database.utils.output_strategy import OutputStrategy
 from app.database.utils.what_strategy import WhatStrategy
 from app.utils.pgdb import pool
@@ -27,30 +25,30 @@ def retrieve_tuple_data(result_date,
         connection.row_factory = dict_row
         for row in rows:
             if db_row := connection.execute(
-                "select ep.id as epic_id, ft.id as feature_id,"
-                " sc.id as scenario_internal_id from scenarios as sc "
-                "inner join features as ft on sc.feature_id = ft.id "
-                "inner join epics as ep on ep.id = ft.epic_id "
-                "where ep.name = %s "
-                "and ft.name = %s "
-                "and sc.scenario_id = %s "
-                "and ep.project_id = %s;",
-                (
-                    row["epic_id"],
-                    row.get("feature_name", row.get("feature_id", None)),
-                    row["scenario_id"],
-                    project_name,
-                ),
+                    "select ep.id as epic_id, ft.id as feature_id,"
+                    " sc.id as scenario_internal_id from scenarios as sc "
+                    "inner join features as ft on sc.feature_id = ft.id "
+                    "inner join epics as ep on ep.id = ft.epic_id "
+                    "where ep.name = %s "
+                    "and ft.name = %s "
+                    "and sc.scenario_id = %s "
+                    "and ep.project_id = %s;",
+                    (
+                            row["epic_id"],
+                            row.get("feature_name", row.get("feature_id", None)),
+                            row["scenario_id"],
+                            project_name,
+                    ),
             ).fetchone():
                 result.append((result_date,
-                project_name,
-                version,
-                campaign_id,
-                db_row["epic_id"],
-                db_row["feature_id"],
-                db_row["scenario_internal_id"],
-                row["status"],
-                is_partial))
+                               project_name,
+                               version,
+                               campaign_id,
+                               db_row["epic_id"],
+                               db_row["feature_id"],
+                               db_row["scenario_internal_id"],
+                               row["status"],
+                               is_partial))
 
 
 def check_result_uniqueness(project_name: str, version: str, result_date: datetime):
@@ -59,7 +57,7 @@ def check_result_uniqueness(project_name: str, version: str, result_date: dateti
     :raise DuplicateTestResults"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        if result := connection.execute(
+        if result := connection.execute(  # noqa: F841
                 "select 0 from test_scenario_results "
                 "where project_id = %s "
                 "and version = %s "
@@ -100,7 +98,7 @@ def __compute_epic_result(epic_list: list,
                           current_epic,
                           current_epic_status,
                           is_partial))
-    return result_epic, set_status(current_epic_status,result_status)
+    return result_epic, set_status(current_epic_status, result_status)
 
 
 def __compute_feature_result(feature_list: list,
@@ -203,14 +201,14 @@ async def insert_result(result_date: datetime,
                              current_epic,
                              current_feature,
                              current_feature_status,
-                                     is_partial))
+                             is_partial))
             epics.append((result_date,
                           project_name,
                           version,
                           campaign_id,
                           current_epic,
                           current_epic_status,
-                                     is_partial))
+                          is_partial))
         with connection.cursor().copy("COPY test_feature_results (run_date, project_id, version,"
                                       " campaign_id, epic_id, feature_id,"
                                       " status, is_partial) from stdin") as copy:

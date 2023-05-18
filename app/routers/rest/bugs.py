@@ -5,16 +5,14 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
-
 from app.database.postgre.pg_bugs import (
     db_update_bugs,
     get_bugs as db_g_bugs,
     insert_bug)
-
+from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 from app.schema.mongo_enums import (BugCriticalityEnum, BugStatusEnum)
 from app.schema.project_schema import (ErrorMessage)
 from app.schema.status_enum import TicketType
-from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 
 router = APIRouter(
     prefix="/api/v1/projects"
@@ -50,6 +48,7 @@ async def get_bugs_for_version(project_name: str,
     except Exception as exp:
         raise HTTPException(500, repr(exp))
 
+
 @router.post("/{project_name}/bugs",
              tags=["Bug"])
 async def create_bugs(project_name: str,
@@ -72,4 +71,3 @@ async def update_bugs(project_name: str,
         return await db_update_bugs(project_name, bug_internal_id, body)
     except Exception as exp:
         raise HTTPException(500, repr(exp))
-

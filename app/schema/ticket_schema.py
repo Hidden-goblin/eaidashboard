@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra, root_validator
 
 from app.schema.status_enum import TicketType
 
@@ -30,14 +30,22 @@ class ToBeTicket(BaseModel):
         return self.dict().get(index, None)
 
 
-class UpdatedTicket(BaseModel):
-    description: Optional[str]
-    status: Optional[str]
-    version: Optional[str]
+class UpdatedTicket(BaseModel, extra=Extra.forbid):
+    description: Optional[str] = None
+    status: Optional[str] = None
+    version: Optional[str] = None
     updated: datetime = datetime.now()
 
     def __getitem__(self, index):
         return self.dict().get(index, None)
+
+    @root_validator
+    def check_at_least_one(cls, values):
+        keys = ("description", "status", "version")
+        if all(values.get(key) is None for key in keys):
+            raise ValueError(f"UpdatedTicket must have at least one key of '{keys}'")
+        return values
+
 
 class EnrichedTicket(Ticket):
     campaign_occurrences: Optional[List[str]]

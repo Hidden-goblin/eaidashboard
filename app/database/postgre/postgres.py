@@ -1,7 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import psycopg
-from app.conf import postgre_string, postgre_setting_string, config
+
+from app.conf import config, postgre_setting_string, postgre_string
 from app.database.postgre.postgre_updates import POSTGRE_UPDATES
 from app.utils.log_management import log_error
 from app.utils.project_alias import register
@@ -10,7 +11,7 @@ from app.utils.project_alias import register
 def init_postgres():
     conn = psycopg.connect(postgre_setting_string, autocommit=True)
     cur = conn.cursor()
-    cur.execute("select * from pg_database where datname =  %s" ,(config['PG_DB'],))
+    cur.execute("select * from pg_database where datname =  %s", (config['PG_DB'],))
     if not cur.fetchall():
         cur.execute(f"create database {config['PG_DB']}")
 
@@ -31,7 +32,8 @@ def update_postgres():
                 connexion.commit()
                 cursor.execute("""insert into operations (type, op_user, op_order, content)
                         values ('database', 'application', %s, %s)
-                        on conflict (type, op_order) do nothing; """, (index + 1, update["description"]))
+                        on conflict (type, op_order) do nothing; """,
+                               (index + 1, update["description"]))
                 connexion.commit()
             except Exception as exc:
                 connexion = psycopg.connect(postgre_string)

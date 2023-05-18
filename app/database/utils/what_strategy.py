@@ -2,10 +2,11 @@
 # -*- Author: E.Aivayan -*-
 import abc
 from abc import ABC
+
 from psycopg.rows import tuple_row
-from app.utils.pgdb import pool
 
 from app.database.postgre.pg_campaigns_management import retrieve_campaign_id
+from app.utils.pgdb import pool
 
 
 class WhatStrategy(ABC):
@@ -296,17 +297,17 @@ class ScenarioMap(WhatStrategy):
                     " where ter.campaign_id = %s"
                     " and ter.is_partial = %s"
                     " order by ter.run_date, ter.scenario_id;",
-                    (campaign_id,True))
+                    (campaign_id, True))
         return list(result.fetchall())
 
 
 REGISTERED_STRATEGY = {"epics": {
     "stacked": EpicStaked,
     "map": EpicMap},
-"features": {
-    "stacked": FeatureStaked,
-    "map": FeatureMap},
-"scenarios": {
-    "stacked": ScenarioStaked,
-    "map": ScenarioMap}
+    "features": {
+        "stacked": FeatureStaked,
+        "map": FeatureMap},
+    "scenarios": {
+        "stacked": ScenarioStaked,
+        "map": ScenarioMap}
 }

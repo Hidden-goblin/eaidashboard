@@ -12,6 +12,7 @@ from starlette.responses import Response
 
 from app.app_exception import MalformedCsvFile
 from app.database.authorization import authorize_user
+from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import (add_epic,
                                                  add_feature,
                                                  add_scenario,
@@ -19,8 +20,6 @@ from app.database.postgre.testrepository import (add_epic,
                                                  db_project_epics,
                                                  db_project_features,
                                                  db_project_scenarios)
-from app.database.postgre.pg_projects import registered_projects
-
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
@@ -71,16 +70,17 @@ async def get_scenarios(project_name: str,
             return await db_project_epics(project_name, limit=limit, offset=offset)
         elif elements == RepositoryEnum.features:
             if epic is not None:
-                return await db_project_features(project_name, epic=epic, limit=limit, offset=offset)
+                return await db_project_features(project_name, epic=epic, limit=limit,
+                                                 offset=offset)
             return await db_project_features(project_name, limit=limit, offset=offset)
         else:
             temp = {"epic": epic, "feature": feature}
             result, count = await db_project_scenarios(project_name,
-                                                 limit=limit,
-                                                 offset=offset,
-                                                 **{key: value
-                                                    for key, value in temp.items() if
-                                                    value is not None})
+                                                       limit=limit,
+                                                       offset=offset,
+                                                       **{key: value
+                                                          for key, value in temp.items() if
+                                                          value is not None})
             response.headers["X-total-count"] = str(count)
             return JSONResponse(content=jsonable_encoder(result),
                                 headers={"X-total-count": str(count)})
@@ -114,8 +114,10 @@ async def upload_repository(project_name: str,
         rows = DictReader(buffer)
         if all(header in rows.fieldnames for header in ("epic", "feature_filename", "feature_name",
                                                         "feature_tags", "feature_description",
-                                                        "scenario_id", "scenario_name","scenario_tags",
-                                                        "scenario_description", "scenario_is_outline",
+                                                        "scenario_id", "scenario_name",
+                                                        "scenario_tags",
+                                                        "scenario_description",
+                                                        "scenario_is_outline",
                                                         "scenario_steps")):
             background_task.add_task(process_upload, decoded, project_name)
             return Response(status_code=204)
@@ -123,6 +125,7 @@ async def upload_repository(project_name: str,
             raise HTTPException(400, detail="Missing or bad csv header")
     except Exception as exp:
         raise HTTPException(500, repr(exp))
+
 
 async def process_upload(csv_content, project_name):
     """Read a csv and prepare data for insertion
@@ -169,16 +172,16 @@ async def process_upload(csv_content, project_name):
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
     excluded_features = [{"epic_name": row["epic"],
-                         "feature_name": row["feature_name"],
-                         "project_name": project_name,
+                          "feature_name": row["feature_name"],
+                          "project_name": project_name,
                           "project_name_alias": provide(project_name),
-                         "description": row["feature_description"],
-                         "tags": row["feature_tags"],
-                         "filename": row["feature_filename"]
-                         }
-                        for row in rows if (not row["scenario_steps"]
-                                            and row["feature_filename"]
-                                            and not row["epic"])]
+                          "description": row["feature_description"],
+                          "tags": row["feature_tags"],
+                          "filename": row["feature_filename"]
+                          }
+                         for row in rows if (not row["scenario_steps"]
+                                             and row["feature_filename"]
+                                             and not row["epic"])]
     buffer = StringIO(csv_content, newline="")
     rows = DictReader(buffer)
     retrieved_features_filename = [item["filename"] for item in features]

@@ -47,10 +47,16 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.4
+## Current: 3.6
 
 ## History
-
+- 3.6
+  - Campaign occurrence status management
+  - Update html export
+- 3.5
+  - Create project (GUI)
+  - Update version (GUI)
+  - Modal management & events triggering
 - 3.4
   - Add some basic documentation and the basics for future documentation.
   - Add plantUml build stage

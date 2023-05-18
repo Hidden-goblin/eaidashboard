@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import datetime
+import json
 
 from fastapi import APIRouter, Form
 from starlette.background import BackgroundTasks
@@ -9,10 +10,10 @@ from starlette.requests import Request
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
-
+from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign, \
+    update_campaign_occurrence
 from app.database.postgre.pg_projects import registered_projects
-
-from app.database.postgre.pg_test_results import TestResults
+from app.database.postgre.pg_test_results import insert_result as pg_insert_result, TestResults
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
 from app.database.postgre.pg_versions import get_versions
 from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenario,
@@ -22,29 +23,26 @@ from app.database.postgre.testcampaign import (db_delete_campaign_ticket_scenari
                                                db_put_campaign_ticket_scenarios,
                                                db_set_campaign_ticket_scenario_status,
                                                get_campaign_content)
-from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
 from app.database.postgre.testrepository import (db_project_epics,
                                                  db_project_features,
                                                  db_project_scenarios)
 from app.database.redis.rs_file_management import (rs_invalidate_file,
                                                    rs_record_file,
                                                    rs_retrieve_file)
-
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
-
 from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
-from app.schema.campaign_schema import Scenarios
-from app.schema.postgres_enums import ScenarioStatusEnum
+from app.schema.campaign_schema import CampaignPatch, Scenarios
+from app.schema.error_code import ApplicationError
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.rest_enum import (DeliverableTypeEnum,
                                   RestTestResultCategoryEnum,
                                   RestTestResultHeaderEnum,
                                   RestTestResultRenderingEnum)
-from app.utils.log_management import log_error
+from app.utils.log_management import log_error, log_message
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
-from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 from app.utils.report_generator import campaign_deliverable
 
 router = APIRouter(prefix="/front/v1/projects")
@@ -223,6 +221,16 @@ async def front_get_campaign(project_name: str,
                                                "project_name": project_name,
                                                "version": version,
                                                "occurrence": occurrence})
+        if request.headers.get("eaid-request", "") == "form":
+            campaign = await get_campaign_content(project_name, version, occurrence, True)
+            return templates.TemplateResponse("forms/update_campaign_occurrence.html",
+                                              {"request": request,
+                                               "campaign": campaign,
+                                               "statuses": CampaignStatusEnum.list(),
+                                               "project_name": project_name,
+                                               "version": version,
+                                               "occurrence": occurrence,
+                                               "update": False})
 
         campaign = await get_campaign_content(project_name, version, occurrence, True)
         projects = await registered_projects()
@@ -239,6 +247,55 @@ async def front_get_campaign(project_name: str,
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
+
+
+@router.patch("/{project_name}/campaigns/{version}/{occurrence}",
+              tags=["Front - Campaign"],
+              include_in_schema=False)
+async def front_update_campaign(project_name: str,
+                                version: str,
+                                occurrence: str,
+                                body: dict,
+                                request: Request):
+    try:
+        if not is_updatable(request, ("admin", "user")):
+            return templates.TemplateResponse("error_message.html",
+                                              {
+                                                  "request": request,
+                                                  "highlight": "You are not authorized",
+                                                  "sequel": " to perform this action.",
+                                                  "advise": "Try to log again."
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
+            # Do the treatment here
+        res = await update_campaign_occurrence(project_name,
+                                               version,
+                                               occurrence,
+                                               CampaignPatch(**body))
+        if isinstance(res, ApplicationError):
+            raise Exception(f"{res.error}\n{res.message}")
+            # Success
+        return templates.TemplateResponse("void.html",
+                                          {"request": request},
+                                          headers={"HX-Trigger": json.dumps({"modalClear": "",
+                                                                             "form-delete": ""})})
+    except Exception as exception:
+        log_error("\n".join(exception.args))
+        campaign = await get_campaign_content(project_name, version, occurrence, True)
+        return templates.TemplateResponse("forms/update_campaign_occurrence.html",
+                                          {
+                                              "request": request,
+                                              "project_name": project_name,
+                                              "version": version,
+                                              "occurrence": occurrence,
+                                              "campaign": campaign,
+                                              "statuses": CampaignStatusEnum.list(),
+                                              "update": True,
+                                              "message": "\n".join(exception.args)
+                                              # Add the error message
+                                          },
+                                          headers={"HX-Retarget": "#modal",  # Retarget
+                                                   "HX-Reswap": "beforeend"})  # Change swap
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}",
@@ -318,6 +375,7 @@ async def front_get_campaign_ticket(project_name: str,
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
+
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
             "{ticket_reference}/scenarios/{scenario_id}",
             tags=["Front - Campaign"],
@@ -345,6 +403,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                               ticket_reference,
                                                               scenario_id,
                                                               updated_status["new_status"])
+        log_message(result)
 
         return templates.TemplateResponse("void.html",
                                           {"request": request},
@@ -640,7 +699,8 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
         if ticket_ref is not None:
-            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" \
+                  f"{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
         filename = await rs_retrieve_file(key)
@@ -649,7 +709,7 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                   version,
                                                   occurrence,
                                                   deliverable_type,
-                                            ticket_ref)
+                                                  ticket_ref)
             await rs_record_file(key, filename)
 
         return templates.TemplateResponse("download_link.html",

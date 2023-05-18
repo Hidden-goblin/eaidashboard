@@ -9,23 +9,19 @@ from fastapi import (APIRouter,
                      Response,
                      Security)
 
-from app.app_exception import (ProjectNotRegistered,
-                               DuplicateArchivedVersion,
-                               DuplicateFutureVersion,
-                               DuplicateInProgressVersion)
 from app.database.authorization import authorize_user
-
 from app.database.postgre.pg_projects import (create_project_version,
-                                                  get_project,
-                                                  get_projects)
+                                              get_project,
+                                              get_projects)
 from app.database.postgre.pg_versions import (get_version,
-                                                  update_version_data)
-
+                                              update_version_data)
+from app.database.utils.object_existence import if_error_raise_http, project_version_exists, \
+    project_version_raise
+from app.schema.bugs_schema import UpdateVersion
 from app.schema.project_schema import (ErrorMessage,
                                        Project,
                                        RegisterVersion,
                                        TicketProject)
-from app.schema.bugs_schema import UpdateVersion
 from app.schema.versions_schema import Version
 
 router = APIRouter(
@@ -44,7 +40,7 @@ async def projects(response: Response,
         # TODO add total # of project in response header
         return await get_projects(skip, limit)
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
 
 
 @router.get("/projects/{project_name}",
@@ -61,18 +57,17 @@ async def projects(response: Response,
   - future
   - archived
   - current
-            
+
 denoting the project's version you want to retrieve.
             """
             )
 async def one_project(project_name: str,
                       sections: Union[List[str], None] = Query(default=None)):
+    await project_version_raise(project_name)
     try:
         return await get_project(project_name.casefold(), sections)
-    except ProjectNotRegistered as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, detail=" ".join(exp.args)) from exp
 
 
 @router.post("/projects/{project_name}/versions",
@@ -89,19 +84,14 @@ Only admin can create new version.""")
 async def post_projects(project_name: str,
                         project: RegisterVersion,
                         user: Any = Security(authorize_user, scopes=["admin"])):
+    await project_version_raise(project_name)
+
     try:
-        result = await create_project_version(project_name,project)
-        return str(result.inserted_id)
-    except ProjectNotRegistered as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
-    except DuplicateArchivedVersion as dav:
-        raise HTTPException(400, detail=" ".join(dav.args)) from dav
-    except DuplicateFutureVersion as dfv:
-        raise HTTPException(400, detail=" ".join(dfv.args)) from dfv
-    except DuplicateInProgressVersion as dipv:
-        raise HTTPException(400, detail=" ".join(dipv.args)) from dipv
+        result = await create_project_version(project_name, project)
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, detail=" ".join(exp.args)) from exp
+
+    return if_error_raise_http(result).inserted_id
 
 
 @router.get("/projects/{project_name}/versions/{version}",
@@ -114,12 +104,14 @@ async def post_projects(project_name: str,
             description="Retrieve a specific project's version details")
 async def version_details(project_name: str,
                           version: str):
+    await project_version_raise(project_name, version)
+
     try:
-        return await get_version(project_name.casefold(), version.casefold())
-    except ProjectNotRegistered as pnr:
-        raise HTTPException(404, detail=" ".join(pnr.args)) from pnr
+        result = await get_version(project_name.casefold(), version.casefold())
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, detail=" ".join(exp.args)) from exp
+
+    return if_error_raise_http(result)
 
 
 @router.put("/projects/{project_name}/versions/{version}",
@@ -130,12 +122,11 @@ async def version_details(project_name: str,
             },
             tags=["Versions"],
             description="""Update the project-version on status, issues and bugs.
-            
+
 **started** and **end_forecast** are dates in YYY-mm-dd format.
-            
+
 **status** is one of:
 
-   - in progress
    - recorded
    - campaign started
    - campaign ended
@@ -144,16 +135,18 @@ async def version_details(project_name: str,
    - test plan accepted
    - ter writing
    - ter sent
-   - cancelled 
+   - cancelled
    - archived
-            
+
 Only admin or user can update a version"""
             )
 async def update_version(project_name: str,
                          version: str,
                          body: UpdateVersion,
                          user: Any = Security(authorize_user, scopes=["admin", "user"])):
+    await project_version_exists(project_name, version)
     try:
-        return await update_version_data(project_name.casefold(), version.casefold(), body)
+        result = await update_version_data(project_name.casefold(), version.casefold(), body)
     except Exception as exp:
-        raise HTTPException(500, repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)

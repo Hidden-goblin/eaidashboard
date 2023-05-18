@@ -8,13 +8,10 @@ from starlette.requests import Request
 from app.app_exception import front_error_message, MalformedCsvFile
 from app.conf import templates
 from app.database.authorization import is_updatable
-
-from app.database.postgre.pg_bugs import get_bugs
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
-from app.schema.mongo_enums import BugStatusEnum
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
@@ -46,10 +43,11 @@ async def front_project_repository(project_name: str,
                                               headers={
                                                   "HX-Redirect": f"/front/v1/projects/"
                                                                  f"{project_name}/repository"})
-        if status is not None:
-            bugs = await get_bugs(project_name)
-        else:
-            bugs = await get_bugs(project_name, status=BugStatusEnum.open)
+        # if status is not None:
+        #     bugs = await get_bugs(project_name)
+        # else:
+        #     bugs = await get_bugs(project_name, status=BugStatusEnum.open)
+        # log_message(bugs)
         projects = await registered_projects()
         return templates.TemplateResponse("repository_board.html",
                                           {
@@ -201,7 +199,8 @@ async def filter_repository(project_name: str,
                                               "pages": pages,
                                               "current_page": current_page,
                                               "nav_bar": count > 10,
-                                              "filter": f"&epic={body['epic']}&feature={body['feature']}"
+                                              "filter": f"&epic={body['epic']}&feature="
+                                                        f"{body['feature']}"
                                           })
     except Exception as exception:
         log_error(repr(exception))

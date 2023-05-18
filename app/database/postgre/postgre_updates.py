@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+# flake8: noqa: W291
 POSTGRE_UPDATES = [
     {"request": """create table if not exists campaigns (
     id serial primary key,
@@ -50,7 +51,8 @@ POSTGRE_UPDATES = [
     {
         "request": """alter table campaign_tickets
         add constraint unique_campaign_ticket unique (campaign_id, ticket_reference),
-        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full;
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match 
+        full;
         """,
         "description": "Add constraints to campaign_tickets"
     },
@@ -66,8 +68,10 @@ POSTGRE_UPDATES = [
     {
         "request": """alter table campaign_ticket_scenarios 
         add constraint unique_campaign_ticket_scenario unique (campaign_id, scenario_id),
-        add constraint campaign_ticket_id_fkey foreign key (campaign_id) references campaign_tickets(id) match full, 
-        add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
+        add constraint campaign_ticket_id_fkey foreign key (campaign_id) references 
+        campaign_tickets(id) match full, 
+        add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match 
+        full;""",
         "description": "Add constraints to campaign_ticket_scenarios"
     },
     {
@@ -87,13 +91,15 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table test_scenario_results 
-        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match 
+        full,
         add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full,
         add constraint feature_id_fkey foreign key (feature_id) references features(id) match full,
-        add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match full;""",
+        add constraint scenario_id_fkey foreign key (scenario_id) references scenarios(id) match 
+        full;""",
         "description": "Add foreign key constraints on test_scenario_results table."
     },
-{
+    {
         "request": """create table if not exists test_feature_results (
         id serial primary key,
         run_date timestamp not null,
@@ -109,12 +115,14 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table test_feature_results 
-        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match 
+        full,
         add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full,
-        add constraint feature_id_fkey foreign key (feature_id) references features(id) match full;""",
+        add constraint feature_id_fkey foreign key (feature_id) references features(id) match 
+        full;""",
         "description": "Add foreign key constraints on test_feature_results table."
     },
-{
+    {
         "request": """create table if not exists test_epic_results (
         id serial primary key,
         run_date timestamp not null,
@@ -129,7 +137,8 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table test_epic_results 
-        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match full,
+        add constraint campaign_id_fkey foreign key (campaign_id) references campaigns(id) match 
+        full,
         add constraint epic_id_fkey foreign key (epic_id) references epics(id) match full;""",
         "description": "Add foreign key constraints on test_epic_results table."
     },
@@ -195,8 +204,10 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table tickets 
-        add constraint tickets_project_fkey foreign key (project_id) references projects(id) match full,
-        add constraint tickets_current_version_fkey foreign key (current_version) references versions(id) match full,
+        add constraint tickets_project_fkey foreign key (project_id) references projects(id) 
+        match full,
+        add constraint tickets_current_version_fkey foreign key (current_version) references 
+        versions(id) match full,
         add constraint unique_ticket_project unique (project_id, reference);
         """,
         "description": "Add fk and unique constraints on tickets"
@@ -242,8 +253,10 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table bugs 
-        add constraint bugs_project_id_fk foreign key (project_id) references projects(id) match full,
-        add constraint bugs_version_id_fk foreign key (version_id) references versions(id) match full,
+        add constraint bugs_project_id_fk foreign key (project_id) references projects(id) match 
+        full,
+        add constraint bugs_version_id_fk foreign key (version_id) references versions(id) match 
+        full,
         add constraint unique_title_project_id unique (project_id, version_id, title);""",
         "description": "Add fk and unique constraint on bugs"
     },
@@ -260,38 +273,38 @@ POSTGRE_UPDATES = [
          where open_blocking is NULL""",
         "description": "Fix null value in versions"
     },
-{
+    {
         "request": """update versions
          set open_major = 0
          where open_major is NULL""",
         "description": "Fix null value in versions"
     },
-{
+    {
         "request": """update versions
          set open_minor = 0
          where open_minor is NULL""",
         "description": "Fix null value in versions"
     },
-{
+    {
         "request": """update versions
          set closed_blocking = 0
          where closed_blocking is NULL""",
         "description": "Fix null value in versions"
     },
-{
+    {
         "request": """update versions
          set closed_major = 0
          where closed_major is NULL""",
         "description": "Fix null value in versions"
     },
-{
+    {
         "request": """update versions
          set closed_minor = 0
          where closed_minor is NULL""",
         "description": "Fix null value in versions"
     },
     {
-        "request":"""alter table versions
+        "request": """alter table versions
         add constraint check_started_before_end_forecast
         check (started is NULL or end_forecast is NULL or started < end_forecast);""",
         "description": "Add constraint on started and end_forecast on versions table"

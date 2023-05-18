@@ -2,34 +2,42 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Union
 
-from app.app_exception import VersionNotFound
-from app.database.postgre.pg_versions import update_status_for_ticket_in_version
-from app.schema.project_schema import RegisterVersionResponse
-from app.utils.pgdb import pool
+from psycopg import IntegrityError
 from psycopg.rows import dict_row, tuple_row
+
+from app.database.postgre.pg_versions import update_status_for_ticket_in_version
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
+from app.schema.project_schema import RegisterVersionResponse
 from app.schema.ticket_schema import (Ticket, ToBeTicket, UpdatedTicket)
+from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
-async def add_ticket(project_name, project_version, ticket: ToBeTicket) -> RegisterVersionResponse:
-    with pool.connection() as connection:
-        connection.row_factory = tuple_row
-        row = connection.execute(
-            "insert into tickets (reference, description, status, current_version, project_id)"
-            " select %s, %s, %s, ve.id, pj.id"
-            " from projects as pj "
-            " join versions as ve on ve.project_id = pj.id"
-            " where ve.version = %s and pj.alias = %s"
-            " returning id;",
-            (ticket.reference,
-             ticket.description,
-             ticket.status,
-             project_version,
-             provide(project_name))).fetchone()
-        return RegisterVersionResponse(inserted_id=row[0])
+async def add_ticket(project_name,
+                     project_version,
+                     ticket: ToBeTicket) -> RegisterVersionResponse | ApplicationError:
+    try:
+        with pool.connection() as connection:
+            connection.row_factory = tuple_row
+            row = connection.execute(
+                "insert into tickets (reference, description, status, current_version, project_id)"
+                " select %s, %s, %s, ve.id, pj.id"
+                " from projects as pj "
+                " join versions as ve on ve.project_id = pj.id"
+                " where ve.version = %s and pj.alias = %s"
+                " returning id;",
+                (ticket.reference,
+                 ticket.description,
+                 ticket.status,
+                 project_version,
+                 provide(project_name))).fetchone()
+            return RegisterVersionResponse(inserted_id=row[0])
+    except IntegrityError as ie:
+        return ApplicationError(error=ApplicationErrorCode.duplicate_element,
+                                message=" ".join(ie.args))
 
 
-async def get_ticket(project_name, project_version, reference) -> Ticket:
+async def get_ticket(project_name, project_version, reference) -> Ticket | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute(
@@ -43,8 +51,10 @@ async def get_ticket(project_name, project_version, reference) -> Ticket:
             (provide(project_name), project_version, reference)
         ).fetchone()
         if row is None:
-            raise VersionNotFound(f"Ticket {reference} does not exist in project {project_name}"
-                                  f" version {project_version}")
+            return ApplicationError(error=ApplicationErrorCode.ticket_not_found,
+                                    message=f"Ticket '{reference}' does not exist in project '"
+                                            f"{project_name}'"
+                                            f" version '{project_version}'")
         return Ticket(**row)
 
 
@@ -58,10 +68,10 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
                                      " tk.updated"
                                      " from tickets as tk"
                                      " join versions as ve on tk.current_version = ve.id"
-                                    " join projects as pj on pj.id = ve.project_id"
-                                    " where pj.alias = %s"
-                                    " and ve.version = %s",
-                                    (provide(project_name), project_version))
+                                     " join projects as pj on pj.id = ve.project_id"
+                                     " where pj.alias = %s"
+                                     " and ve.version = %s",
+                                     (provide(project_name), project_version))
         return [Ticket(**result) for result in results.fetchall()]
 
 
@@ -82,10 +92,11 @@ async def get_tickets_by_reference(project_name: str, project_version: str,
         ).fetchall()
         return [Ticket(**row) for row in rows]
 
+
 async def move_tickets(project_name,
                        version,
                        target_version: str,
-                       tickets_reference: List[str] | str)->List[str]:
+                       tickets_reference: List[str] | str) -> List[str] | ApplicationError:
     current_version_id = None
     target_version_id = None
     with pool.connection() as connection:
@@ -108,12 +119,14 @@ async def move_tickets(project_name,
             (provide(project_name), target_version)
         ).fetchone()
         if row_target_version is None:
-            raise VersionNotFound(f"The version {target_version} is not found.")
+            return ApplicationError(error=ApplicationErrorCode.version_not_found,
+                                    message=f"The version {target_version} is not found.")
         target_version_id = row_target_version[0]
     _ticket_id = []
 
     with pool.connection() as connection:
-        _ticket_references = tickets_reference if isinstance(tickets_reference, list) else [tickets_reference,]
+        _ticket_references = tickets_reference if isinstance(tickets_reference, list) else [
+            tickets_reference, ]
         for _ticket in _ticket_references:
             connection.row_factory = tuple_row
             ticket_id = connection.execute(
@@ -129,7 +142,8 @@ async def move_tickets(project_name,
     return await _update_ticket_version(_ticket_id, target_version_id)
 
 
-async def _update_ticket_version(ticket_ids, target_version_id) -> List[str]:
+async def _update_ticket_version(ticket_ids,
+                                 target_version_id) -> RegisterVersionResponse | ApplicationError:
     _success = []
     _fail = []
     with pool.connection() as connection:
@@ -147,20 +161,24 @@ async def _update_ticket_version(ticket_ids, target_version_id) -> List[str]:
             else:
                 _success.append(str(_id))
         if _fail:
-            raise VersionNotFound(f"Cannot move '{', '.join(_fail)}' tickets")
-        return _success
+            return ApplicationError(error=ApplicationErrorCode.version_not_found,
+                                    message=f"Cannot move '{', '.join(_fail)}' tickets")
+        return RegisterVersionResponse(inserted_id=', '.join(_success))
 
 
 async def update_ticket(project_name: str,
                         project_version: str,
                         ticket_reference: str,
-                        updated_ticket: UpdatedTicket) -> RegisterVersionResponse:
+                        updated_ticket: UpdatedTicket) -> RegisterVersionResponse | \
+                                                          ApplicationError:
     # SPEC: update the version ticket count status where ticket status is updated
     if updated_ticket.status is not None:
-        await update_status_for_ticket_in_version(project_name,
-                                                  project_version,
-                                                  ticket_reference,
-                                                  updated_ticket.status)
+        result = await update_status_for_ticket_in_version(project_name,
+                                                           project_version,
+                                                           ticket_reference,
+                                                           updated_ticket.status)
+        if isinstance(result, ApplicationError):
+            return result
     # SPEC: update the values first then move the ticket to another version
     query = ("update tickets tk"
              " set")
@@ -182,14 +200,14 @@ async def update_ticket(project_name: str,
         row = connection.execute(query, data).fetchone()
         connection.commit()
         if row is None:
-            raise VersionNotFound(
-                f"Ticket {ticket_reference} does not exist in project {project_name}"
-                f" version {project_version}")
+            return ApplicationError(error=ApplicationErrorCode.ticket_not_found,
+                                    message=f"Ticket {ticket_reference} does not exist in "
+                                            f"project {project_name}"
+                                            f" version {project_version}")
         if updated_ticket.version is None:
-            return RegisterVersionResponse(inserted_id = row["id"])
+            return RegisterVersionResponse(inserted_id=row["id"])
 
-        result = await move_tickets(project_name,
-                              project_version,
-                              updated_ticket.version,
-                              ticket_reference)
-        return RegisterVersionResponse(inserted_id = ', '.join(result))
+        return await move_tickets(project_name,
+                                  project_version,
+                                  updated_ticket.version,
+                                  ticket_reference)

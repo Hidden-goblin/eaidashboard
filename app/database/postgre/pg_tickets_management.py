@@ -4,11 +4,12 @@
 from psycopg.rows import tuple_row
 
 from app.database.postgre.pg_tickets import get_tickets
-
 from app.utils.pgdb import pool
+
 
 async def get_campaign_ids_for_ticket(project_name, version, ticket_reference):
     pass
+
 
 async def get_ticket_in_campaign(project_name, version, occurrence):
     """Retrieve all ticket reference from """
@@ -23,6 +24,7 @@ async def get_ticket_in_campaign(project_name, version, occurrence):
                                     "and cp.occurrence = %s;",
                                     (project_name, version, occurrence))
         return [row[0] for row in result.fetchall()]
+
 
 async def get_tickets_not_in_campaign(project_name, version, occurrence):
     _tickets = await get_tickets(project_name, version)

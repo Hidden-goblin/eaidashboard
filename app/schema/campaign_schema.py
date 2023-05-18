@@ -1,15 +1,15 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional, Union
-from dataclasses import dataclass
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.status_enum import TicketType
+from app.schema.ticket_schema import Ticket
 
 
-class ToBeCampaign(BaseModel):
+class ToBeCampaign(BaseModel, extra=Extra.forbid):
     version: str
 
     def __getitem__(self, index):
@@ -68,16 +68,25 @@ class Scenario(BaseModel):
     def get(self, index, default):
         return self.dict().get(index, default)
 
+
 class ScenarioInternal(Scenario):
     internal_id: int
+
 
 class TicketScenario(BaseModel):
     reference: str
     summary: str
     status: Optional[TicketType] = TicketType.OPEN
     scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
+
     def __getitem__(self, index):
         return self.dict().get(index, None)
 
+
 class CampaignFull(CampaignLight):
-    tickets: Optional[list[TicketScenario]] = []
+    tickets: Optional[list[TicketScenario | Ticket]] = []
+
+
+class CampaignPatch(BaseModel):
+    status: CampaignStatusEnum
+    description: Optional[str]

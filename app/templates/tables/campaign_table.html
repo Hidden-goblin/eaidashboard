@@ -12,7 +12,9 @@
       {% for campaign in campaigns %}
       <tr>
         <td>{{campaign.version}}</td>
-        <td>{{campaign.occurrence}}</td>
+        <td><a hx-get="/front/v1/projects/{{project_name}}/campaigns/{{campaign.version}}/{{campaign.occurrence}}"
+               hx-target="#modals-here"
+               hx-headers='{"eaid-request": "form"}'>{{campaign.occurrence}}</a></td>
         <td>{{campaign.status}}</td>
           <td><button class="btn btn-primary"
                       hx-get="/front/v1/projects/{{project_name}}/campaigns/{{campaign.version}}/{{campaign.occurrence}}"

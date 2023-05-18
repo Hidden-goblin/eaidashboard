@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -12,14 +12,12 @@ from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
-
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_tickets import (get_ticket,
                                              get_tickets,
                                              update_ticket)
 from app.database.postgre.pg_versions import dashboard as db_dash, get_version, \
     refresh_version_stats
-
 from app.schema.ticket_schema import UpdatedTicket
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
@@ -129,8 +127,9 @@ async def post_login(request: Request,
                                               "request": request
                                           },
                                           headers={"HX-Trigger": "modalClear",
-                                                   "HX-Trigger-After-Swap": json.dumps({"navRefresh": '',
-                                                                             "update-dashboard": ""})}
+                                                   "HX-Trigger-After-Swap": json.dumps(
+                                                       {"navRefresh": '',
+                                                        "update-dashboard": ""})}
                                           )
     except Exception as exception:
         log_error(repr(exception))
@@ -155,7 +154,8 @@ async def logout(request: Request):
         return templates.TemplateResponse("void.html",
                                           {"request": request},
                                           headers={"HX-Trigger": json.dumps({"navRefresh": '',
-                                                                             "update-dashboard": ""})}
+                                                                             "update-dashboard":
+                                                                                 ""})}
                                           )
     except Exception as exception:
         log_error(repr(exception))
@@ -276,41 +276,43 @@ async def project_version_update_ticket(request: Request,
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
+
 @router.get("/front/v1/navigation",
             response_class=HTMLResponse,
             tags=["Front - Campaign"],
             include_in_schema=False
             )
-async  def get_navigation_bar(request: Request):
+async def get_navigation_bar(request: Request):
     projects = await registered_projects()
     return templates.TemplateResponse("navigation.html",
                                       {"request": request,
                                        "projects": projects or []}
                                       )
 
-@router.get("/testResults",
-            response_class=HTMLResponse,
-            tags=["Front - Campaign"],
-            include_in_schema=False)
-async def get_test_results(request: Request):
-    try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
-        projects = await registered_projects()
-        result = {project: await get_project_results(project) for project in projects}
-        return templates.TemplateResponse("test_results.html",
-                                          {"request": request,
-                                           "results": result})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
+
+# @router.get("/testResults",
+#             response_class=HTMLResponse,
+#             tags=["Front - Campaign"],
+#             include_in_schema=False)
+# async def get_test_results(request: Request):
+#     try:
+#         if not is_updatable(request, tuple()):
+#             return templates.TemplateResponse("error_message.html",
+#                                               {
+#                                                   "request": request,
+#                                                   "highlight": "You are not authorized",
+#                                                   "sequel": " to perform this action.",
+#                                                   "advise": "Try to log again."
+#                                               },
+#                                               headers={"HX-Retarget": "#messageBox"})
+#         projects = await registered_projects()
+#         result = {project: await get_project_results(project) for project in projects}
+#         return templates.TemplateResponse("test_results.html",
+#                                           {"request": request,
+#                                            "results": result})
+#     except Exception as exception:
+#         log_error(repr(exception))
+#         return front_error_message(templates, request, exception)
 
 
 @router.get("front/v1/projects/{project}/versions/{version}",

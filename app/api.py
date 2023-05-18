@@ -9,14 +9,10 @@ from app.database.postgre.postgres import init_postgres, update_postgres
 from app.conf import config, APP_VERSION
 from app.database.utils.password_management import generate_keys
 from app.utils.log_management import log_message
+
 from app.utils.pgdb import pool
-
-init_postgres()
-update_postgres()
-
 from app.database.postgre.pg_users import init_user
 from app.database.postgre.postgres import postgre_register
-
 
 from app.routers.rest import (auth,
                               bugs,
@@ -36,6 +32,8 @@ from app.routers.front import (front_dashboard,
                                front_documentation)
 from app.utils.openapi_tags import DESCRIPTION
 
+init_postgres()
+update_postgres()
 
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
@@ -92,7 +90,7 @@ def db_start_connection():
 
 
 @app.on_event("shutdown")
-def db_start_connection():
+def db_close_connection():
     pool.close()
 
 
@@ -108,4 +106,3 @@ async def custom_swagger_ui_html():
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
 async def swagger_ui_redirect():
     return get_swagger_ui_oauth2_redirect_html()
-

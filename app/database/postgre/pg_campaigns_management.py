@@ -4,19 +4,16 @@ from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import VersionNotFound
-
-from app.database.postgre.pg_versions import version_exists
-
+from app.schema.campaign_schema import CampaignLight, CampaignPatch
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
+from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 
 
-async def create_campaign(project_name, version, status: str = "recorded") -> dict:
+async def create_campaign(project_name, version, status: str = "recorded") -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
-    if not await version_exists(project_name, version):
-        raise VersionNotFound(f"{version} does not belong to {project_name}.")
     with pool.connection() as connection:
         connection.row_factory = dict_row
         conn = connection.execute("insert into campaigns (project_id, version, status, occurrence) "
@@ -32,14 +29,14 @@ async def create_campaign(project_name, version, status: str = "recorded") -> di
                                    version)).fetchone()
 
         connection.commit()
-        return conn
+        return CampaignLight(**conn)
 
 
 async def retrieve_campaign(project_name,
-                      version: str = None,
-                      status: str = None,
-                      limit: int = 10,
-                      skip: int = 0):
+                            version: str = None,
+                            status: str = None,
+                            limit: int = 10,
+                            skip: int = 0):
     """Get raw campaign with version, occurrence, description and status"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -93,16 +90,22 @@ async def retrieve_campaign(project_name,
         return conn.fetchall(), count.fetchone()["total"]
 
 
-async def retrieve_campaign_id(project_name: str, version: str, occurrence: str) -> Tuple[int, str]:
+async def retrieve_campaign_id(project_name: str,
+                               version: str,
+                               occurrence: str) -> Tuple[int, str] | ApplicationError:
     """get campaign internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        return connection.execute("select id, status"
-                                  " from campaigns"
-                                  " where project_id = %s "
-                                  " and version = %s "
-                                  " and occurrence = %s;",
-                                  (project_name, version, occurrence)).fetchone()
+        row = connection.execute("select id, status"
+                                 " from campaigns"
+                                 " where project_id = %s "
+                                 " and version = %s "
+                                 " and occurrence = %s;",
+                                 (project_name, version, occurrence)).fetchone()
+        if row is None:
+            return ApplicationError(error=ApplicationErrorCode.occurrence_not_found,
+                                    message=f"Occurrence '{occurrence}' not found")
+        return row
 
 
 async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
@@ -118,7 +121,10 @@ async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
 
 async def is_campaign_exist(project_name: str, version: str, occurrence: str):
     """Check if campaign exist"""
-    return bool(await retrieve_campaign_id(project_name, version, occurrence))
+    try:
+        return bool(await retrieve_campaign_id(project_name, version, occurrence))
+    except Exception:
+        return False
 
 
 async def enrich_tickets_with_campaigns(project_name: str,
@@ -138,7 +144,36 @@ async def enrich_tickets_with_campaigns(project_name: str,
                                       " and cpt.ticket_reference = %s",
                                       (version, project_name, ticket.reference))
             _tickets.append(EnrichedTicket(**{**ticket.dict(),
-                                           "campaign_occurrences": [row['occurrence'] for row in rows]}))
+                                              "campaign_occurrences": [row['occurrence'] for row in
+                                                                       rows]}))
 
     return _tickets
 
+
+async def update_campaign_occurrence(project_name,
+                                     version,
+                                     occurrence,
+                                     update_occurrence: CampaignPatch):
+    campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
+    if isinstance(campaign_id, ApplicationError):
+        return campaign_id
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        query = []
+        values = []
+        if update_occurrence.status is not None:
+            query.append("status = %s")
+            values.append(update_occurrence.status.value)
+        if update_occurrence.description is not None:
+            query.append("description = %s")
+            values.append(update_occurrence.description)
+        values.append(campaign_id[0])
+        query_full = ("update campaigns"
+                      f" set {', '.join(query)}"
+                      " where id = %s;")
+        rows = connection.execute(query_full,
+                                  values)
+        log_message(rows.statusmessage)
+        connection.commit()
+
+    return rows
