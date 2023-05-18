@@ -42,8 +42,8 @@ jobs:
           pipenv install --dev
       - name: Run tests with coverage
         run: |
-            coverage run -m pytest
-            coverage xml
+            pipenv run coverage run -m pytest
+            pipenv run coverage xml
         continue-on-error: true
 
       - name: Upload code coverage report to Codecov
