@@ -19,7 +19,7 @@ jobs:
       postgres:
         image: postgres
         ports:
-          - $PG_PORT:5432
+          - 8084:5432
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -27,7 +27,7 @@ jobs:
       redis:
         image: redis
         ports:
-          - $REDIS_PORT:6379
+          - 8085:6379
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
