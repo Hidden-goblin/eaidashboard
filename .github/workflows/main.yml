@@ -43,14 +43,14 @@ jobs:
           pipenv install --dev
       - name: Run tests with coverage
         env:
-          PG_USR: ${{ secrets.PG_USR }}
-          PG_PWD: ${{ secrets.PG_PWD }}
-          PG_URL: ${{ secrets.PG_URL }}
+          PG_USR: postgres
+          PG_PWD: postgres
+          PG_URL: localhost
           PG_PORT: 5432
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_URL: localhost
           REDIS_PORT: 6379
           TIMEDELTA: 3600
-          SESSION_KEY: ${{ secrets.SESSION_KEY }}
+          SESSION_KEY: poiuytrezz
         run: |
             pipenv run coverage run -m pytest
             pipenv run coverage xml
