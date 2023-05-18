@@ -5,16 +5,50 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PG_USR: ${{ secrets.PG_USR }}
+      PG_PWD: ${{ secrets.PG_PWD }}
+      PG_URL: ${{ secrets.PG_URL }}
+      PG_PORT: ${{ secrets.PG_PORT }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      TIMEDELTA: 3600
+      SESSION_KEY: ${{ secrets.SESSION_KEY }}
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
       - name: Install dependencies
         run: |
           pip install pipenv
-          ls
+          pipenv install --dev
+      - name: Run tests with coverage
+        run: |
+            coverage run -m pytest
+            coverage xml
+        continue-on-error: true
+
+      - name: Upload code coverage report to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          file: coverage.xml
+          flags: unittests
+          name: codecov-umbrella
