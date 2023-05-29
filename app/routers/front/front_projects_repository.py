@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, File, UploadFile
 from starlette.requests import Request
 
-from app.app_exception import front_error_message, MalformedCsvFile
+from app.app_exception import MalformedCsvFile, front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.postgre.pg_projects import registered_projects

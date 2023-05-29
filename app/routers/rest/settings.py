@@ -2,12 +2,12 @@
 # -*- Author: E.Aivayan -*-
 from typing import Any, List
 
-from fastapi import (APIRouter, HTTPException, Security)
+from fastapi import APIRouter, HTTPException, Security
 
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
-from app.schema.project_schema import (ErrorMessage, Project, RegisterProject)
-from app.database.postgre.pg_projects import (register_project, registered_projects)
+from app.database.postgre.pg_projects import register_project, registered_projects
+from app.schema.project_schema import ErrorMessage, Project, RegisterProject
 
 router = APIRouter(
     prefix="/api/v1/settings"

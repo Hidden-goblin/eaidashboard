@@ -6,8 +6,7 @@ from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
-
-from app.database.postgre.pg_users import (self_update_user, update_user)
+from app.database.postgre.pg_users import self_update_user, update_user
 from app.schema.users import UpdateMe, UpdateUser
 
 router = APIRouter(

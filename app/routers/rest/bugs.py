@@ -5,13 +5,11 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_bugs import (
-    db_update_bugs,
-    get_bugs as db_g_bugs,
-    insert_bug)
+from app.database.postgre.pg_bugs import db_update_bugs, insert_bug
+from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
-from app.schema.mongo_enums import (BugCriticalityEnum, BugStatusEnum)
-from app.schema.project_schema import (ErrorMessage)
+from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+from app.schema.project_schema import ErrorMessage
 from app.schema.status_enum import TicketType
 
 router = APIRouter(

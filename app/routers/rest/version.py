@@ -7,12 +7,9 @@ from psycopg import IntegrityError
 
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
-from app.database.postgre.pg_tickets import (add_ticket,
-                                             get_ticket,
-                                             get_tickets,
-                                             update_ticket)
+from app.database.postgre.pg_tickets import add_ticket, get_ticket, get_tickets, update_ticket
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
-from app.schema.project_schema import (ErrorMessage)
+from app.schema.project_schema import ErrorMessage
 from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
 from app.utils.log_management import log_error
 

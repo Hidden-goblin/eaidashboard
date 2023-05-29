@@ -7,7 +7,7 @@ class BugStatusEnum(str, Enum):
     open = "open"
     closed = "closed"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
 
@@ -16,5 +16,5 @@ class BugCriticalityEnum(str, Enum):
     major = "major"
     minor = "minor"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value

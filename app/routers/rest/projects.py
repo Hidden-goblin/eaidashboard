@@ -3,25 +3,14 @@
 
 from typing import Any, List, Union
 
-from fastapi import (APIRouter,
-                     HTTPException,
-                     Query,
-                     Response,
-                     Security)
+from fastapi import APIRouter, HTTPException, Query, Response, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import (create_project_version,
-                                              get_project,
-                                              get_projects)
-from app.database.postgre.pg_versions import (get_version,
-                                              update_version_data)
-from app.database.utils.object_existence import if_error_raise_http, project_version_exists, \
-    project_version_raise
+from app.database.postgre.pg_projects import create_project_version, get_project, get_projects
+from app.database.postgre.pg_versions import get_version, update_version_data
+from app.database.utils.object_existence import if_error_raise_http, project_version_exists, project_version_raise
 from app.schema.bugs_schema import UpdateVersion
-from app.schema.project_schema import (ErrorMessage,
-                                       Project,
-                                       RegisterVersion,
-                                       TicketProject)
+from app.schema.project_schema import ErrorMessage, Project, RegisterVersion, TicketProject
 from app.schema.versions_schema import Version
 
 router = APIRouter(

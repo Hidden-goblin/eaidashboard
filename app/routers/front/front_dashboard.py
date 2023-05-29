@@ -13,11 +13,9 @@ from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import is_updatable
 from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.pg_tickets import (get_ticket,
-                                             get_tickets,
-                                             update_ticket)
-from app.database.postgre.pg_versions import dashboard as db_dash, get_version, \
-    refresh_version_stats
+from app.database.postgre.pg_tickets import get_ticket, get_tickets, update_ticket
+from app.database.postgre.pg_versions import dashboard as db_dash
+from app.database.postgre.pg_versions import get_version, refresh_version_stats
 from app.schema.ticket_schema import UpdatedTicket
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide

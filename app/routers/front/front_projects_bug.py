@@ -8,10 +8,7 @@ from starlette.requests import Request
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
-from app.database.postgre.pg_bugs import (db_get_bug,
-                                          db_update_bugs,
-                                          get_bugs,
-                                          insert_bug)
+from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_versions import get_versions
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket

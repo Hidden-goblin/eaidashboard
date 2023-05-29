@@ -223,7 +223,7 @@ async def insert_result(result_date: datetime,
 
 
 class TestResults:
-    def __init__(self, what: WhatStrategy, output: OutputStrategy):
+    def __init__(self, what: WhatStrategy, output: OutputStrategy) -> None:
         self.__what = what
         self.__output = output
 

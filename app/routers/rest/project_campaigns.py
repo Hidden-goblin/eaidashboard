@@ -2,45 +2,45 @@
 # -*- Author: E.Aivayan -*-
 import datetime
 import logging
-from typing import (Any, List)
+from typing import Any, List
 
-from fastapi import (APIRouter,
-                     HTTPException,
-                     Response,
-                     Security)
+from fastapi import APIRouter, HTTPException, Response, Security
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 
-from app.app_exception import (CampaignNotFound,
-                               DuplicateTestResults,
-                               IncorrectFieldsRequest,
-                               MalformedCsvFile,
-                               VersionNotFound)
+from app.app_exception import (
+    CampaignNotFound,
+    DuplicateTestResults,
+    IncorrectFieldsRequest,
+    MalformedCsvFile,
+    VersionNotFound,
+)
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_campaigns_management import (
-    create_campaign,
-    retrieve_campaign,
-    update_campaign_occurrence as pg_update_campaign_occurrence)
+from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign
+from app.database.postgre.pg_campaigns_management import update_campaign_occurrence as pg_update_campaign_occurrence
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
-from app.database.postgre.testcampaign import (db_get_campaign_ticket_scenario,
-                                               db_get_campaign_ticket_scenarios,
-                                               db_get_campaign_tickets,
-                                               db_put_campaign_ticket_scenarios,
-                                               db_set_campaign_ticket_scenario_status,
-                                               fill_campaign as db_fill_campaign,
-                                               get_campaign_content)
+from app.database.postgre.testcampaign import (
+    db_get_campaign_ticket_scenario,
+    db_get_campaign_ticket_scenarios,
+    db_get_campaign_tickets,
+    db_put_campaign_ticket_scenarios,
+    db_set_campaign_ticket_scenario_status,
+    get_campaign_content,
+)
+from app.database.postgre.testcampaign import fill_campaign as db_fill_campaign
 from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.database.utils.test_result_management import register_manual_campaign_result
-from app.schema.campaign_schema import (CampaignFull,
-                                        CampaignLight,
-                                        CampaignPatch,
-                                        Scenarios,
-                                        TicketScenarioCampaign,
-                                        ToBeCampaign)
-from app.schema.postgres_enums import (CampaignStatusEnum,
-                                       ScenarioStatusEnum)
-from app.schema.project_schema import (ErrorMessage)
+from app.schema.campaign_schema import (
+    CampaignFull,
+    CampaignLight,
+    CampaignPatch,
+    Scenarios,
+    TicketScenarioCampaign,
+    ToBeCampaign,
+)
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.project_schema import ErrorMessage
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.log_management import log_error
 from app.utils.report_generator import campaign_deliverable

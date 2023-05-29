@@ -4,7 +4,7 @@ from enum import Enum
 
 
 class DashTypeEnum(Enum):
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
     @classmethod

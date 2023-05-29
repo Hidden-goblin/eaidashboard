@@ -6,21 +6,23 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import CampaignNotFound, ScenarioNotFound, TicketNotFound
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
-from app.database.postgre.pg_tickets import (get_ticket,
-                                             get_tickets_by_reference)
+from app.database.postgre.pg_tickets import get_ticket, get_tickets_by_reference
 from app.database.postgre.testrepository import db_get_scenarios_id
 from app.database.redis.rs_file_management import rs_invalidate_file
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.database.utils.transitions import ticket_authorized_transition, version_transition
-from app.schema.campaign_schema import (CampaignFull,
-                                        CampaignPatch, Scenario,
-                                        ScenarioCampaign,
-                                        ScenarioInternal,
-                                        Scenarios,
-                                        TicketScenario,
-                                        TicketScenarioCampaign)
+from app.schema.campaign_schema import (
+    CampaignFull,
+    CampaignPatch,
+    Scenario,
+    ScenarioCampaign,
+    ScenarioInternal,
+    Scenarios,
+    TicketScenario,
+    TicketScenarioCampaign,
+)
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.postgres_enums import (CampaignStatusEnum, ScenarioStatusEnum)
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.status_enum import TicketType
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool

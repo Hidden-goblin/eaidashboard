@@ -1,11 +1,11 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import (List, Optional)
+from typing import List, Optional
 
-from psycopg import (DatabaseError, IntegrityError)
+from psycopg import DatabaseError, IntegrityError
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import (DuplicateProject, ProjectNameInvalid)
+from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_enum import DashCollection
 from app.schema.project_schema import RegisterVersion, RegisterVersionResponse

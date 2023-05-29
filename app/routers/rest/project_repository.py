@@ -4,7 +4,7 @@ from csv import DictReader
 from io import StringIO
 from typing import Any, List, Union
 
-from fastapi import (APIRouter, File, HTTPException, Security, UploadFile)
+from fastapi import APIRouter, File, HTTPException, Security, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from starlette.background import BackgroundTasks
@@ -13,13 +13,15 @@ from starlette.responses import Response
 from app.app_exception import MalformedCsvFile
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.testrepository import (add_epic,
-                                                 add_feature,
-                                                 add_scenario,
-                                                 clean_scenario_with_fake_id,
-                                                 db_project_epics,
-                                                 db_project_features,
-                                                 db_project_scenarios)
+from app.database.postgre.testrepository import (
+    add_epic,
+    add_feature,
+    add_scenario,
+    clean_scenario_with_fake_id,
+    db_project_epics,
+    db_project_features,
+    db_project_scenarios,
+)
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
