@@ -1,20 +1,11 @@
 name: CI
 
-on: [pull_request]
+on: [push]
 
 jobs:
   test:
     environment: eaidashboard
     runs-on: ubuntu-latest
-    env:
-      PG_USR: ${{ secrets.PG_USR }}
-      PG_PWD: ${{ secrets.PG_PWD }}
-      PG_URL: ${{ secrets.PG_URL }}
-      PG_PORT: ${{ secrets.PG_PORT }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      TIMEDELTA: 3600
-      SESSION_KEY: ${{ secrets.SESSION_KEY }}
     services:
       postgres:
         image: postgres
@@ -41,6 +32,8 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --dev
+      - name: Lint
+        run: flake8
       - name: Run tests with coverage
         env:
           PG_USR: postgres
@@ -64,10 +57,3 @@ jobs:
           badge: true
           output: both
           format: markdown
-
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
-        with:
-          recreate: true
-          path: code-coverage-results.md
