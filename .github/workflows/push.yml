@@ -1,4 +1,4 @@
-name: CI
+name: CI-push
 
 on: [push]
 
@@ -22,18 +22,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
       - name: Install dependencies
         run: |
-          pip install pipenv
-          pipenv install --dev
+          pip install poetry
+          poetry install --with dev
       - name: Lint
-        run: flake8
+        uses: chartboost/ruff-action@v1
+        with:
+          src: "./app"
       - name: Run tests with coverage
         env:
           PG_USR: postgres
@@ -49,7 +49,6 @@ jobs:
             pipenv run coverage run -m pytest
             pipenv run coverage xml
         continue-on-error: true
-
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:

@@ -6,6 +6,16 @@ line-length = 120
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
 
+[tool.coverage.run]
+command_line = "-m pytest"
+branch = "true"
+
+[tool.coverage.report]
+include = ["app/*"]
+show_missing = "true"
+
+[tool.coverage.html]
+directory = "cov_html"
 
 [tool.poetry]
 name = "eaidashboard"
@@ -36,7 +46,7 @@ markdown = "*"
 
 [tool.poetry.group.dev.dependencies]
 pydeps = "*"
-coverage = "*"
+coverage = {extras = ["toml"], version = "*"}
 pytest-order = "*"
 httpx = "*"
 ruff = "*"
