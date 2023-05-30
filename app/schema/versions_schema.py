@@ -20,5 +20,5 @@ class Version(BaseModel):
     statistics: Statistics
     bugs: Bugs
 
-    def __getitem__(self, index):
+    def __getitem__(self: "Version", index: str) -> str | datetime | StatusEnum | Statistics | Bugs:
         return self.dict().get(index, None)
