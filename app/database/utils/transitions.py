@@ -64,10 +64,10 @@ ticket_authorized_transition = {
 }
 
 
-def version_transition(current_status,
-                       to_be_status,
+def version_transition(current_status: str,
+                       to_be_status: str,
                        element_enum: DashTypeEnum = StatusEnum,
-                       transition_dict: dict = None):
+                       transition_dict: dict = None) -> None:
     """Raise an exception if the transition is not allowed"""
     if not element_enum.in_enum(to_be_status):
         raise UnknownStatusException("Status is not accepted")

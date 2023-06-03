@@ -12,6 +12,7 @@ from app.database.postgre.pg_users import get_user
 from app.database.redis.token_management import get_token_date, renew_token_date
 from app.database.utils.token import token_scope, token_user
 from app.schema.authentication import TokenData
+from app.schema.users import UpdateUser
 
 log = getLogger(__name__)
 
@@ -23,7 +24,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 def authorize_user(security_scopes: SecurityScopes,
-                   token: str = Depends(oauth2_scheme)):
+                   token: str = Depends(oauth2_scheme)) -> UpdateUser | HTTPException:
     # Error message building
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'

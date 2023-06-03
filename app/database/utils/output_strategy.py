@@ -6,6 +6,7 @@ import uuid
 from abc import ABC
 from datetime import datetime
 from math import pi
+from typing import List, Tuple
 
 from bokeh import resources
 from bokeh.io import output_file, save
@@ -19,13 +20,13 @@ class OutputStrategy(ABC):
 
     @staticmethod
     @abc.abstractmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> str | dict:
         pass
 
 
 class StakedHtml(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> str:
         _json = await StakedJson().render(table_rows)
         max_y = max(
             _json["passed"][index]
@@ -49,7 +50,7 @@ class StakedHtml(OutputStrategy):
 
 class StakedCsv(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> str:
         # TODO add triggered background task to remove old files [Register here]
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.csv"
         with open(filename,
@@ -63,7 +64,7 @@ class StakedCsv(OutputStrategy):
 
 class StakedJson(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> dict:
         result = {"run_date": [],
                   "passed": [],
                   "failed": [],
@@ -78,7 +79,7 @@ class StakedJson(OutputStrategy):
 
 class MapHtml(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> str:
         _json = await MapJson().render(table_rows)
 
         mapper = CategoricalColorMapper(palette=["red", "green", "gray"],
@@ -120,7 +121,7 @@ class MapHtml(OutputStrategy):
 
 class MapCsv(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> str:
         filename = BASE_DIR / "static" / f"testoutput_{uuid.uuid4()}.csv"
         with open(filename,
                   "w",
@@ -133,7 +134,7 @@ class MapCsv(OutputStrategy):
 
 class MapJson(OutputStrategy):
     @staticmethod
-    async def render(table_rows):
+    async def render(table_rows: List[Tuple]) -> dict:
         result = {
             "run_date": [],
             "element_id": [],

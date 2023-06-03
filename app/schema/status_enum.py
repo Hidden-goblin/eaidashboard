@@ -1,18 +1,19 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from enum import Enum
+from typing import List
 
 
 class DashTypeEnum(Enum):
-    def __str__(self) -> str:
+    def __str__(self:"DashTypeEnum") -> str:
         return self.value
 
     @classmethod
-    def in_enum(cls, item):
+    def in_enum(cls: "DashTypeEnum", item: str) -> bool:
         return item in [str(val) for val in cls.__members__.values()]
 
     @classmethod
-    def list(cls):
+    def list(cls: "DashTypeEnum") -> List[str]:
         return [str(val) for val in cls.__members__.values()]
 
 

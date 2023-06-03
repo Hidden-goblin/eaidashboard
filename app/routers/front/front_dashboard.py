@@ -1,5 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
+
 import json
 import logging
 
@@ -24,10 +26,9 @@ router = APIRouter()
 
 
 @router.get("/",
-            response_class=HTMLResponse,
             include_in_schema=False,
             tags=["Front - Dashboard"])
-async def dashboard(request: Request):
+async def dashboard(request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ()):
             request.session.pop("token", None)
@@ -44,10 +45,11 @@ async def dashboard(request: Request):
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets",
-            response_class=HTMLResponse,
             tags=["Front - Utils"],
             include_in_schema=False)
-async def project_version_tickets(request: Request, project_name, project_version):
+async def project_version_tickets(request: Request,
+                                  project_name: str,
+                                  project_version: str) -> HTMLResponse:
     try:
         return (
             templates.TemplateResponse(
@@ -81,7 +83,7 @@ async def project_version_tickets(request: Request, project_name, project_versio
                response_class=HTMLResponse,
                tags=["Front - Utils"],
                include_in_schema=False)
-async def return_void(request: Request):
+async def return_void(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("void.html",
                                       {"request": request},
                                       headers={
@@ -90,11 +92,10 @@ async def return_void(request: Request):
 
 
 @router.get("/login",
-            response_class=HTMLResponse,
             tags=["Front - Login"],
             include_in_schema=False
             )
-async def login(request: Request):
+async def login(request: Request) -> HTMLResponse:
     try:
         return templates.TemplateResponse("forms/login_modal.html",
                                           {"request": request,
@@ -111,7 +112,7 @@ async def login(request: Request):
 async def post_login(request: Request,
                      username: str = Form(...),
                      password: str = Form(...)
-                     ):
+                     ) -> HTMLResponse:
     try:
         sub, scopes = authenticate_user(username, password)
         if sub is None:
@@ -144,7 +145,7 @@ async def post_login(request: Request,
                response_class=HTMLResponse,
                tags=["Front - Login"],
                include_in_schema=False)
-async def logout(request: Request):
+async def logout(request: Request) -> HTMLResponse:
     try:
         if is_updatable(request, ("admin", "user")):
             invalidate_token(request.session["token"])
@@ -161,10 +162,12 @@ async def logout(request: Request):
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}/edit",
-            response_class=HTMLResponse,
             tags=["Front - Tickets"],
             include_in_schema=False)
-async def project_version_ticket_edit(request: Request, project_name, project_version, reference):
+async def project_version_ticket_edit(request: Request,
+                                      project_name: str,
+                                      project_version: str,
+                                      reference: str) -> HTMLResponse:
     try:
         return (
             templates.TemplateResponse(
@@ -197,10 +200,12 @@ async def project_version_ticket_edit(request: Request, project_name, project_ve
 
 
 @router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
-            response_class=HTMLResponse,
             tags=["Front - Tickets"],
             include_in_schema=False)
-async def project_version_ticket(request: Request, project_name, project_version, reference):
+async def project_version_ticket(request: Request,
+                                 project_name: str,
+                                 project_version: str,
+                                 reference: str) -> HTMLResponse:
     try:
         return (
             templates.TemplateResponse(
@@ -233,7 +238,6 @@ async def project_version_ticket(request: Request, project_name, project_version
 
 
 @router.put("/{project_name}/versions/{project_version}/tickets/{reference}",
-            response_class=HTMLResponse,
             tags=["Front - Tickets"],
             include_in_schema=False)
 async def project_version_update_ticket(request: Request,
@@ -241,7 +245,7 @@ async def project_version_update_ticket(request: Request,
                                         project_version: str,
                                         reference: str,
                                         body: dict,
-                                        background_task: BackgroundTasks):
+                                        background_task: BackgroundTasks) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -276,11 +280,10 @@ async def project_version_update_ticket(request: Request,
 
 
 @router.get("/front/v1/navigation",
-            response_class=HTMLResponse,
             tags=["Front - Campaign"],
             include_in_schema=False
             )
-async def get_navigation_bar(request: Request):
+async def get_navigation_bar(request: Request) -> HTMLResponse:
     projects = await registered_projects()
     return templates.TemplateResponse("navigation.html",
                                       {"request": request,
@@ -314,13 +317,12 @@ async def get_navigation_bar(request: Request):
 
 
 @router.get("front/v1/projects/{project}/versions/{version}",
-            response_class=HTMLResponse,
             tags=["Front - Campaign"],
             include_in_schema=False
             )
 async def get_project_version(project: str,
                               version: str,
-                              request: Request):
+                              request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",

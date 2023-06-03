@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import HTMLResponse
 
 from app.conf import APP_VERSION, config
 from app.database.postgre.pg_users import init_user
@@ -92,12 +93,12 @@ def db_start_connection() -> None:
 
 
 @app.on_event("shutdown")
-def db_close_connection():
+def db_close_connection() -> None:
     pool.close()
 
 
 @app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
+async def custom_swagger_ui_html() -> HTMLResponse:
     return get_swagger_ui_html(openapi_url=app.openapi_url,
                                title=f"{app.title} - Swagger UI",
                                oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
@@ -106,5 +107,5 @@ async def custom_swagger_ui_html():
 
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
-async def swagger_ui_redirect():
+async def swagger_ui_redirect() -> HTMLResponse:
     return get_swagger_ui_oauth2_redirect_html()

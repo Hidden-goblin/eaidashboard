@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Optional
+from typing import List, Optional
 
 from psycopg.rows import dict_row, tuple_row
 
@@ -16,7 +16,7 @@ from app.utils.project_alias import provide
 async def get_bugs(project_name: str,
                    status: Optional[BugStatusEnum] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
-                   version: str = None):
+                   version: str = None) -> List[BugTicketFull]:
     query = ("select bg.id as internal_id,"
              " bg.title,"
              " bg.url,"
@@ -72,7 +72,9 @@ async def db_get_bug(project_name: str,
     return BugTicketFull(**row)
 
 
-async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
+async def db_update_bugs(project_name: str,
+                         internal_id: str,
+                         bug_ticket: UpdateBugTicket) -> BugTicketFull:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         bug_ticket_dict = bug_ticket.to_dict()
@@ -112,7 +114,8 @@ async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket)
     return await db_get_bug(project_name, internal_id)
 
 
-async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersionResponse:
+async def insert_bug(project_name: str,
+                     bug_ticket: BugTicket) -> RegisterVersionResponse:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(

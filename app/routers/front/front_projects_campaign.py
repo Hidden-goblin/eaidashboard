@@ -1,11 +1,13 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
 import datetime
 import json
 
 from fastapi import APIRouter, Form
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
@@ -55,7 +57,7 @@ async def front_project_management(project_name: str,
                                    request: Request,
                                    limit: int = 10,
                                    skip: int = 0
-                                   ):
+                                   ) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -101,7 +103,7 @@ async def front_project_management(project_name: str,
 async def front_project_table(project_name: str,
                               request: Request,
                               limit: int = 10,
-                              skip: int = 0):
+                              skip: int = 0) -> HTMLResponse:
     try:
         campaigns, count = await retrieve_campaign(project_name, limit=limit, skip=skip)
         pages, current_page = page_numbering(count, limit, skip)
@@ -121,7 +123,7 @@ async def front_project_table(project_name: str,
 
 
 async def front_new_campaign_form(project_name: str,
-                                  request: Request):
+                                  request: Request) -> HTMLResponse:
     try:
         return templates.TemplateResponse("forms/add_campaign.html",
                                           {
@@ -140,12 +142,13 @@ async def front_new_campaign_form(project_name: str,
 
 @router.post("/{project_name}/campaigns",
              tags=["Front - Project"],
+
              include_in_schema=False
              )
 async def front_new_campaign(project_name: str,
                              request: Request,
                              version: str = Form(...)
-                             ):
+                             ) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -168,10 +171,11 @@ async def front_new_campaign(project_name: str,
 
 @router.post("/{project_name}/campaigns/scenarios",
              tags=["Front - Campaign"],
+
              include_in_schema=False)
 async def front_scenarios_selector(project_name: str,
                                    body: dict,
-                                   request: Request):
+                                   request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -201,7 +205,7 @@ async def front_scenarios_selector(project_name: str,
 async def front_get_campaign(project_name: str,
                              version: str,
                              occurrence: str,
-                             request: Request):
+                             request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -251,12 +255,13 @@ async def front_get_campaign(project_name: str,
 
 @router.patch("/{project_name}/campaigns/{version}/{occurrence}",
               tags=["Front - Campaign"],
+
               include_in_schema=False)
 async def front_update_campaign(project_name: str,
                                 version: str,
                                 occurrence: str,
                                 body: dict,
-                                request: Request):
+                                request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -306,7 +311,7 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                                  occurrence: str,
                                                  ticket_reference: str,
                                                  request: Request,
-                                                 initiator: str = None):
+                                                 initiator: str = None) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -345,7 +350,7 @@ async def front_get_campaign_ticket(project_name: str,
                                     version: str,
                                     occurrence: str,
                                     ticket_reference: str,
-                                    request: Request):
+                                    request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -386,7 +391,7 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                        ticket_reference: str,
                                                        scenario_id: str,
                                                        updated_status: dict,
-                                                       request: Request):
+                                                       request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -423,7 +428,7 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             occurrence: str,
                                                             ticket_reference: str,
                                                             scenario_id: str,
-                                                            request: Request):
+                                                            request: Request) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
         if not is_updatable(request, tuple()):
@@ -459,13 +464,14 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
 @router.delete("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
                "{ticket_reference}/scenarios/{scenario_id}",
                tags=["Front - Campaign"],
+
                include_in_schema=False)
 async def front_delete_campaign_ticket_scenario(project_name: str,
                                                 version: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
                                                 scenario_id: str,
-                                                request: Request):
+                                                request: Request) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
         if not is_updatable(request, ("admin", "user")):
@@ -499,7 +505,7 @@ async def add_scenarios_to_ticket(project_name: str,
                                   occurrence: str,
                                   ticket_reference: str,
                                   element: dict,
-                                  request: Request):
+                                  request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -533,10 +539,10 @@ async def add_scenarios_to_ticket(project_name: str,
             tags=["Front - Campaign"],
             include_in_schema=False
             )
-async def front_campaign_version_tickets(project_name,
-                                         version,
-                                         occurrence,
-                                         request: Request):
+async def front_campaign_version_tickets(project_name: str,
+                                         version: str,
+                                         occurrence: str,
+                                         request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -569,13 +575,14 @@ async def front_campaign_version_tickets(project_name,
 
 @router.post("/{project_name}/campaigns/{version}/{occurrence}/tickets",
              tags=["Front - Campaign"],
+
              include_in_schema=False
              )
 async def front_campaign_add_tickets(project_name: str,
                                      version: str,
                                      occurrence: str,
                                      request: Request,
-                                     body: dict):
+                                     body: dict) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -606,7 +613,7 @@ async def front_campaign_add_tickets(project_name: str,
 async def front_campaign_occurrence_status(project_name: str,
                                            version: str,
                                            occurrence: str,
-                                           request: Request):
+                                           request: Request) -> HTMLResponse:
     try:
         result = await rs_retrieve_file(f"file:{provide(project_name)}:{version}:"
                                         f"{occurrence}:scenarios:map:text/html")
@@ -631,13 +638,15 @@ async def front_campaign_occurrence_status(project_name: str,
 
 @router.post("/{project_name}/campaigns/{version}/{occurrence}/results",
              tags=["Front - Campaign"],
+
              include_in_schema=False
              )
 async def front_campaign_occurrence_snapshot_status(project_name: str,
                                                     version: str,
                                                     occurrence: str,
                                                     request: Request,
-                                                    background_task: BackgroundTasks):
+                                                    background_task: BackgroundTasks) -> \
+        HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -687,7 +696,7 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                  request: Request,
                                                  deliverable_type: DeliverableTypeEnum =
                                                  DeliverableTypeEnum.TEST_PLAN,
-                                                 ticket_ref: str = None):
+                                                 ticket_ref: str = None) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",

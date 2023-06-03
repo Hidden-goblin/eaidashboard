@@ -15,7 +15,7 @@ class Ticket(BaseModel):
     created: datetime
     updated: datetime
 
-    def __getitem__(self, index):
+    def __getitem__(self: "Ticket", index: str) -> str | datetime:
         return self.dict().get(index, None)
 
 
@@ -26,7 +26,7 @@ class ToBeTicket(BaseModel):
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
 
-    def __getitem__(self, index):
+    def __getitem__(self: "ToBeTicket", index: str) -> str | datetime:
         return self.dict().get(index, None)
 
 
@@ -36,11 +36,10 @@ class UpdatedTicket(BaseModel, extra=Extra.forbid):
     version: Optional[str] = None
     updated: datetime = datetime.now()
 
-    def __getitem__(self, index):
+    def __getitem__(self: "UpdatedTicket", index: str) -> str | datetime:
         return self.dict().get(index, None)
-
     @root_validator
-    def check_at_least_one(cls, values):
+    def check_at_least_one(cls, values: dict) -> dict: # noqa: ANN101
         keys = ("description", "status", "version")
         if all(values.get(key) is None for key in keys):
             raise ValueError(f"UpdatedTicket must have at least one key of '{keys}'")
@@ -50,7 +49,7 @@ class UpdatedTicket(BaseModel, extra=Extra.forbid):
 class EnrichedTicket(Ticket):
     campaign_occurrences: Optional[List[str]]
 
-    def __getitem__(self, index):
+    def __getitem__(self: "EnrichedTicket", index: str) -> List[str]:
         return self.dict().get(index, None)
 
 
@@ -61,7 +60,7 @@ class UpdateTickets(BaseModel):
     in_progress: Optional[int]
     done: Optional[int]
 
-    def __getitem__(self, index):
+    def __getitem__(self: "UpdateTickets", index: str) -> int:
         return self.dict().get(index, None)
 
 
@@ -73,5 +72,5 @@ class TicketVersion(BaseModel):
     end_forecast: Optional[datetime]
     status: str
 
-    def __getitem__(self, index):
+    def __getitem__(self: "TicketVersion", index: str) -> str | datetime:
         return self.dict().get(index, None)

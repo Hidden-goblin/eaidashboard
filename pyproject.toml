@@ -6,6 +6,10 @@ line-length = 120
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
 
+[tool.ruff.per-file-ignores]
+
+"app/routers/front" = ["ANN201"]
+
 [tool.coverage.run]
 command_line = "-m pytest"
 branch = "true"

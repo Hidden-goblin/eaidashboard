@@ -1,9 +1,11 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
 from typing import Optional
 
 from fastapi import APIRouter, File, UploadFile
 from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from app.app_exception import MalformedCsvFile, front_error_message
 from app.conf import templates
@@ -24,7 +26,7 @@ router = APIRouter(prefix="/front/v1/projects")
             include_in_schema=False)
 async def front_project_repository(project_name: str,
                                    request: Request,
-                                   status: Optional[str] = None):
+                                   status: Optional[str] = None) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -65,11 +67,12 @@ async def front_project_repository(project_name: str,
 
 @router.post("/{project_name}/repository",
              tags=["Front - Project"],
+
              include_in_schema=False)
 async def post_repository(project_name: str,
                           request: Request,
                           file: UploadFile = File(),
-                          ):
+                          ) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -113,7 +116,7 @@ async def post_repository(project_name: str,
 async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,
-                         feature: str = None):
+                         feature: str = None) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -138,7 +141,7 @@ async def get_scenario(project_name: str,
                        limit: int,
                        skip: int,
                        epic: Optional[str] = None,
-                       feature: Optional[str] = None):
+                       feature: Optional[str] = None) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -172,11 +175,12 @@ async def get_scenario(project_name: str,
 
 @router.post("/{project_name}/repository/scenarios",
              tags=["Front - Repository"],
+
              include_in_schema=False
              )
 async def filter_repository(project_name: str,
                             body: dict,
-                            request: Request):
+                            request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",

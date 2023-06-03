@@ -8,7 +8,7 @@ from app.schema.repository_schema import Feature, Scenario, TestFeature, TestSce
 from app.utils.pgdb import pool
 
 
-async def add_epic(project: str, epic_name: str):
+async def add_epic(project: str, epic_name: str) -> None:
     with pool.connection() as connection:
         connection.execute("insert into epics (name, project_id) "
                            "values (%s, %s)"
@@ -17,7 +17,7 @@ async def add_epic(project: str, epic_name: str):
         connection.commit()
 
 
-async def add_feature(feature: TestFeature):
+async def add_feature(feature: TestFeature) -> None:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         epic_id = connection.execute(
@@ -44,7 +44,7 @@ async def add_feature(feature: TestFeature):
         connection.commit()
 
 
-async def add_scenario(scenario: TestScenario):
+async def add_scenario(scenario: TestScenario) -> None:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         feature_id = connection.execute(
@@ -75,7 +75,7 @@ async def add_scenario(scenario: TestScenario):
         connection.commit()
 
 
-async def clean_scenario_with_fake_id(project: str):
+async def clean_scenario_with_fake_id(project: str) -> None:
     with pool.connection() as connection:
         connection.execute(
             "delete from scenarios "
@@ -235,11 +235,11 @@ async def db_project_scenarios(project: str,
         return [Scenario(**cur) for cur in cursor], count.fetchone()["total"]
 
 
-async def db_get_scenarios_id(project_name,
-                              epic_name,
-                              feature_name,
+async def db_get_scenarios_id(project_name: str,
+                              epic_name: str,
+                              feature_name: str,
                               scenarios_ref: list | str,
-                              feature_filename=None) -> List[int]:
+                              feature_filename: str=None) -> List[int]:
     if isinstance(scenarios_ref, str):
         scenarios_ref = [scenarios_ref]
     with pool.connection() as connection:

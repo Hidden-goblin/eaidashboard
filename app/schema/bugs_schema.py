@@ -16,7 +16,7 @@ class Bugs(BaseModel):
     closed_major: Optional[int]
     closed_minor: Optional[int]
 
-    def __getitem__(self, index):
+    def __getitem__(self: "Bugs", index: str) -> int:
         return self.dict().get(index, None)
 
 
@@ -28,7 +28,7 @@ class BugsStatistics(BaseModel):
     closed_major: int = 0
     closed_minor: int = 0
 
-    def __getitem__(self, index):
+    def __getitem__(self: "BugsStatistics", index: str) -> int:
         return self.dict().get(index, None)
 
 
@@ -42,7 +42,8 @@ class BugTicket(BaseModel):
     status: BugStatusEnum
     criticality: BugCriticalityEnum
 
-    def __getitem__(self, index):
+    def __getitem__(self: "BugTicket",
+                    index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:
         return self.dict().get(index, None)
 
 
@@ -59,7 +60,7 @@ class UpdateBugTicket(BaseModel):
     status: Optional[BugStatusEnum]
     criticality: Optional[BugCriticalityEnum]
 
-    def to_dict(self):
+    def to_dict(self: "UpdateBugTicket") -> dict:
         temp = {"title": self.title,
                 "description": self.description,
                 "updated": self.updated,
@@ -75,5 +76,5 @@ class UpdateVersion(BaseModel):
     end_forecast: Optional[str]
     status: Optional[str]
 
-    def __getitem__(self, index):
+    def __getitem__(self: "UpdateVersion", index: str) -> str:
         return self.dict().get(index, None)

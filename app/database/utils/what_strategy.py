@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 import abc
 from abc import ABC
+from typing import List, Tuple
 
 from psycopg.rows import tuple_row
 
@@ -14,7 +15,7 @@ class WhatStrategy(ABC):
     @abc.abstractmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         pass
 
 
@@ -22,7 +23,7 @@ class EpicStaked(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:
@@ -71,7 +72,7 @@ class EpicMap(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:
@@ -106,7 +107,7 @@ class FeatureStaked(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:
@@ -164,7 +165,7 @@ class FeatureMap(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:
@@ -202,7 +203,7 @@ class ScenarioStaked(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:
@@ -260,7 +261,7 @@ class ScenarioMap(WhatStrategy):
     @staticmethod
     async def gather(project_name: str,
                      version: str = None,
-                     campaign_occurrence: str = None):
+                     campaign_occurrence: str = None) -> List[Tuple]:
         with pool.connection() as connection:
             connection.row_factory = tuple_row
             if version is None and campaign_occurrence is None:

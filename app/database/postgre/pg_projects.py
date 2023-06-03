@@ -8,12 +8,13 @@ from psycopg.rows import dict_row, tuple_row
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_enum import DashCollection
-from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
+from app.schema.project_schema import Project, RegisterVersion, RegisterVersionResponse, TicketProject
+from app.schema.ticket_schema import TicketVersion
 from app.utils.pgdb import pool
 from app.utils.project_alias import contains, provide, register
 
 
-async def register_project(project_name: str):
+async def register_project(project_name: str) -> str:
     if len(project_name) > 63:
         raise ProjectNameInvalid("Project name must be strictly less than 64 character")
     # Add check that project name does not contain \ / $ symbols raise an error
@@ -32,13 +33,13 @@ async def register_project(project_name: str):
     return project_name
 
 
-async def registered_projects():
+async def registered_projects() -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         return [item[0] for item in connection.execute("select name from projects;").fetchall()]
 
 
-async def get_projects(skip: int = 0, limit: int = 10):
+async def get_projects(skip: int = 0, limit: int = 10) -> List[Project]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # The query returns null instead of 0 value.
@@ -89,7 +90,8 @@ async def create_project_version(project_name: str,
     return result
 
 
-async def get_project(project_name: str, sections: Optional[List[str]]):
+async def get_project(project_name: str,
+                      sections: Optional[List[str]]) -> TicketProject:
     result = {"name": project_name.casefold()}
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -102,7 +104,7 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status not in ('recorded', 'archived')"
                 " and pj.alias = %s;", (provide(project_name),))
-            result[DashCollection.CURRENT.value] = list(current.fetchall())
+            result[DashCollection.CURRENT.value] = [TicketVersion(**cur) for cur in current.fetchall()]
         if DashCollection.FUTURE.value in _sections or not _sections:
             future = connection.execute(
                 "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
@@ -110,7 +112,7 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status = 'recorded'"
                 " and pj.alias = %s;", (provide(project_name),))
-            result[DashCollection.FUTURE.value] = list(future.fetchall())
+            result[DashCollection.FUTURE.value] = [TicketVersion(**fut) for fut in future.fetchall()]
         if DashCollection.ARCHIVED.value in _sections or not _sections:
             archived = connection.execute(
                 "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
@@ -118,5 +120,5 @@ async def get_project(project_name: str, sections: Optional[List[str]]):
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status = 'archived'"
                 " and pj.alias = %s;", (provide(project_name),))
-            result[DashCollection.ARCHIVED.value] = list(archived.fetchall())
-    return result
+            result[DashCollection.ARCHIVED.value] = [TicketVersion(**arch) for arch in archived.fetchall()]
+    return TicketProject(**result)

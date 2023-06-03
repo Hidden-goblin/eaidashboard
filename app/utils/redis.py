@@ -2,7 +2,6 @@
 # -*- Author: E.Aivayan -*-
 
 import redis
-from redis.client import Redis
 from redis.exceptions import ConnectionError
 
 import app.utils.redis
@@ -20,7 +19,7 @@ def redis_health() -> bool:
         return False
 
 
-def redis_connection() -> Redis[bytes]:
+def redis_connection() -> redis.client.Redis:
     if app.utils.redis.redis_pool is None:
         app.utils.redis.redis_pool = redis.ConnectionPool(**redis_dict, db=0)
 

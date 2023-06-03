@@ -1,7 +1,9 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
 from fastapi import APIRouter
 from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
@@ -14,7 +16,7 @@ router = APIRouter(prefix="/front/v1/forms")
 @router.get("/importRepository",
             tags=["Front - Repository"],
             include_in_schema=False)
-async def get_import_repository_form(request: Request):
+async def get_import_repository_form(request: Request) -> HTMLResponse:
     try:
         if is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("forms/import_repository_from_csv.html",

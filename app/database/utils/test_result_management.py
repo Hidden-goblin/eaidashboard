@@ -56,7 +56,7 @@ async def insert_result(project_name: str,
     return test_result_uuid, campaign_id, rows
 
 
-def __convert_scenario_status_to_three_state(scenarios):
+def __convert_scenario_status_to_three_state(scenarios: List[Scenario]) -> None:
     for scenario in scenarios:
         if scenario.status == ScenarioStatusEnum.done.value:
             scenario.status = TestResultStatusEnum.passed.value

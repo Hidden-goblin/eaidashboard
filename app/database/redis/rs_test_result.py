@@ -10,7 +10,10 @@ from app.utils.project_alias import provide
 from app.utils.redis import redis_connection
 
 
-async def mg_insert_test_result(project_name, version, campaign_id, is_partial):
+async def mg_insert_test_result(project_name: str,
+                                version: str,
+                                campaign_id: int,
+                                is_partial: bool) -> str:
     data = RdTestResult(campaign_id=campaign_id,
                         version=version,
                         is_partial=is_partial,
@@ -21,7 +24,8 @@ async def mg_insert_test_result(project_name, version, campaign_id, is_partial):
     return key
 
 
-async def mg_insert_test_result_done(project_name, key_uuid, message=None):
+async def mg_insert_test_result_done(project_name: str,
+                                     key_uuid: str, message: str=None) -> None:
     connection = redis_connection()
     data = connection.get(key_uuid)
     dict_data = RdTestResult(**json.loads(data))
@@ -29,6 +33,6 @@ async def mg_insert_test_result_done(project_name, key_uuid, message=None):
     connection.set(key_uuid, json.dumps(jsonable_encoder(dict_data)))
 
 
-async def test_result_status(key_uuid):
+async def test_result_status(key_uuid: str) -> dict:
     connection = redis_connection()
     return json.loads(connection.get(key_uuid))

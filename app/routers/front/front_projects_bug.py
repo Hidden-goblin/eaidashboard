@@ -1,9 +1,11 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+
 from typing import Optional
 
 from fastapi import APIRouter
 from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
@@ -24,7 +26,7 @@ router = APIRouter(prefix="/front/v1/projects")
             include_in_schema=False)
 async def front_project_bugs(project_name: str,
                              request: Request,
-                             display_all: Optional[str] = None):
+                             display_all: Optional[str] = None) -> HTMLResponse:
     try:
         allowed = is_updatable(request, tuple())
         requested_item = request.headers.get("eaid-request", None)
@@ -92,10 +94,11 @@ async def front_project_bugs(project_name: str,
 
 @router.post("/{project_name}/bugs",
              tags=["Front - Project"],
+
              include_in_schema=False)
 async def record_bug(project_name: str,
                      body: dict,
-                     request: Request):
+                     request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -127,7 +130,7 @@ async def record_bug(project_name: str,
             include_in_schema=False)
 async def display_bug(project_name: str,
                       internal_id: str,
-                      request: Request):
+                      request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -160,7 +163,7 @@ async def display_bug(project_name: str,
 async def front_update_bug(project_name: str,
                            internal_id: str,
                            body: dict,
-                           request: Request):
+                           request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -190,11 +193,12 @@ async def front_update_bug(project_name: str,
 
 @router.patch("/{project_name}/bugs/{internal_id}",
               tags=["Front - Project"],
+
               include_in_schema=False)
 async def front_update_bug_patch(project_name: str,
                                  internal_id: str,
                                  body: dict,
-                                 request: Request):
+                                 request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",

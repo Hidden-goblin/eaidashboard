@@ -1,9 +1,8 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import Any
 
-from fastapi import APIRouter, File, Form, Header, HTTPException, Response, Security, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, Security, UploadFile
 from fastapi.encoders import jsonable_encoder
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
@@ -20,6 +19,7 @@ from app.database.utils.test_result_management import insert_result
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
 from app.schema.project_schema import ErrorMessage
 from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, RestTestResultRenderingEnum
+from app.schema.users import UpdateUser
 from app.utils.project_alias import provide
 
 router = APIRouter(
@@ -28,8 +28,7 @@ router = APIRouter(
 
 
 @router.post("/{project_name}/testResults",
-             response_class=Response,
-             status_code=204,
+             status_code=200,
              description="Successful request, processing data."
                          " It might be import error during the process.\n"
                          "'campaign_occurrence' is mandatory for partial results",
@@ -51,7 +50,8 @@ async def rest_import_test_results(project_name: str,
                                    result_date: datetime = Form(),
                                    is_partial: bool = Form(default=False),
                                    campaign_occurrence: str = Form(default=None),
-                                   user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                                   user: UpdateUser = Security(
+                                       authorize_user, scopes=["admin", "user"])) -> str:
     try:
         if not version_exists(project_name, version):
             raise VersionNotFound(f"Project '{project_name}' in version '{version}' not found")
@@ -100,7 +100,7 @@ async def rest_import_test_results(project_name: str,
             Please note that partial results are not counted in the application results.
             """,
             tags=["Test Results"])
-async def rest_export_results(project_name: str,
+async def rest_export_results(project_name: str,   # noqa:ANN201
                               category: RestTestResultCategoryEnum,
                               rendering: RestTestResultRenderingEnum,
                               request: Request,
