@@ -46,8 +46,8 @@ jobs:
           SESSION_KEY: poiuytrezz
         run: |
             mkdir app/static
-            pipenv run coverage run -m pytest
-            pipenv run coverage xml
+            poetry run coverage run -m pytest
+            poetry run coverage xml
         continue-on-error: true
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@v1.3.0
