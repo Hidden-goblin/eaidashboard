@@ -14,7 +14,8 @@ from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, i
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_versions import get_versions
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket
-from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+from app.schema.mongo_enums import BugCriticalityEnum
+from app.schema.status_enum import BugStatusEnum
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
@@ -28,7 +29,7 @@ async def front_project_bugs(project_name: str,
                              request: Request,
                              display_all: Optional[str] = None) -> HTMLResponse:
     try:
-        allowed = is_updatable(request, tuple())
+        allowed = is_updatable(request, ())
         requested_item = request.headers.get("eaid-request", None)
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
@@ -61,9 +62,9 @@ async def front_project_bugs(project_name: str,
                                               })
         elif requested_item.casefold() == "TABLE".casefold() and allowed:
             if display_all == "on".casefold():
-                bugs = await get_bugs(project_name)
+                bugs, count = await get_bugs(project_name)
             else:
-                bugs = await get_bugs(project_name, status=BugStatusEnum.open)
+                bugs, count = await get_bugs(project_name, status=[BugStatusEnum.open, BugStatusEnum.fix_ready])
             return templates.TemplateResponse("tables/bug_table.html",
                                               {"request": request,
                                                "bugs": bugs,
@@ -78,7 +79,8 @@ async def front_project_bugs(project_name: str,
                                                   "highlight": "Unknown requested item",
                                                   "sequel": "provided.",
                                                   "advise": "Please reload the page."
-                                              })
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
         else:
             return templates.TemplateResponse("error_message.html",
                                               {
@@ -86,7 +88,8 @@ async def front_project_bugs(project_name: str,
                                                   "highlight": "You are not authorized",
                                                   "sequel": " to perform this action.",
                                                   "advise": "Try to log again"
-                                              })
+                                              },
+                                              headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -110,7 +113,7 @@ async def record_bug(project_name: str,
                                               })
         complement_data = {"status": BugStatusEnum.open}
         res = await insert_bug(project_name, BugTicket(**body, **complement_data))
-        log_message(res)
+        log_message(repr(res))
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,
@@ -162,7 +165,7 @@ async def display_bug(project_name: str,
             include_in_schema=False)
 async def front_update_bug(project_name: str,
                            internal_id: str,
-                           body: dict,
+                           body: UpdateBugTicket,
                            request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
@@ -174,8 +177,7 @@ async def front_update_bug(project_name: str,
                                                   "advise": "Try to log again"
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
-        bug = UpdateBugTicket(**body)
-        res = await db_update_bugs(project_name, internal_id, bug)
+        res = await db_update_bugs(project_name, internal_id, body)
         log_message(res)
         return templates.TemplateResponse("void.html",
                                           {

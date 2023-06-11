@@ -3,9 +3,10 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
-from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+from app.schema.mongo_enums import BugCriticalityEnum
+from app.schema.status_enum import BugStatusEnum
 
 
 class Bugs(BaseModel):
@@ -32,15 +33,15 @@ class BugsStatistics(BaseModel):
         return self.dict().get(index, None)
 
 
-class BugTicket(BaseModel):
+class BugTicket(BaseModel, extra=Extra.forbid):
     version: str
     title: str
     description: str
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
-    url: str
-    status: BugStatusEnum
-    criticality: BugCriticalityEnum
+    url: Optional[str] = ""
+    status: BugStatusEnum = BugStatusEnum.open
+    criticality: BugCriticalityEnum = BugCriticalityEnum.major
 
     def __getitem__(self: "BugTicket",
                     index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:
@@ -51,7 +52,7 @@ class BugTicketFull(BugTicket):
     internal_id: int
 
 
-class UpdateBugTicket(BaseModel):
+class UpdateBugTicket(BaseModel, extra=Extra.forbid):
     title: Optional[str]
     version: Optional[str]
     description: Optional[str]
@@ -70,6 +71,11 @@ class UpdateBugTicket(BaseModel):
                 "version": self.version}
         return {key: value for key, value in temp.items() if value is not None}
 
+    def to_sql(self: "UpdateBugTicket") -> dict:
+        temp = self.to_dict()
+        if "status" in temp:
+            temp["status"] = temp["status"].value
+        return temp
 
 class UpdateVersion(BaseModel):
     started: Optional[str]

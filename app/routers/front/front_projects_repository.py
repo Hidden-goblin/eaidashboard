@@ -118,7 +118,7 @@ async def get_repository(project_name: str,
                          epic: str = None,
                          feature: str = None) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
+        if not is_updatable(request, ()):
             return templates.TemplateResponse("error_message.html",
                                               {
                                                   "request": request,
@@ -143,7 +143,7 @@ async def get_scenario(project_name: str,
                        epic: Optional[str] = None,
                        feature: Optional[str] = None) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
+        if not is_updatable(request, ()):
             return templates.TemplateResponse("error_message.html",
                                               {
                                                   "request": request,

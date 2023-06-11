@@ -1,8 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
-from starlette.templating import Jinja2Templates, _TemplateResponse
+from starlette.templating import Jinja2Templates
 
 from app.utils.log_management import log_error
 
@@ -106,10 +105,10 @@ class DuplicateTestResults(Exception):
     pass
 
 
-def front_error_message(templates: Jinja2Templates,
+def front_error_message(templates: Jinja2Templates, # noqa: ANN201
                         request: Request,
                         exception: Exception,
-                        retarget: str = "#messageBox") -> HTMLResponse | _TemplateResponse:
+                        retarget: str = "#messageBox"):
     log_error(repr(exception))
     return templates.TemplateResponse(
         "error_message.html",

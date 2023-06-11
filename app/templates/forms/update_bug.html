@@ -28,7 +28,7 @@
     </div>
     <div class="mb-3">
         <label for="description" class="form-label">Defect description:</label>
-        <input type="text" id="description" name="description" class="form-control" value="{{bug.description}}"/>
+        <textarea type="text" id="description" name="description" class="form-control">{{bug.description}}</textarea>
     </div>
     <div class="mb-3">
         <label for="created" class="form-label">Created on </label>
@@ -37,7 +37,6 @@
     <div class="mb-3">
         <label for="updated" class="form-label">Last update </label>
         <input id="updated" value="{{bug.updated.strftime('%Y-%m-%d %H:%M')}}" readonly class="form-control-plaintext"/>
-        Last update
     </div>
     <input type="hidden" name="status" value="{{bug.status}}"/>
     <button type="submit"

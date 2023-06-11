@@ -26,6 +26,7 @@ async def add_feature(feature: TestFeature) -> None:
             "and project_id = %s;",
             (feature.epic_name.casefold(),
              feature.project_name.casefold())).fetchone()[0]
+        # Ensure Epic id is retrieved
         connection.execute(
             "insert into features (epic_id, name, description, filename, project_id, tags)"
             "values (%(epic)s, %(name)s, %(description)s, %(filename)s, %(project)s, %(tags)s)"
@@ -50,6 +51,7 @@ async def add_scenario(scenario: TestScenario) -> None:
         feature_id = connection.execute(
             "select id from features where filename = %s and project_id = %s;",
             (scenario.filename, scenario.project_name)).fetchone()[0]
+        # Ensure feature_id is retrieved
         connection.execute(
             "insert into scenarios "
             "(scenario_id, feature_id, name, description, steps, tags, isoutline, project_id)"

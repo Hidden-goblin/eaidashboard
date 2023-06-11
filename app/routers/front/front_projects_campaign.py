@@ -22,6 +22,7 @@ from app.database.postgre.testcampaign import (
     db_delete_campaign_ticket_scenario,
     db_get_campaign_ticket_scenario,
     db_get_campaign_ticket_scenarios,
+    db_get_campaign_ticket_scenarios_status_count,
     db_get_campaign_tickets,
     db_put_campaign_ticket_scenarios,
     db_set_campaign_ticket_scenario_status,
@@ -207,7 +208,7 @@ async def front_get_campaign(project_name: str,
                              occurrence: str,
                              request: Request) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
+        if not is_updatable(request, ()):
             return templates.TemplateResponse("error_message.html",
                                               {
                                                   "request": request,
@@ -361,6 +362,17 @@ async def front_get_campaign_ticket(project_name: str,
                                                   "advise": "Try to log again."
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
+        if request.headers.get("eaid-request", "") == "statistics":
+            stats = await db_get_campaign_ticket_scenarios_status_count(project_name,
+                                                                        version,
+                                                                        occurrence,
+                                                                        ticket_reference)
+            return templates.TemplateResponse("formatting/ticket_scenarios_count.html",
+                                              {
+                                                  "request": request,
+                                                  "statistics": stats,
+                                              })
+
         scenarios = await db_get_campaign_ticket_scenarios(project_name,
                                                            version,
                                                            occurrence,

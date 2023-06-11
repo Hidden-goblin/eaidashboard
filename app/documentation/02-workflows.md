@@ -2,7 +2,8 @@
 
 <a hx-get="/documentation/01-workflows.md"> <img height="20" src="/assets/chevron-left-duo.svg" width="20"/> Back </a> 
 | <a 
-hx-get="/documentation/index.md"> Index </a> 
+hx-get="/documentation/index.md"> Index </a> | <a 
+hx-get="/documentation/03-workflows.md"> Next <img height="20" src="/assets/chevron-right-duo.svg" width="20"/> </a>
 
 [TOC]
 

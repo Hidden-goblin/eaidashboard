@@ -62,3 +62,22 @@ alt="Select version in the form" width="800"/>
 
 If the version does not have already a campaign you will create the first occurrence. Otherwise, you will create the 
 next occurrence.
+
+## Create a new defect
+
+On the GUI, you need to be connected with admin rights. Your project needs to have versions.
+
+Select the project.
+
+Go to the `Bugs` tab.
+
+Select the `Record a new defect`.
+
+<img src="/assets/howto/create_bugs_HT.png" title="Create a new bug" 
+alt="Use the record a new defect button" width="800"/>
+
+On the displayed form, fill the defect title, select the version to record in and the defect criticality. You can 
+optionally add a defect link and a description.
+
+<img src="/assets/howto/create_bugs_HT-form.png" title="Create a new bug -- Form" 
+alt="Form to create bug" width="800"/>

@@ -3,14 +3,6 @@
 from enum import Enum
 
 
-class BugStatusEnum(str, Enum):
-    open = "open"
-    closed = "closed"
-
-    def __str__(self: "BugStatusEnum") -> str:
-        return self.value
-
-
 class BugCriticalityEnum(str, Enum):
     blocking = "blocking"
     major = "major"

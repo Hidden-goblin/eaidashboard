@@ -1,0 +1,17 @@
+@startuml
+title Simple Defect workflow
+start
+-> Record new defect;
+:Open;
+if (Does defect have a fix?)then (Yes)
+    :Fix ready;
+else (No\nDoes not need a fix)
+    :Closed not a defect;
+    floating note right: Can be re-open.
+    end
+endif
+->Fix validated;
+:Closed;
+floating note right: Can be re-open.
+end
+@enduml

@@ -4,7 +4,7 @@
 {% for ticket in campaign.tickets %}
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading{{ticket.reference}}">
-                <button class="accordion-button collapsed"
+                <button class="accordion-button collapsed hstack"
                         type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#collapse{{loop.index}}"
@@ -15,7 +15,13 @@
                         hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios"
                         hx-target="#accordion-body{{loop.index}}"
                 >
-                    {{ticket.reference}}: {{ticket.description}}
+                       <span>{{ticket.reference}}: {{ticket.description}}</span>
+                       <span class="ms-auto"
+                             hx-trigger="load, add-scenario-{{loop.index}} from:body"
+                             hx-target="this"
+                             hx-swap="innerHTML"
+                             hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket.reference}}/scenarios"
+                             hx-headers='{"eaid-request": "statistics"}'></span>
                 </button>
             </h2>
             <div id="collapse{{loop.index}}"

@@ -39,3 +39,10 @@ class StatusEnum(DashTypeEnum):
     BLOCKED = "blocked"
     CANCELLED = "cancelled"
     ARCHIVED = "archived"
+
+
+class BugStatusEnum(DashTypeEnum):
+    open = "open"
+    closed = "closed"
+    closed_not_a_defect = "closed not a defect"
+    fix_ready = "fix ready"

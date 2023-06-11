@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from collections import Counter
 from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
@@ -33,8 +34,8 @@ async def fill_campaign(project_name: str,
                         version: str,
                         occurrence: str,
                         content: TicketScenarioCampaign) -> Tuple[int,
-                                                                  list] | Tuple[ApplicationError,
-                                                                                list]:
+list] | Tuple[ApplicationError,
+list]:
     """Attach ticket to campaign
     Attach scenarios to campaign"""
     campaign_ticket_id = await add_ticket_to_campaign(project_name,
@@ -235,6 +236,30 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
                                     (campaign_id[0], reference))
         return [ScenarioInternal(**res) for res in result.fetchall()]
 
+
+
+async def db_get_campaign_ticket_scenarios_status_count(project_name: str,
+                                                        version: str,
+                                                        occurrence: str,
+                                                        reference: str) -> dict:
+    if not await is_campaign_exist(project_name, version, occurrence):
+        raise CampaignNotFound(f"Campaign occurrence {occurrence} "
+                               f"for project {project_name} in version {version} not found")
+    campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
+    with pool.connection() as connection:
+        connection.row_factory = tuple_row
+        result = connection.execute("select cts.status"
+                                    " from campaign_tickets as ct"
+                                    " join campaign_ticket_scenarios as cts"
+                                    " on ct.id = cts.campaign_ticket_id"
+                                    " join scenarios as sc on sc.id = cts.scenario_id"
+                                    " join features as ft on sc.feature_id = ft.id"
+                                    " join epics as ep on ft.epic_id = ep.id"
+                                    " where ct.campaign_id = %s"
+                                    " and ct.ticket_reference = %s;",
+                                    (campaign_id[0], reference))
+        temp = [res[0] for res in result.fetchall()]
+        return dict(Counter(temp))
 
 async def db_get_campaign_ticket_scenario(project_name: str,
                                           version: str,
