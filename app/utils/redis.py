@@ -10,7 +10,7 @@ from app.conf import redis_dict
 redis_pool = None
 
 
-def redis_health():
+def redis_health() -> bool:
     try:
         conn = redis_connection()
         return conn.ping()
@@ -19,7 +19,7 @@ def redis_health():
         return False
 
 
-def redis_connection():
+def redis_connection() -> redis.client.Redis:
     if app.utils.redis.redis_pool is None:
         app.utils.redis.redis_pool = redis.ConnectionPool(**redis_dict, db=0)
 

@@ -12,7 +12,9 @@ from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 
 
-async def create_campaign(project_name, version, status: str = "recorded") -> CampaignLight:
+async def create_campaign(project_name: str,
+                          version: str,
+                          status: str = "recorded") -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -32,16 +34,18 @@ async def create_campaign(project_name, version, status: str = "recorded") -> Ca
         return CampaignLight(**conn)
 
 
-async def retrieve_campaign(project_name,
+async def retrieve_campaign(project_name: str,
                             version: str = None,
                             status: str = None,
                             limit: int = 10,
-                            skip: int = 0):
-    """Get raw campaign with version, occurrence, description and status"""
+                            skip: int = 0) -> Tuple[List[CampaignLight], int]:
+    """Get raw campaign with version, occurrence, description and status
+    TODO: check if dict could be replace with a model
+    """
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if version is None and status is None:
-            conn = connection.execute("select id as id, project_id as project_id,"
+            conn = connection.execute("select project_id as project_name,"
                                       " version as version, occurrence as occurrence,"
                                       " description as description, "
                                       " status as status "
@@ -51,7 +55,7 @@ async def retrieve_campaign(project_name,
                                       "limit %s offset %s;",
                                       (project_name, limit, skip))
         elif version is None:
-            conn = connection.execute("select id as id, project_id as project_id,"
+            conn = connection.execute("select project_id as project_name,"
                                       " version as version, occurrence as occurrence,"
                                       " description as description, "
                                       " status as status "
@@ -62,7 +66,7 @@ async def retrieve_campaign(project_name,
                                       "limit %s offset %s;",
                                       (project_name, status, limit, skip))
         elif status is None:
-            conn = connection.execute("select id as id, project_id as project_id,"
+            conn = connection.execute("select project_id as project_name,"
                                       " version as version, occurrence as occurrence,"
                                       " description as description, "
                                       " status as status "
@@ -73,7 +77,7 @@ async def retrieve_campaign(project_name,
                                       "limit %s offset %s;",
                                       (project_name, version, limit, skip))
         else:
-            conn = connection.execute("select id as id, project_id as project_id,"
+            conn = connection.execute("select project_id as project_name,"
                                       " version as version, occurrence as occurrence,"
                                       " description as description, "
                                       " status as status "
@@ -87,7 +91,7 @@ async def retrieve_campaign(project_name,
         count = connection.execute("select count(*) as total "
                                    "from campaigns "
                                    "where project_id = %s;", (project_name,))
-        return conn.fetchall(), count.fetchone()["total"]
+        return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
 
 
 async def retrieve_campaign_id(project_name: str,
@@ -108,7 +112,8 @@ async def retrieve_campaign_id(project_name: str,
         return row
 
 
-async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
+async def retrieve_all_campaign_id_for_version(project_name: str,
+                                               version: str) -> List[Tuple[int, str]]:
     """Get campaigns internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
@@ -119,7 +124,9 @@ async def retrieve_all_campaign_id_for_version(project_name: str, version: str):
                                   (project_name, version)).fetchall()
 
 
-async def is_campaign_exist(project_name: str, version: str, occurrence: str):
+async def is_campaign_exist(project_name: str,
+                            version: str,
+                            occurrence: str) -> bool:
     """Check if campaign exist"""
     try:
         return bool(await retrieve_campaign_id(project_name, version, occurrence))
@@ -150,10 +157,12 @@ async def enrich_tickets_with_campaigns(project_name: str,
     return _tickets
 
 
-async def update_campaign_occurrence(project_name,
-                                     version,
-                                     occurrence,
-                                     update_occurrence: CampaignPatch):
+async def update_campaign_occurrence(project_name: str,
+                                     version: str,
+                                     occurrence: str,
+                                     update_occurrence: CampaignPatch) -> List[
+                                                                              str] | \
+                                                                          ApplicationError:
     campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
     if isinstance(campaign_id, ApplicationError):
         return campaign_id

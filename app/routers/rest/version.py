@@ -1,19 +1,17 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any, List
+from typing import List
 
 from fastapi import APIRouter, HTTPException, Security
 from psycopg import IntegrityError
 
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
-from app.database.postgre.pg_tickets import (add_ticket,
-                                             get_ticket,
-                                             get_tickets,
-                                             update_ticket)
+from app.database.postgre.pg_tickets import add_ticket, get_ticket, get_tickets, update_ticket
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
-from app.schema.project_schema import (ErrorMessage)
+from app.schema.project_schema import ErrorMessage, RegisterVersionResponse
 from app.schema.ticket_schema import EnrichedTicket, Ticket, ToBeTicket, UpdatedTicket
+from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
 
 router = APIRouter(
@@ -39,7 +37,8 @@ router = APIRouter(
 async def create_ticket(project_name: str,
                         version: str,
                         ticket: ToBeTicket,
-                        user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                        user: UpdateUser = Security(authorize_user,
+                                             scopes=["admin", "user"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, version)
     try:
         result = await add_ticket(project_name, version, ticket)
@@ -48,7 +47,7 @@ async def create_ticket(project_name: str,
     except Exception as exception:
         log_error(repr(exception))
         raise HTTPException(500, detail=" ".join(exception.args)) from exception
-    return str(if_error_raise_http(result).inserted_id)
+    return if_error_raise_http(result)
 
 
 @router.get("/projects/{project_name}/versions/{version}/tickets/",
@@ -64,7 +63,7 @@ async def create_ticket(project_name: str,
             },
             tags=["Tickets"],
             description="Retrieve all tickets in a version")
-async def router_get_tickets(project_name, version):
+async def router_get_tickets(project_name: str, version: str) -> List[EnrichedTicket]:
     await project_version_raise(project_name, version)
     try:
         tickets = await get_tickets(project_name, version)
@@ -87,7 +86,7 @@ async def router_get_tickets(project_name, version):
             },
             tags=["Tickets"],
             description="Retrieve one ticket of a version")
-async def get_one_ticket(project_name: str, version: str, reference: str):
+async def get_one_ticket(project_name: str, version: str, reference: str) -> Ticket:
     await project_version_raise(project_name, version)
 
     try:
@@ -129,7 +128,7 @@ async def update_one_ticket(project_name: str,
                             version: str,
                             reference: str,
                             ticket: UpdatedTicket,
-                            user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                            user: UpdateUser = Security(authorize_user, scopes=["admin", "user"])) -> str:
     await project_version_raise(project_name, version)
     try:
         res = await update_ticket(project_name, version, reference, ticket)

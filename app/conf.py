@@ -1,10 +1,10 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-
 import os
-from fastapi.templating import Jinja2Templates
-from dotenv import dotenv_values
 from pathlib import Path
+
+from dotenv import dotenv_values
+from fastapi.templating import Jinja2Templates
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -30,4 +30,4 @@ redis_dict = {"host": config['REDIS_URL'],
 SECRET_KEY = None
 PUBLIC_KEY = None
 ALGORITHM = None
-APP_VERSION = "3.6"
+APP_VERSION = "3.7"

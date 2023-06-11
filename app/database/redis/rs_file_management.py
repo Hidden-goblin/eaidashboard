@@ -16,7 +16,7 @@ async def rs_record_file(file_key: str, filename: str) -> str:
     return str(connection.get(file_key))
 
 
-async def rs_invalidate_file(file_key_pattern: str):
+async def rs_invalidate_file(file_key_pattern: str) -> None:
     # SPEC: remove file_key from storage
     # SPEC: remove real file if file exists
     connection = redis_connection()
@@ -31,7 +31,7 @@ async def rs_invalidate_file(file_key_pattern: str):
         connection.delete(*keys)
 
 
-async def rs_retrieve_file(file_key: str):
+async def rs_retrieve_file(file_key: str) -> str | None:
     # SPEC: return stored filename or None if not exists
     # SPEC: check real file exists invalidate and return None if not
     connection = redis_connection()

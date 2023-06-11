@@ -1,18 +1,19 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from enum import Enum
+from typing import List
 
 
 class DashTypeEnum(Enum):
-    def __str__(self):
+    def __str__(self:"DashTypeEnum") -> str:
         return self.value
 
     @classmethod
-    def in_enum(cls, item):
+    def in_enum(cls: "DashTypeEnum", item: str) -> bool:
         return item in [str(val) for val in cls.__members__.values()]
 
     @classmethod
-    def list(cls):
+    def list(cls: "DashTypeEnum") -> List[str]:
         return [str(val) for val in cls.__members__.values()]
 
 
@@ -38,3 +39,10 @@ class StatusEnum(DashTypeEnum):
     BLOCKED = "blocked"
     CANCELLED = "cancelled"
     ARCHIVED = "archived"
+
+
+class BugStatusEnum(DashTypeEnum):
+    open = "open"
+    closed = "closed"
+    closed_not_a_defect = "closed not a defect"
+    fix_ready = "fix ready"

@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import psycopg
+from psycopg import Connection
 
 from app.conf import config, postgre_setting_string, postgre_string
 from app.database.postgre.postgre_updates import POSTGRE_UPDATES
@@ -8,7 +9,7 @@ from app.utils.log_management import log_error
 from app.utils.project_alias import register
 
 
-def init_postgres():
+def init_postgres() -> None:
     conn = psycopg.connect(postgre_setting_string, autocommit=True)
     cur = conn.cursor()
     cur.execute("select * from pg_database where datname =  %s", (config['PG_DB'],))
@@ -16,7 +17,7 @@ def init_postgres():
         cur.execute(f"create database {config['PG_DB']}")
 
 
-def update_postgres():
+def update_postgres() -> None:
     connexion = psycopg.connect(postgre_string)
     create_schema(connexion)
     cursor = connexion.cursor()
@@ -46,7 +47,7 @@ def update_postgres():
                 connexion.commit()
 
 
-def create_schema(connexion):
+def create_schema(connexion: Connection) -> None:
     cursor = connexion.cursor()
     cursor.execute("""create table if not exists epics (
     id serial primary key,
@@ -97,7 +98,7 @@ def create_schema(connexion):
     connexion.commit()
 
 
-def postgre_register():
+def postgre_register() -> None:
     conn = psycopg.connect(postgre_string, autocommit=True)
     cur = conn.cursor()
     rows = cur.execute("select name, alias from projects;").fetchall()

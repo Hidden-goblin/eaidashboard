@@ -1,22 +1,27 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
 from app.database.postgre.pg_versions import version_internal_id
+from app.database.utils.transitions import bug_authorized_transition, version_transition
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
-from app.schema.mongo_enums import BugCriticalityEnum, BugStatusEnum
+from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.project_schema import RegisterVersionResponse
+from app.schema.status_enum import BugStatusEnum
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
 async def get_bugs(project_name: str,
-                   status: Optional[BugStatusEnum] = None,
+                   status: Optional[List[BugStatusEnum]] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
-                   version: str = None):
+                   version: str = None,
+                   limit:  int = 100,
+                   skip: int = 0) -> Tuple[List[BugTicketFull], int]:
+
     query = ("select bg.id as internal_id,"
              " bg.title,"
              " bg.url,"
@@ -29,25 +34,35 @@ async def get_bugs(project_name: str,
              " from bugs as bg"
              " join projects as pj on pj.id = bg.project_id"
              " join versions as ve on ve.id = bg.version_id")
-
+    count_query = ("select count(bg.id) as total"
+             " from bugs as bg"
+             " join projects as pj on pj.id = bg.project_id"
+             " join versions as ve on ve.id = bg.version_id")
     query_filter = ["pj.alias = %s"]
     data = [provide(project_name)]
     if version is not None:
         query_filter.append("ve.version = %s")
         data.append(version)
     if status is not None:
-        query_filter.append("bg.status = %s")
-        data.append(status)
+        query_filter.append("bg.status = ANY(%s)")
+        data.append([str(stat) for stat in status])
     if criticality is not None:
         query_filter.append("bg.criticality = %s")
         data.append(criticality.value)
 
-    final_query = f"{query} where {' and '.join(query_filter)};"
+    final_query = (f"{query} where {' and '.join(query_filter)}"
+                   f" order by ve.version, bg.id"
+                   f" limit %s offset %s;")
+    final_count_query = f"{count_query}  where {' and '.join(query_filter)};"
+
+    data.extend((limit, skip))
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(final_query, data).fetchall()
-
-        return [BugTicketFull(**row) for row in rows]
+        data.pop()
+        data.pop()
+        count = connection.execute(final_count_query, data).fetchone()["total"]
+        return [BugTicketFull(**row) for row in rows], count
 
 
 async def db_get_bug(project_name: str,
@@ -72,47 +87,71 @@ async def db_get_bug(project_name: str,
     return BugTicketFull(**row)
 
 
-async def db_update_bugs(project_name, internal_id, bug_ticket: UpdateBugTicket):
-    with pool.connection() as connection:
-        connection.row_factory = dict_row
-        bug_ticket_dict = bug_ticket.to_dict()
-        current_bug = connection.execute("select criticality, status, version_id"
-                                         " from bugs where id = %s;",
-                                         (internal_id,)).fetchone()
-        if ("status" in bug_ticket_dict.keys()
-                or "criticality" in bug_ticket_dict.keys()):
-            current_status_criticality = f"{current_bug['status']}_{current_bug['criticality']}"
-            to_be_status_criticality = (
-                f"{bug_ticket_dict.get('status', current_bug['status'])}"
-                f"_{bug_ticket_dict.get('criticality', current_bug['criticality'])}")
-            if current_status_criticality != to_be_status_criticality:
-                update_query = (
-                    "update versions"
-                    f" set {current_status_criticality} = {current_status_criticality} - 1,"
-                    f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
-                    f" where id = %s;")
+def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket) -> None:
+    if (bug_ticket.status is not None
+            or bug_ticket.criticality is not None):
+        open_close_collapse = {BugStatusEnum.open: BugStatusEnum.open.value,
+                               BugStatusEnum.fix_ready: BugStatusEnum.open.value,
+                               BugStatusEnum.closed: BugStatusEnum.closed.value,
+                               BugStatusEnum.closed_not_a_defect: BugStatusEnum.closed.value}
+
+        current_status_criticality = (f"{open_close_collapse[current_bug.status]}_"
+                                     f"{current_bug.criticality}")
+        to_be_status_criticality = (
+            f"{open_close_collapse[bug_ticket.to_dict().get('status', current_bug['status'])]}"
+            f"_{bug_ticket.to_dict().get('criticality', current_bug['criticality'])}")
+        if current_status_criticality != to_be_status_criticality:
+            update_query = (
+                "update versions"
+                f" set {current_status_criticality} = {current_status_criticality} - 1,"
+                f" {to_be_status_criticality} = {to_be_status_criticality} + 1"
+                f" where id = %s;")
+            with pool.connection() as connection:
+                connection.row_factory = dict_row
                 up_version = connection.execute(update_query,
                                                 (current_bug["version_id"],))
-                log_message(up_version)
-        to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket_dict.keys() if key != "version")
-        values = [value for key, value in bug_ticket_dict.items() if key != "version"]
-        # TIPS: convert string version into internal id version
-        if "version" in bug_ticket_dict:
-            to_set = f"{to_set}, version_id = %s"
-            values.append(await version_internal_id(project_name, bug_ticket_dict["version"]))
+                log_message(up_version.statusmessage)
 
-        values.append(internal_id)
+
+async def db_update_bugs(project_name: str,
+                         internal_id: str,
+                         bug_ticket: UpdateBugTicket) -> BugTicketFull:
+
+
+    bug_ticket_dict = bug_ticket.to_dict()
+    current_bug: BugTicketFull = await db_get_bug(project_name, internal_id)
+
+    # Status update must follow transition pattern
+    if "status" in bug_ticket_dict.keys():
+        version_transition(current_bug["status"],
+                           str(bug_ticket_dict['status']),
+                           BugStatusEnum,
+                           bug_authorized_transition)
+    __update_bug_status(current_bug, bug_ticket)
+
+    to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket.to_sql().keys() if key != "version")
+    values = [value for key, value in bug_ticket.to_sql().items() if key != "version"]
+    # TIPS: convert string version into internal id version
+    if "version" in bug_ticket_dict:
+        to_set = f"{to_set}, version_id = %s"
+        values.append(await version_internal_id(project_name, bug_ticket_dict["version"]))
+        # ToDo: update statuses from past version to current version
+
+    values.append(internal_id)
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
         row = connection.execute(f"update bugs"
                                  f" set "
                                  f" {to_set}"
                                  f" where id = %s"
                                  f" returning id;",
                                  values)
-        log_message(row)
+        log_message(row.statusmessage)
     return await db_get_bug(project_name, internal_id)
 
 
-async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersionResponse:
+async def insert_bug(project_name: str,
+                     bug_ticket: BugTicket) -> RegisterVersionResponse:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
@@ -132,8 +171,8 @@ async def insert_bug(project_name: str, bug_ticket: BugTicket) -> RegisterVersio
              bug_ticket.version,
              provide(project_name))).fetchone()
         update_query = (f"update versions as ve"
-                        f" set {bug_ticket.status}_{bug_ticket.criticality}"
-                        f" = {bug_ticket.status}_{bug_ticket.criticality} + 1"
+                        f" set {bug_ticket.status.value}_{bug_ticket.criticality}"
+                        f" = {bug_ticket.status.value}_{bug_ticket.criticality} + 1"
                         f" from projects as pj"
                         f" where pj.alias = %s"
                         f" and pj.id = ve.project_id"

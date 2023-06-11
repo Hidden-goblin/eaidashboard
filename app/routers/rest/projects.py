@@ -1,27 +1,18 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
-from typing import Any, List, Union
+from typing import List, Union
 
-from fastapi import (APIRouter,
-                     HTTPException,
-                     Query,
-                     Response,
-                     Security)
+from fastapi import APIRouter, HTTPException, Query, Response, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import (create_project_version,
-                                              get_project,
-                                              get_projects)
-from app.database.postgre.pg_versions import (get_version,
-                                              update_version_data)
-from app.database.utils.object_existence import if_error_raise_http, project_version_exists, \
-    project_version_raise
+from app.database.postgre.pg_projects import create_project_version, get_project, get_projects
+from app.database.postgre.pg_versions import get_version, update_version_data
+from app.database.utils.object_existence import if_error_raise_http, project_version_exists, project_version_raise
 from app.schema.bugs_schema import UpdateVersion
-from app.schema.project_schema import (ErrorMessage,
-                                       Project,
-                                       RegisterVersion,
-                                       TicketProject)
+from app.schema.error_code import ApplicationError
+from app.schema.project_schema import ErrorMessage, Project, RegisterVersion, TicketProject
+from app.schema.users import UpdateUser
 from app.schema.versions_schema import Version
 
 router = APIRouter(
@@ -35,7 +26,7 @@ router = APIRouter(
             description="Retrieve all projects")
 async def projects(response: Response,
                    skip: int = 0,
-                   limit: int = 100):
+                   limit: int = 100) -> List[Project]:
     try:
         # TODO add total # of project in response header
         return await get_projects(skip, limit)
@@ -62,7 +53,7 @@ denoting the project's version you want to retrieve.
             """
             )
 async def one_project(project_name: str,
-                      sections: Union[List[str], None] = Query(default=None)):
+                      sections: Union[List[str], None] = Query(default=None)) -> TicketProject:
     await project_version_raise(project_name)
     try:
         return await get_project(project_name.casefold(), sections)
@@ -83,7 +74,7 @@ async def one_project(project_name: str,
 Only admin can create new version.""")
 async def post_projects(project_name: str,
                         project: RegisterVersion,
-                        user: Any = Security(authorize_user, scopes=["admin"])):
+                        user: UpdateUser = Security(authorize_user, scopes=["admin"])) -> str:
     await project_version_raise(project_name)
 
     try:
@@ -95,7 +86,7 @@ async def post_projects(project_name: str,
 
 
 @router.get("/projects/{project_name}/versions/{version}",
-            response_model=Union[Version, dict],
+            response_model=Union[Version, ApplicationError, dict],
             responses={
                 404: {"model": ErrorMessage,
                       "description": "Project name is not registered (ignore case)"}
@@ -103,7 +94,7 @@ async def post_projects(project_name: str,
             tags=["Versions"],
             description="Retrieve a specific project's version details")
 async def version_details(project_name: str,
-                          version: str):
+                          version: str) -> Version | ApplicationError:
     await project_version_raise(project_name, version)
 
     try:
@@ -143,7 +134,9 @@ Only admin or user can update a version"""
 async def update_version(project_name: str,
                          version: str,
                          body: UpdateVersion,
-                         user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                         user: UpdateUser = Security(
+                             authorize_user,
+                             scopes=["admin", "user"])) -> Version | ApplicationError:
     await project_version_exists(project_name, version)
     try:
         result = await update_version_data(project_name.casefold(), version.casefold(), body)

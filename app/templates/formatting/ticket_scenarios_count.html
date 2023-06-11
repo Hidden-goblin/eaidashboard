@@ -1,0 +1,5 @@
+<ul class="list-inline">
+  {% for key, value in statistics.items() %}
+    <li class="list-inline-item"><b>{{key | capitalize}}:</b>{{value}}</li>
+  {% endfor %}
+</ul>

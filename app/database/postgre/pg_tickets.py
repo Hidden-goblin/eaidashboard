@@ -8,13 +8,13 @@ from psycopg.rows import dict_row, tuple_row
 from app.database.postgre.pg_versions import update_status_for_ticket_in_version
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
-from app.schema.ticket_schema import (Ticket, ToBeTicket, UpdatedTicket)
+from app.schema.ticket_schema import Ticket, ToBeTicket, UpdatedTicket
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
 
 
-async def add_ticket(project_name,
-                     project_version,
+async def add_ticket(project_name: str,
+                     project_version: str,
                      ticket: ToBeTicket) -> RegisterVersionResponse | ApplicationError:
     try:
         with pool.connection() as connection:
@@ -37,7 +37,9 @@ async def add_ticket(project_name,
                                 message=" ".join(ie.args))
 
 
-async def get_ticket(project_name, project_version, reference) -> Ticket | ApplicationError:
+async def get_ticket(project_name: str,
+                     project_version: str,
+                     reference: str) -> Ticket | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute(
@@ -58,7 +60,7 @@ async def get_ticket(project_name, project_version, reference) -> Ticket | Appli
         return Ticket(**row)
 
 
-async def get_tickets(project_name, project_version) -> List[Ticket]:
+async def get_tickets(project_name: str, project_version: str) -> List[Ticket]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         results = connection.execute("select tk.status,"
@@ -75,7 +77,8 @@ async def get_tickets(project_name, project_version) -> List[Ticket]:
         return [Ticket(**result) for result in results.fetchall()]
 
 
-async def get_tickets_by_reference(project_name: str, project_version: str,
+async def get_tickets_by_reference(project_name: str,
+                                   project_version: str,
                                    references: Union[List, set]) -> List[Ticket]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -93,8 +96,8 @@ async def get_tickets_by_reference(project_name: str, project_version: str,
         return [Ticket(**row) for row in rows]
 
 
-async def move_tickets(project_name,
-                       version,
+async def move_tickets(project_name: str,
+                       version: str,
                        target_version: str,
                        tickets_reference: List[str] | str) -> List[str] | ApplicationError:
     current_version_id = None
@@ -142,8 +145,8 @@ async def move_tickets(project_name,
     return await _update_ticket_version(_ticket_id, target_version_id)
 
 
-async def _update_ticket_version(ticket_ids,
-                                 target_version_id) -> RegisterVersionResponse | ApplicationError:
+async def _update_ticket_version(ticket_ids: List[int],
+                                 target_version_id: int) -> RegisterVersionResponse | ApplicationError:
     _success = []
     _fail = []
     with pool.connection() as connection:

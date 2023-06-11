@@ -1,13 +1,14 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any, List
+from typing import List
 
-from fastapi import (APIRouter, HTTPException, Security)
+from fastapi import APIRouter, HTTPException, Security
 
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
-from app.schema.project_schema import (ErrorMessage, Project, RegisterProject)
-from app.database.postgre.pg_projects import (register_project, registered_projects)
+from app.database.postgre.pg_projects import register_project, registered_projects
+from app.schema.project_schema import ErrorMessage, Project, RegisterProject
+from app.schema.users import UpdateUser
 
 router = APIRouter(
     prefix="/api/v1/settings"
@@ -32,10 +33,11 @@ router = APIRouter(
              }
              )
 async def post_register_projects(project: RegisterProject,
-                                 user: Any = Security(authorize_user, scopes=["admin"])):
+                                 user: UpdateUser = Security(
+                                     authorize_user, scopes=["admin"])) -> Project:
     try:
         _project_name = await register_project(project.dict()["name"])
-        return {"name": _project_name}
+        return Project(name=_project_name)
     except ProjectNameInvalid as pni:
         raise HTTPException(400, detail=" ".join(pni.args)) from pni
     except DuplicateProject as dp:
@@ -49,7 +51,7 @@ async def post_register_projects(project: RegisterProject,
             tags=["Settings"],
             description="""Register a new project. Only admin can do so."""
             )
-async def get_registered_projects():
+async def get_registered_projects() -> List[str]:
     try:
         return await registered_projects()
     except Exception as exp:

@@ -1,36 +1,39 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from app.database.postgre.postgres import init_postgres, update_postgres
-from app.conf import config, APP_VERSION
-from app.database.utils.password_management import generate_keys
-from app.utils.log_management import log_message
+from starlette.responses import HTMLResponse
 
-from app.utils.pgdb import pool
+from app.conf import APP_VERSION, config
 from app.database.postgre.pg_users import init_user
-from app.database.postgre.postgres import postgre_register
-
-from app.routers.rest import (auth,
-                              bugs,
-                              project_campaigns,
-                              project_repository,
-                              projects,
-                              settings,
-                              users,
-                              version,
-                              project_test_results)
-from app.routers.front import (front_dashboard,
-                               front_projects,
-                               front_projects_campaign,
-                               front_projects_bug,
-                               front_projects_repository,
-                               front_forms,
-                               front_documentation)
+from app.database.postgre.postgres import init_postgres, postgre_register, update_postgres
+from app.database.utils.password_management import generate_keys
+from app.routers.front import (
+    front_dashboard,
+    front_documentation,
+    front_forms,
+    front_projects,
+    front_projects_bug,
+    front_projects_campaign,
+    front_projects_repository,
+)
+from app.routers.rest import (
+    auth,
+    bugs,
+    project_campaigns,
+    project_repository,
+    project_test_results,
+    projects,
+    settings,
+    users,
+    version,
+)
+from app.utils.log_management import log_message
 from app.utils.openapi_tags import DESCRIPTION
+from app.utils.pgdb import pool
 
 init_postgres()
 update_postgres()
@@ -84,18 +87,18 @@ generate_keys()
 
 
 @app.on_event("startup")
-def db_start_connection():
+def db_start_connection() -> None:
     pool.open()
     postgre_register()
 
 
 @app.on_event("shutdown")
-def db_close_connection():
+def db_close_connection() -> None:
     pool.close()
 
 
 @app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
+async def custom_swagger_ui_html() -> HTMLResponse:
     return get_swagger_ui_html(openapi_url=app.openapi_url,
                                title=f"{app.title} - Swagger UI",
                                oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
@@ -104,5 +107,5 @@ async def custom_swagger_ui_html():
 
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
-async def swagger_ui_redirect():
+async def swagger_ui_redirect() -> HTMLResponse:
     return get_swagger_ui_oauth2_redirect_html()

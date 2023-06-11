@@ -163,7 +163,8 @@ async def update_version_data(project_name: str,
     return await get_version(project_name, version)
 
 
-async def dashboard():
+async def dashboard() -> List[dict]:
+    """TODO Fix potential defect where more than 10 """
     projects = await get_projects()
     result = []
     for project in projects:
@@ -174,10 +175,10 @@ async def dashboard():
     return result
 
 
-async def update_status_for_ticket_in_version(project_name,
-                                              version,
-                                              ticket_reference,
-                                              updated_status):
+async def update_status_for_ticket_in_version(project_name: str,
+                                              version: str,
+                                              ticket_reference: str,
+                                              updated_status: str) -> bool | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         current_ticket = connection.execute("select tk.status, tk.current_version"
@@ -215,7 +216,7 @@ async def version_internal_id(project_name: str, version: str) -> int:
                                   (provide(project_name), version)).fetchone()[0]
 
 
-async def refresh_version_stats(project_name: str = None, version: str = None):
+async def refresh_version_stats(project_name: str = None, version: str = None) -> None:
     # TODO: Limit to project-version in general except for future cron task
     with pool.connection() as connection:
         connection.row_factory = tuple_row

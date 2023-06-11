@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any
+from typing import TypeVar
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -24,14 +24,17 @@ async def project_version_exists(project_name: str, version: str = None) -> Appl
                                 message=f"Version '{version}' is not found")
 
 
-async def project_version_raise(project_name: str, version: str = None):
+async def project_version_raise(project_name: str, version: str = None) -> None:
     result = await project_version_exists(project_name, version)
     if result is not None:
         log_error(f"Code: {result.error}: {result.message}")
         raise HTTPException(404, result.message)
 
+T = TypeVar('T')
 
-def if_error_raise_http(result_to_test, headers=None, to_json=False) -> Any:
+def if_error_raise_http(result_to_test: T,
+                        headers: dict=None,
+                        to_json: bool=False) -> T | HTTPException | JSONResponse:
     """Return the input variable or raise HTTPException"""
     if isinstance(result_to_test, ApplicationError):
         log_error(f"Code: {result_to_test.error}: {result_to_test.message}")

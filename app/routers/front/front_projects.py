@@ -4,16 +4,14 @@
 from fastapi import APIRouter, Form
 from psycopg.errors import CheckViolation, UniqueViolation
 from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import is_updatable
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
-from app.database.postgre.pg_projects import (create_project_version,
-                                              get_project,
-                                              register_project, registered_projects)
-from app.database.postgre.pg_tickets import (add_ticket,
-                                             get_tickets)
+from app.database.postgre.pg_projects import create_project_version, get_project, register_project, registered_projects
+from app.database.postgre.pg_tickets import add_ticket, get_tickets
 from app.database.postgre.pg_versions import get_version, update_version_data
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.utils.transitions import authorized_transition
@@ -30,7 +28,7 @@ router = APIRouter(prefix="/front/v1/projects")
 @router.get("",
             tags=["Front - Project"],
             include_in_schema=False)
-async def front_project(request: Request):
+async def front_project(request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin",)):
             return templates.TemplateResponse("error_message.html",
@@ -54,9 +52,10 @@ async def front_project(request: Request):
 
 @router.post("",
              tags=["Front - Project"],
+
              include_in_schema=False)
 async def front_create_project(body: RegisterProject,
-                               request: Request):
+                               request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin",)):
             return templates.TemplateResponse("error_message.html",
@@ -89,7 +88,7 @@ async def front_create_project(body: RegisterProject,
             tags=["Front - Project"],
             include_in_schema=False)
 async def front_project_management(project_name: str,
-                                   request: Request):
+                                   request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -135,7 +134,7 @@ async def front_project_management(project_name: str,
             tags=["Front - Project"],
             include_in_schema=False)
 async def project_versions(project_name: str,
-                           request: Request):
+                           request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -171,7 +170,7 @@ async def project_versions(project_name: str,
             include_in_schema=False)
 async def project_version_tickets(project_name: str,
                                   version: str,
-                                  request: Request):
+                                  request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -219,11 +218,12 @@ async def project_version_tickets(project_name: str,
 
 @router.post("/{project_name}/versions/{version}",
              tags=["Front - Project"],
+
              include_in_schema=False)
 async def add_ticket_to_version(project_name: str,
                                 version: str,
                                 request: Request,
-                                body: dict):
+                                body: dict) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -265,7 +265,7 @@ async def add_ticket_to_version(project_name: str,
 async def project_version_update(project_name: str,
                                  version: str,
                                  body: dict,
-                                 request: Request):
+                                 request: Request) -> HTMLResponse:
     version = await get_version(project_name, version)
     try:
         if not is_updatable(request, ("admin", "user")):
@@ -322,7 +322,7 @@ async def project_version_update(project_name: str,
             tags=["Front - Project"],
             include_in_schema=False)
 async def form_version(project_name: str,
-                       request: Request):
+                       request: Request) -> HTMLResponse:
     try:
         if not is_updatable(request, tuple()):
             return templates.TemplateResponse("error_message.html",
@@ -346,11 +346,12 @@ async def form_version(project_name: str,
 
 @router.post("/{project_name}/versions",
              tags=["Front - Project"],
+
              include_in_schema=False)
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...)
-                      ):
+                      ) -> HTMLResponse:
     try:
         if not is_updatable(request, ("admin", "user")):
             return templates.TemplateResponse("error_message.html",
@@ -375,7 +376,7 @@ async def add_version(project_name: str,
 async def repository_dropdowns(project_name: str,
                                request: Request,
                                epic: str,
-                               feature: str):
+                               feature: str) -> HTMLResponse:
     if epic is None and feature is None:
         epics = await db_project_epics(project_name)
         if epics:
@@ -400,7 +401,3 @@ async def repository_dropdowns(project_name: str,
                                               "project_name_alias": provide(project_name),
                                               "features": features
                                           })
-
-
-async def repository_board(project_name, request, epic, feature, limit, skip):
-    pass

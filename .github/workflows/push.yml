@@ -1,20 +1,11 @@
-name: CI
+name: CI-push
 
-on: [pull_request]
+on: [push]
 
 jobs:
   test:
     environment: eaidashboard
     runs-on: ubuntu-latest
-    env:
-      PG_USR: ${{ secrets.PG_USR }}
-      PG_PWD: ${{ secrets.PG_PWD }}
-      PG_URL: ${{ secrets.PG_URL }}
-      PG_PORT: ${{ secrets.PG_PORT }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      TIMEDELTA: 3600
-      SESSION_KEY: ${{ secrets.SESSION_KEY }}
     services:
       postgres:
         image: postgres
@@ -31,16 +22,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
       - name: Install dependencies
         run: |
-          pip install pipenv
-          pipenv install --dev
+          pip install poetry
+          poetry install --with dev
+      - name: Lint
+        uses: chartboost/ruff-action@v1
+        with:
+          src: "./app"
       - name: Run tests with coverage
         env:
           PG_USR: postgres
@@ -53,10 +46,9 @@ jobs:
           SESSION_KEY: poiuytrezz
         run: |
             mkdir app/static
-            pipenv run coverage run -m pytest
-            pipenv run coverage xml
+            poetry run coverage run -m pytest
+            poetry run coverage xml
         continue-on-error: true
-
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
@@ -64,10 +56,3 @@ jobs:
           badge: true
           output: both
           format: markdown
-
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
-        with:
-          recreate: true
-          path: code-coverage-results.md

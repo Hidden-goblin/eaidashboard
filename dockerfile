@@ -1,15 +1,23 @@
 # Stage 1 - Install dependencies
 
+FROM python:3.11.0-slim-buster AS builder-dep
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y build-essential
+RUN pip install poetry
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root --no-directory
+RUN poetry export -f requirements.txt --output requirements.txt
+
 FROM python:3.11.0-slim-buster AS builder
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y build-essential
-RUN pip install pipenv
 
-COPY Pipfile ./
-RUN pipenv install
-RUN pipenv requirements > requirements.txt
+COPY --from=builder-dep /app/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cleaning folders from dev elements

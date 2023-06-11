@@ -47,9 +47,14 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.6
+## Current: 3.7
 
 ## History
+- 3.7
+  - VirtualEnv migration to Poetry
+  - Add Bug simple workflow
+  - Add ruff static code review
+  - Add Front ticket's scenarios statuses count
 - 3.6
   - Campaign occurrence status management
   - Update html export

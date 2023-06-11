@@ -1,0 +1,60 @@
+[tool.ruff]
+select = ["E", "F", "C90", "I", "W", "ANN"]
+line-length = 120
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.per-file-ignores]
+
+"app/routers/front" = ["ANN201"]
+
+[tool.coverage.run]
+command_line = "-m pytest"
+branch = "true"
+
+[tool.coverage.report]
+include = ["app/*"]
+show_missing = "true"
+
+[tool.coverage.html]
+directory = "cov_html"
+
+[tool.poetry]
+name = "eaidashboard"
+version = "3.6"
+description = "Simple test campaign dashboard using FastApi, Jinja2 and redis and Postgresql database."
+authors = ["Hidden <hiddengob@free.fr>"]
+license = "GNU GPL v3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "*"
+uvicorn = "*"
+python-dotenv = "*"
+jinja2 = "*"
+dpath = "*"
+python-multipart = "*"
+passlib = "*"
+bcrypt = "*"
+itsdangerous = "*"
+bokeh = "*"
+pydantic = {extras = ["email"], version = "*"}
+pyjwt = {extras = ["crypto"], version = "*"}
+psycopg = {extras = ["binary", "pool"], version = "*"}
+python-docx = "*"
+redis = "*"
+markdown = "*"
+
+[tool.poetry.group.dev.dependencies]
+pydeps = "*"
+coverage = {extras = ["toml"], version = "*"}
+pytest-order = "*"
+httpx = "*"
+ruff = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

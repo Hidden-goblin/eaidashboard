@@ -35,7 +35,7 @@ class TestRestCampaign:
         assert response.status_code == 200
 
     def test_get_campaigns(self, application):
-        response = application.get("/api/v1/projects/test/campaigns")
+        response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns")
         assert response.status_code == 200
         assert response.json() == []
 

@@ -14,7 +14,7 @@ def _compute_alias(project_name: str) -> str:
     return _alias
 
 
-def register(project_name: str, alias: str = None):
+def register(project_name: str, alias: str = None)->None:
     forbidden_char = ['/', '\\', '.', ' ', '"', '$', '*', '<', '>', ':', '|', '?']
     has_forbidden_char = any(char in project_name for char in forbidden_char)
 
@@ -30,10 +30,10 @@ def register(project_name: str, alias: str = None):
         PROJECT_ALIAS[project_name.casefold()] = project_name.casefold()
 
 
-def provide(project_name: str):
-    return PROJECT_ALIAS.get(project_name.casefold(), None)
+def provide(project_name: str) -> str | None:
+    return PROJECT_ALIAS.get(project_name.casefold())
 
 
-def contains(project_name) -> bool:
+def contains(project_name: str) -> bool:
     return (project_name.casefold() in list(PROJECT_ALIAS.keys())
             or _compute_alias(project_name) in list(PROJECT_ALIAS.keys()))

@@ -167,7 +167,7 @@ class TestRestProjects:
                       "time data '2023:01:31' does not match format '%Y-%m-%d'"),
                      ({"end_forecast": "31-01-2023"},
                       "time data '31-01-2023' does not match format '%Y-%m-%d'"),
-                     ({"status": "unknown"}, "Status is not accepted")]
+                     ({"status": "unknown"}, "Status 'unknown' is not accepted")]
 
     @pytest.mark.parametrize("payload,message", update_errors)
     def test_update_versions_400(self, application, logged, payload, message):

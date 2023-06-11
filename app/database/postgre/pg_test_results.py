@@ -10,16 +10,18 @@ from app.app_exception import DuplicateTestResults
 from app.database.redis.rs_test_result import mg_insert_test_result_done
 from app.database.utils.output_strategy import OutputStrategy
 from app.database.utils.what_strategy import WhatStrategy
+from app.schema.campaign_schema import Scenario
 from app.utils.pgdb import pool
 
 
-def retrieve_tuple_data(result_date,
-                        project_name,
-                        version,
-                        campaign_id,
-                        rows,
-                        is_partial,
-                        result: list):
+def retrieve_tuple_data(result_date: datetime,
+                        project_name: str,
+                        version: str,
+                        campaign_id: int,
+                        rows: DictReader | List[dict],
+                        is_partial: bool,
+                        result: List[
+                            Tuple[datetime, str, str, int, int, int, int, str, bool]]) -> None:
     """:return list of tuple (date, str, str, int, int, int, int, str, bool)"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -37,7 +39,7 @@ def retrieve_tuple_data(result_date,
                             row["epic_id"],
                             row.get("feature_name", row.get("feature_id", None)),
                             row["scenario_id"],
-                            project_name,
+                            project_name
                     ),
             ).fetchone():
                 result.append((result_date,
@@ -51,7 +53,9 @@ def retrieve_tuple_data(result_date,
                                is_partial))
 
 
-def check_result_uniqueness(project_name: str, version: str, result_date: datetime):
+def check_result_uniqueness(project_name: str,
+                            version: str,
+                            result_date: datetime) -> None:
     """Check if result data exist for project_name-version-date exists
     :return None
     :raise DuplicateTestResults"""
@@ -68,7 +72,8 @@ def check_result_uniqueness(project_name: str, version: str, result_date: dateti
                                        f" in version '{version}' run at '{result_date}'")
 
 
-def set_status(current_status: str, new_result: str) -> str:
+def set_status(current_status: str,
+               new_result: str) -> str:
     """For container elements, set the status based on the worse status.
     i.e. container element is failed if one of its element is failed
     """
@@ -84,7 +89,7 @@ def __compute_epic_result(epic_list: list,
                           current_epic_status: str,
                           result_epic: int,
                           result_status: str,
-                          result_date,
+                          result_date: datetime,
                           project_name: str,
                           version: str,
                           campaign_id: int,
@@ -106,7 +111,7 @@ def __compute_feature_result(feature_list: list,
                              current_feature_status: str,
                              result_feature: int,
                              result_status: str,
-                             result_date,
+                             result_date: datetime,
                              project_name: str,
                              version: str,
                              campaign_id: int,
@@ -130,7 +135,7 @@ async def insert_result(result_date: datetime,
                         campaign_id: int,
                         is_partial: bool,
                         mg_result_uuid: str,
-                        rows: DictReader | List[dict]):
+                        rows: DictReader | List[dict] | List[Scenario]) -> None:
     results = []
     # results = [retrieve_tuple_data(result_date,
     #                                project_name,
@@ -223,26 +228,29 @@ async def insert_result(result_date: datetime,
 
 
 class TestResults:
-    def __init__(self, what: WhatStrategy, output: OutputStrategy):
+    def __init__(self: "TestResults", what: WhatStrategy, output: OutputStrategy) -> None:
         self.__what = what
         self.__output = output
 
     @property
-    def what(self):
+    def what(self: "TestResults") -> WhatStrategy:
         return self.__what
 
     @what.setter
-    def what(self, strategy: WhatStrategy):
+    def what(self: "TestResults", strategy: WhatStrategy) -> None:
         self.__what = strategy
 
     @property
-    def output(self):
+    def output(self: "TestResults") -> OutputStrategy:
         return self.__output
 
     @output.setter
-    def output(self, strategy: OutputStrategy):
+    def output(self: "TestResults", strategy: OutputStrategy) -> None:
         self.__output = strategy
 
-    async def render(self, project_name, version, campaign_occurrence):
+    async def render(self: "TestResults",
+                     project_name: str,
+                     version: str,
+                     campaign_occurrence: str) -> str | dict:
         table_rows = await self.__what.gather(project_name, version, campaign_occurrence)
         return await self.__output.render(table_rows=table_rows)

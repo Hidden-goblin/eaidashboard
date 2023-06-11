@@ -2,9 +2,9 @@
 # -*- Author: E.Aivayan -*-
 from csv import DictReader
 from io import StringIO
-from typing import Any, List, Union
+from typing import List, Union
 
-from fastapi import (APIRouter, File, HTTPException, Security, UploadFile)
+from fastapi import APIRouter, File, HTTPException, Security, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from starlette.background import BackgroundTasks
@@ -13,16 +13,19 @@ from starlette.responses import Response
 from app.app_exception import MalformedCsvFile
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.testrepository import (add_epic,
-                                                 add_feature,
-                                                 add_scenario,
-                                                 clean_scenario_with_fake_id,
-                                                 db_project_epics,
-                                                 db_project_features,
-                                                 db_project_scenarios)
+from app.database.postgre.testrepository import (
+    add_epic,
+    add_feature,
+    add_scenario,
+    clean_scenario_with_fake_id,
+    db_project_epics,
+    db_project_features,
+    db_project_scenarios,
+)
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
+from app.schema.users import UpdateUser
 from app.utils.project_alias import provide
 
 router = APIRouter(
@@ -34,7 +37,7 @@ router = APIRouter(
             response_model=List[str],
             tags=["Repository"],
             description="Retrieve all epics linked to the project.")
-async def get_epics(project_name):
+async def get_epics(project_name: str) -> List[str]:
     try:
         return await db_project_epics(project_name.casefold())
     except Exception as exp:
@@ -45,7 +48,7 @@ async def get_epics(project_name):
             response_model=List[Feature],
             tags=["Repository"],
             description="Retrieve all features linked to the project for this epic")
-async def get_feature(project_name, epic):
+async def get_feature(project_name: str, epic: str) -> List[Feature]:
     try:
         return await db_project_features(project_name, epic)
     except Exception as exp:
@@ -64,7 +67,8 @@ async def get_scenarios(project_name: str,
                         limit: int = 100,
                         offset: int = 0,
                         epic: str = None,
-                        feature: str = None):
+                        feature: str = None) -> List[str] | List[Feature] | List[
+    Scenario] | JSONResponse:
     try:
         if elements == RepositoryEnum.epics:
             return await db_project_epics(project_name, limit=limit, offset=offset)
@@ -89,7 +93,6 @@ async def get_scenarios(project_name: str,
 
 
 @router.post("/projects/{project_name}/repository",
-             response_class=Response,
              status_code=204,
              description="Successful request, processing data."
                          " It might be import error during the process.",
@@ -101,10 +104,11 @@ async def get_scenarios(project_name: str,
                        "description": "project not found"}
              },
              tags=["Repository"])
-async def upload_repository(project_name: str,
+async def upload_repository(project_name: str, # noqa: ANN201
                             background_task: BackgroundTasks,
                             file: UploadFile = File(),
-                            user: Any = Security(authorize_user, scopes=["admin", "user"])):
+                            user: UpdateUser = Security(
+                                authorize_user, scopes=["admin", "user"])):
     try:
         if project_name.casefold() not in await registered_projects():
             raise HTTPException(404, detail=f"Project '{project_name}' not found")
@@ -127,7 +131,7 @@ async def upload_repository(project_name: str,
         raise HTTPException(500, repr(exp))
 
 
-async def process_upload(csv_content, project_name):
+async def process_upload(csv_content: str, project_name: str) -> dict:
     """Read a csv and prepare data for insertion
     Feature without epic are removed
     Scenario in removed features are removed

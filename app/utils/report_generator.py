@@ -8,7 +8,7 @@ from app.conf import BASE_DIR
 from app.database.postgre.pg_bugs import get_bugs
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
-from app.schema.campaign_schema import CampaignFull, TicketScenario
+from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, TicketScenario
 from app.schema.postgres_enums import ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.project_alias import provide
@@ -95,7 +95,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     return filename.name
 
 
-def _compute_status(scenarios):
+def _compute_status(scenarios: list[Scenario | ScenarioInternal] | None) -> TestResultStatusEnum:
     status = [scenario.status for scenario in scenarios]
     if (ScenarioStatusEnum.waiting_fix in status
             or ScenarioStatusEnum.waiting_answer in status):
@@ -180,7 +180,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     return filename.name
 
 
-async def evidence_from_ticket(ticket: TicketScenario):
+async def evidence_from_ticket(ticket: TicketScenario) -> str:
     document = Document()
     document.add_heading("Test Evidence", 0)
 
@@ -222,7 +222,7 @@ async def campaign_deliverable(project_name: str,
                                version: str,
                                occurrence: str,
                                deliverable_type: DeliverableTypeEnum,
-                               ticket_ref: str = None):
+                               ticket_ref: str = None) -> str:
     # TODO register file
     # file:project_alias:version:occurrence:type
     if deliverable_type == DeliverableTypeEnum.TEST_PLAN:

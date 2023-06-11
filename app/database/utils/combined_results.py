@@ -5,7 +5,10 @@ from app.database.postgre.testcampaign import db_get_campaign_ticket_scenarios
 from app.schema.campaign_schema import TicketScenario
 
 
-async def get_ticket_with_scenarios(project_name, version, occurrence, ticket_reference):
+async def get_ticket_with_scenarios(project_name: str,
+                                    version: str,
+                                    occurrence: str,
+                                    ticket_reference: str) -> TicketScenario:
     ticket = await get_ticket(project_name, version, ticket_reference)
     scenarios = await db_get_campaign_ticket_scenarios(project_name,
                                                        version,
