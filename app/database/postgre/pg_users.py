@@ -11,7 +11,7 @@ from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error, log_message
 from app.utils.pgdb import pool
-
+import json
 
 def init_user() -> None:
     with pool.connection() as conn:
@@ -43,8 +43,11 @@ def get_user(username: str) -> UpdateUser:
         from users
         where username = %s;
         """, (username,))
-
-        return UpdateUser(**rows.fetchone())
+        temp = rows.fetchone()
+        print(temp["scopes"])
+        js = json.loads(temp["scopes"])
+        print(js)
+        return UpdateUser(**temp)
 
 
 def update_user(username: str,

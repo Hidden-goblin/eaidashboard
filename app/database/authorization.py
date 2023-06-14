@@ -21,11 +21,14 @@ oauth2_scheme = OAuth2PasswordBearer(
     scopes={"admin": "All operations granted",
             "user": "Update"}
 )
-
+def path_project(project_name: str = None):
+    return project_name
 
 def authorize_user(security_scopes: SecurityScopes,
-                   token: str = Depends(oauth2_scheme)) -> UpdateUser | HTTPException:
+                   token: str = Depends(oauth2_scheme),
+                   project_name: str = Depends(path_project)) -> UpdateUser | HTTPException:
     # Error message building
+    print(project_name)
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:

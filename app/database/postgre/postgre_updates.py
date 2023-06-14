@@ -309,4 +309,7 @@ POSTGRE_UPDATES = [
         check (started is NULL or end_forecast is NULL or started < end_forecast);""",
         "description": "Add constraint on started and end_forecast on versions table"
     }
+    # Alter table users to use the first scope in the array to a json
+    # alter table users
+    #   alter column scopes type json using to_json('{"*":"' || scopes[1] ||'"}')
 ]
