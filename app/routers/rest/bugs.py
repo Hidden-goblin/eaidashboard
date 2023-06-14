@@ -7,9 +7,9 @@ from psycopg.errors import UniqueViolation
 from starlette.responses import Response
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_bugs import db_update_bugs, insert_bug
-from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
-from app.database.utils.object_existence import project_version_raise
+from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs as db_g_bugs, \
+    insert_bug
+from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.project_schema import ErrorMessage, RegisterVersionResponse
@@ -53,6 +53,30 @@ async def get_bugs(project_name: str,
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
 
+
+@router.get("/{project_name}/bugs/{internal_id}",
+            tags=["Bug"],
+            description="Retrieve all bugs for a project no matter the versions",
+            response_model=BugTicketFull,
+            responses={
+                404: {"model": ErrorMessage,
+                      "description": "Project is not found"},
+                500: {"model": ErrorMessage,
+                      "description": "Computation error"}
+            }
+            )
+async def get_bug(project_name: str,
+                  internal_id: str,
+                  response: Response
+                  ) -> BugTicketFull:
+    await project_version_raise(project_name)
+    try:
+        result = await db_get_bug(project_name=project_name,
+                                  internal_id=internal_id)
+    except Exception as exp:
+        log_error(repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 @router.get("/{project_name}/versions/{version}/bugs",
             tags=["Bug"],
@@ -98,8 +122,10 @@ async def create_bugs(project_name: str,
         return await insert_bug(project_name, bug)
     except UniqueViolation as uv:
         log_error(repr(uv))
-        raise HTTPException(409, f"Cannot insert existing bug for '{project_name}', '{bug.version}', '{bug.title}'.\n"
-                                 f"Please check your data.") from uv
+        raise HTTPException(409,
+                            f"Cannot insert existing bug for '{project_name}', '{bug.version}', "
+                            f"'{bug.title}'.\n"
+                            f"Please check your data.") from uv
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
@@ -115,7 +141,8 @@ async def update_bugs(project_name: str,
                           authorize_user, scopes=["admin", "user"])) -> BugTicketFull:
     await project_version_raise(project_name)
     try:
-        return await db_update_bugs(project_name, bug_internal_id, body)
+        result = await db_update_bugs(project_name, bug_internal_id, body)
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)

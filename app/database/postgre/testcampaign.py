@@ -237,7 +237,6 @@ async def db_get_campaign_ticket_scenarios(project_name: str,
         return [ScenarioInternal(**res) for res in result.fetchall()]
 
 
-
 async def db_get_campaign_ticket_scenarios_status_count(project_name: str,
                                                         version: str,
                                                         occurrence: str,
@@ -260,6 +259,7 @@ async def db_get_campaign_ticket_scenarios_status_count(project_name: str,
                                     (campaign_id[0], reference))
         temp = [res[0] for res in result.fetchall()]
         return dict(Counter(temp))
+
 
 async def db_get_campaign_ticket_scenario(project_name: str,
                                           version: str,

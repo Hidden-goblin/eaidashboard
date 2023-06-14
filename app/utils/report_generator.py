@@ -101,7 +101,7 @@ def _compute_status(scenarios: list[Scenario | ScenarioInternal] | None) -> Test
             or ScenarioStatusEnum.waiting_answer in status):
         return TestResultStatusEnum.failed
     if all(ScenarioStatusEnum(stat) in [ScenarioStatusEnum.done, ScenarioStatusEnum.cancelled]
-           for stat in status):
+           for stat in status) and status:
         return TestResultStatusEnum.passed
     return TestResultStatusEnum.skipped
 
@@ -158,7 +158,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Defect status")
     # Create table of defect within the version
-    bugs = await get_bugs(project_name=campaign.project_name,
+    bugs, _ = await get_bugs(project_name=campaign.project_name,
                           version=campaign.version)
     table = document.add_table(rows=1, cols=3, style="TableGrid")
     hdr_cells = table.rows[0].cells

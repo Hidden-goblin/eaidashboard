@@ -7,6 +7,7 @@ from psycopg.rows import tuple_row
 from app.database.postgre.pg_campaigns_management import retrieve_campaign_id
 from app.database.postgre.pg_tickets import get_ticket
 from app.database.postgre.pg_versions import version_exists
+from app.database.redis.rs_file_management import rs_invalidate_file
 from app.schema.error_code import ApplicationError
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
@@ -52,6 +53,7 @@ async def add_ticket_to_campaign(project_name: str,
                                     "and ticket_reference = %s;",
                                     (campaign_id.result()[0],
                                      ticket_reference)).fetchone()
+        await rs_invalidate_file(f"file:{project_name}:{version}:{occurrence}:*")
         return result[0]
 
 

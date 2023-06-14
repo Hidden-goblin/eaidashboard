@@ -205,16 +205,19 @@ async def update_status_for_ticket_in_version(project_name: str,
         return True
 
 
-async def version_internal_id(project_name: str, version: str) -> int:
+async def version_internal_id(project_name: str, version: str) -> int | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        return connection.execute("select ve.id"
-                                  " from versions as ve"
-                                  " join projects as pj on pj.id = ve.project_id"
-                                  " where pj.alias = %s"
-                                  " and ve.version = %s;",
-                                  (provide(project_name), version)).fetchone()[0]
-
+        result = connection.execute("select ve.id"
+                                    " from versions as ve"
+                                    " join projects as pj on pj.id = ve.project_id"
+                                    " where pj.alias = %s"
+                                    " and ve.version = %s;",
+                                    (provide(project_name), version)).fetchone()
+        if result is None:
+            return ApplicationError(error=ApplicationErrorCode.version_not_found,
+                                    message=f"The version '{version}' is not found.")
+        return result[0]
 
 async def refresh_version_stats(project_name: str = None, version: str = None) -> None:
     # TODO: Limit to project-version in general except for future cron task
