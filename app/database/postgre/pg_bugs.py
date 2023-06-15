@@ -7,6 +7,7 @@ from psycopg.rows import dict_row, tuple_row
 from app.database.postgre.pg_versions import version_internal_id
 from app.database.utils.transitions import bug_authorized_transition, version_transition
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import BugStatusEnum
@@ -66,7 +67,7 @@ async def get_bugs(project_name: str,
 
 
 async def db_get_bug(project_name: str,
-                     internal_id: str) -> BugTicketFull:
+                     internal_id: str) -> BugTicketFull | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute("select bg.id as internal_id,"
@@ -84,7 +85,10 @@ async def db_get_bug(project_name: str,
                                  " where bg.id = %s"
                                  " and pj.alias = %s",
                                  (int(internal_id), provide(project_name))).fetchone()
-    return BugTicketFull(**row)
+    return BugTicketFull(**row) if row else ApplicationError(
+        error=ApplicationErrorCode.bug_not_found,
+        message=f"Bug '{internal_id}' is not found."
+    )
 
 
 def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket) -> None:
@@ -115,11 +119,13 @@ def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket)
 
 async def db_update_bugs(project_name: str,
                          internal_id: str,
-                         bug_ticket: UpdateBugTicket) -> BugTicketFull:
+                         bug_ticket: UpdateBugTicket) -> BugTicketFull | ApplicationError:
 
 
     bug_ticket_dict = bug_ticket.to_dict()
     current_bug: BugTicketFull = await db_get_bug(project_name, internal_id)
+    if isinstance(current_bug, ApplicationError):
+        return current_bug
 
     # Status update must follow transition pattern
     if "status" in bug_ticket_dict.keys():
@@ -134,7 +140,10 @@ async def db_update_bugs(project_name: str,
     # TIPS: convert string version into internal id version
     if "version" in bug_ticket_dict:
         to_set = f"{to_set}, version_id = %s"
-        values.append(await version_internal_id(project_name, bug_ticket_dict["version"]))
+        version_id = await version_internal_id(project_name, bug_ticket_dict["version"])
+        if isinstance(version_id, ApplicationError):
+            return version_id
+        values.append(version_id)
         # ToDo: update statuses from past version to current version
 
     values.append(internal_id)

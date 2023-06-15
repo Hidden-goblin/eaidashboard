@@ -143,9 +143,9 @@ class TestRestBug:
         with patch('app.routers.rest.bugs.insert_bug') as rp:
             rp.side_effect = Exception("error")
             response = application.post(f"/api/v1/projects/{TestRestBug.project_name}/bugs",
-            json={"title": "First",
-                        "version": TestRestBug.current_version,
-                        "description": "First, only mandatory field"},
+                                        json={"title": "First",
+                                              "version": TestRestBug.current_version,
+                                              "description": "First, only mandatory field"},
                                         headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
@@ -242,8 +242,58 @@ class TestRestBug:
         assert response.status_code == 200
         assert len(response.json()) == count
 
-    # def test_get_bug_from_db(self):
-    #     bug = await db_get_bug("test_bug", "1")
-    #     assert isinstance(bug, BugTicketFull)
+    def test_get_bug(self, application):
+        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1")
+        assert response.status_code == 200
+        assert response.json()["title"] ==  "First"
+        assert response.json()["version"] == TestRestBug.current_version
+        assert response.json()["description"] == "First, only mandatory field"
+        assert response.json()["url"] == ""
+        assert response.json()["criticality"] == "major"
+        assert response.json()["status"] == "open"
+        assert response.json()["created"] == response.json()["updated"]
+
+    def test_get_bug_internal_id_not_found(self, application):
+        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/100")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Bug '100' is not found."
+    def test_get_bug_error_404(self, application):
+        response = application.get(f"/api/v1/projects/unknown/bugs/1")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "'unknown' is not registered"
+
+    def test_get_bug_error_500(self, application):
+        with patch('app.routers.rest.bugs.db_get_bug') as rp:
+            rp.side_effect = Exception("error")
+            response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1")
+
+            assert response.status_code == 500
+            assert response.json()["detail"] == "error"
     def test_update_bug_error_401(self, application):
-        pass
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
+                                   json={"title": "First updated"})
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Not authenticated"
+
+    update_bug_404 = [("unknown","1",{"title": "First updated"},"'unknown' is not registered"),
+                      (project_name,"100",{"title": "First updated"},"Bug '100' is not found."),
+                      (project_name, "1",{"version": "6.6.6"}, "The version '6.6.6' is not found.")]
+
+    @pytest.mark.parametrize("project_name,bug_id,payload,message", update_bug_404)
+    def test_update_bug_error_404(self,
+                                  application,
+                                  logged,
+                                  project_name,
+                                  bug_id,
+                                  payload,
+                                  message):
+        response = application.put(f"/api/v1/projects/{project_name}/bugs/{bug_id}",
+                                   json=payload,
+                                   headers=logged)
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == message
+
