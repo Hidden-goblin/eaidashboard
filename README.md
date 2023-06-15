@@ -47,9 +47,12 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.7.1
+## Current: 3.7.2
 
 ## History
+- 3.7.2
+  - Fix BugStatusEnum
+  - Fix modal title (bis)
 - 3.7.1
   - Fix TER generation: root cause change signature on function retrieving bugs
   - Fix modal title

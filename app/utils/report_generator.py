@@ -169,7 +169,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
         row_cells = table.add_row().cells
         row_cells[0].text = bug["title"]
         row_cells[1].text = bug["criticality"]
-        row_cells[2].text = bug["status"]
+        row_cells[2].text = bug.status.value
 
     filename = BASE_DIR / "static" / (f"TER_{provide(campaign.project_name)}"
                                       f"_{campaign.version}_"
