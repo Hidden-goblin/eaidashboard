@@ -47,9 +47,13 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.7
+## Current: 3.7.1
 
 ## History
+- 3.7.1
+  - Fix TER generation: root cause change signature on function retrieving bugs
+  - Fix modal title
+  - Fix ticket status in TER based on scenarios' status
 - 3.7
   - VirtualEnv migration to Poetry
   - Add Bug simple workflow

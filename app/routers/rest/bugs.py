@@ -7,8 +7,8 @@ from psycopg.errors import UniqueViolation
 from starlette.responses import Response
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs as db_g_bugs, \
-    insert_bug
+from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, insert_bug
+from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 from app.schema.mongo_enums import BugCriticalityEnum
