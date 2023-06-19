@@ -8,11 +8,12 @@ from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from starlette import status
 from starlette.requests import Request
 
+from app.conf import templates
 from app.database.postgre.pg_users import get_user
 from app.database.redis.token_management import get_token_date, renew_token_date
 from app.database.utils.token import token_scope, token_user
-from app.schema.authentication import TokenData
-from app.schema.users import UpdateUser
+from app.schema.users import User
+from app.utils.log_management import log_error
 
 log = getLogger(__name__)
 
@@ -21,14 +22,22 @@ oauth2_scheme = OAuth2PasswordBearer(
     scopes={"admin": "All operations granted",
             "user": "Update"}
 )
-def path_project(project_name: str = None):
+def path_project(project_name: str = None) -> str:
     return project_name
+
+def get_request(request: Request) -> Request:
+    return request
 
 def authorize_user(security_scopes: SecurityScopes,
                    token: str = Depends(oauth2_scheme),
-                   project_name: str = Depends(path_project)) -> UpdateUser | HTTPException:
+                   project_name: str = Depends(path_project)) -> User | HTTPException:
+    return __generic_authorization(security_scopes,token,project_name)
+
+
+def __generic_authorization(security_scopes: SecurityScopes,
+                            token: str,
+                            project_name: str) -> User | HTTPException:
     # Error message building
-    print(project_name)
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -38,6 +47,7 @@ def authorize_user(security_scopes: SecurityScopes,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": authenticate_value},
     )
+
     try:
         # Authorize method
         # Token contains the username
@@ -51,23 +61,24 @@ def authorize_user(security_scopes: SecurityScopes,
             raise credentials_exception
 
         # Check token validity
-        if get_token_date(user["username"]) is None:
+        if get_token_date(user.username) is None:
             raise credentials_exception
 
         # Check user right
         token_scopes = token_scope(token)
-        token_data = TokenData(scopes=token_scopes, email=email)
-    except jwt.InvalidSignatureError:
+    except jwt.InvalidSignatureError as ise:
+        log_error("JWT has an invalid signature.")
+        raise credentials_exception from ise
+    except Exception as exception:
+        log_error("\n".join(exception.args))
+        raise credentials_exception from exception
+    # Raise if the user has no matching scope
+    if (token_scopes.right(project_name=project_name) is None
+            or token_scopes.right(project_name=project_name) not in security_scopes.scopes):
         raise credentials_exception
-    except Exception:
-        raise credentials_exception
-    if (all(scope not in security_scopes.scopes for scope in token_data.scopes)
-            and security_scopes.scopes):
-        raise credentials_exception
-    renew_token_date(user["username"])
+    renew_token_date(user.username)
 
     return user
-
 
 def is_updatable(request: Request, rights: tuple) -> bool:
     """Authorization method for front usage"""
@@ -79,3 +90,23 @@ def is_updatable(request: Request, rights: tuple) -> bool:
     except Exception as ex:
         log.error("".join(ex.args))
         return False
+
+
+def front_authorize(security_scopes: SecurityScopes,
+                    request: Request,
+                    project_name: str = Depends(path_project)) -> User:
+    try:
+        return __generic_authorization(security_scopes,
+                                       request.session.get("token"),
+                                       project_name)
+    except Exception:
+        return templates.TemplateResponse(
+            "error_message.html",
+            {
+                "request": request,
+                "highlight": "You are not authorized",
+                "sequel": " to perform this action.",
+                "advise": "Try to log again.",
+            },
+            headers={"HX-Retarget": "#messageBox"},
+        )

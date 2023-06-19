@@ -21,6 +21,8 @@ async def register_project(project_name: str) -> str:
     forbidden_char = ["\\", "/", "$"]
     if any(char in project_name for char in forbidden_char):
         raise ProjectNameInvalid("Project name must not contain \\ / $ characters")
+    if project_name == "*":
+        raise ProjectNameInvalid("Project name must be different from '*' special project")
     if contains(project_name):
         raise DuplicateProject(f"Project name '{project_name}' "
                                f"already exists. Please update the name "

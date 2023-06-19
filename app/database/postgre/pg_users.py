@@ -1,17 +1,19 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import json
 from typing import List
 
 from psycopg.rows import dict_row
+from psycopg.types.json import Json
 
 from app.app_exception import IncorrectFieldsRequest
 from app.database.redis.token_management import revoke
 from app.database.utils.password_management import get_password_hash
 from app.schema.project_schema import RegisterVersionResponse
-from app.schema.users import UpdateUser
+from app.schema.users import User
 from app.utils.log_management import log_error, log_message
 from app.utils.pgdb import pool
-import json
+
 
 def init_user() -> None:
     with pool.connection() as conn:
@@ -19,24 +21,24 @@ def init_user() -> None:
         row = conn.execute("select id from users where username='admin@admin.fr'").fetchone()
         log_message(f"{row}")
         if row is None:
-            create_user("admin@admin.fr", "admin", ["admin"])
+            create_user("admin@admin.fr", "admin", {"*":"admin"})
 
 
 def create_user(username: str,
                 password: str,
-                scopes: List[str]) -> None:
+                scopes: dict) -> None:
     try:
         with pool.connection() as conn:
             log_message(f"Create user {username} with {scopes}")
             conn.execute("insert into users (username, password, scopes) "
                          " values (%s, %s, %s);",
-                         (username, get_password_hash(password), scopes))
+                         (username, get_password_hash(password), Json(scopes)))
     except Exception as exception:
         log_error("\n".join(exception.args))
         raise
 
 
-def get_user(username: str) -> UpdateUser:
+def get_user(username: str) -> User | None:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute("""select username, password, scopes
@@ -44,10 +46,8 @@ def get_user(username: str) -> UpdateUser:
         where username = %s;
         """, (username,))
         temp = rows.fetchone()
-        print(temp["scopes"])
-        js = json.loads(temp["scopes"])
-        print(js)
-        return UpdateUser(**temp)
+        # js = json.loads(temp["scopes"])
+        return User(username=temp["username"], password=temp["password"], scopes=temp["scopes"]) if temp is not None else None
 
 
 def update_user(username: str,

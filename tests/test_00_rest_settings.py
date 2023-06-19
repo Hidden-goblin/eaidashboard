@@ -62,7 +62,8 @@ class TestSettings:
     fail_projects = ["te/st",
                      "te\\st",
                      "te$st",
-                     "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong"]
+                     "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong",
+                     "*"]
 
     @pytest.mark.parametrize("project_name", fail_projects)
     def test_create_projects_errors_400(self, application, logged, project_name):

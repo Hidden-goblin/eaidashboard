@@ -5,7 +5,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Security
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -13,12 +13,14 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
-from app.database.authorization import is_updatable
+from app.database.authorization import front_authorize, is_updatable
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_tickets import get_ticket, get_tickets, update_ticket
 from app.database.postgre.pg_versions import dashboard as db_dash
 from app.database.postgre.pg_versions import get_version, refresh_version_stats
+from app.schema.authentication import TokenData
 from app.schema.ticket_schema import UpdatedTicket
+from app.schema.users import User
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
@@ -30,8 +32,8 @@ router = APIRouter()
             tags=["Front - Dashboard"])
 async def dashboard(request: Request) -> HTMLResponse:
     try:
-        if not is_updatable(request, ()):
-            request.session.pop("token", None)
+        # if not is_updatable(request, ()):
+        #     request.session.pop("token", None)
         if request.headers.get("eaid-request", None) is None:
             return templates.TemplateResponse("dashboard.html",
                                               {"request": request})
@@ -114,12 +116,13 @@ async def post_login(request: Request,
                      password: str = Form(...)
                      ) -> HTMLResponse:
     try:
-        sub, scopes = authenticate_user(username, password)
-        if sub is None:
+        user = authenticate_user(username, password)
+        if user is None:
             raise Exception("Unrecognized credentials")
-        access_token = create_access_token(
-            data={"sub": sub,
-                  "scopes": scopes})
+        access_token = create_access_token(TokenData(sub=user.username,
+                                                     scopes=user.scopes))
+        # data={"sub": user.username,
+        #       "scopes": user.scopes})
         request.session["token"] = access_token
         return templates.TemplateResponse("void.html",
                                           {
@@ -205,32 +208,21 @@ async def project_version_ticket_edit(request: Request,
 async def project_version_ticket(request: Request,
                                  project_name: str,
                                  project_version: str,
-                                 reference: str) -> HTMLResponse:
+                                 reference: str,
+                                 user: User =Security(front_authorize, scopes=["admin", "user"])
+                                 ) -> HTMLResponse:
     try:
-        return (
-            templates.TemplateResponse(
-                "ticket_row.html",
-                {
-                    "request": request,
-                    "ticket": await get_ticket(
-                        project_name, project_version, reference
-                    ),
-                    "project_name": project_name,
-                    "project_name_alias": provide(project_name),
-                    "project_version": project_version,
-                },
-            )
-            if is_updatable(request, tuple())
-            else templates.TemplateResponse(
-                "error_message.html",
-                {
-                    "request": request,
-                    "highlight": "You are not authorized",
-                    "sequel": " to perform this action.",
-                    "advise": "Try to log again.",
-                },
-                headers={"HX-Retarget": "#messageBox"},
-            )
+        return templates.TemplateResponse(
+            "ticket_row.html",
+            {
+                "request": request,
+                "ticket": await get_ticket(
+                    project_name, project_version, reference
+                ),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            }
         )
     except Exception as exception:
         log_error(repr(exception))
@@ -245,17 +237,10 @@ async def project_version_update_ticket(request: Request,
                                         project_version: str,
                                         reference: str,
                                         body: dict,
-                                        background_task: BackgroundTasks) -> HTMLResponse:
+                                        background_task: BackgroundTasks,
+                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                                        ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You're not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try reconnect",
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         # TODO check if a refactor might enhance readability
         res = await update_ticket(project_name,
                                   project_version,
@@ -322,17 +307,10 @@ async def get_navigation_bar(request: Request) -> HTMLResponse:
             )
 async def get_project_version(project: str,
                               version: str,
-                              request: Request) -> HTMLResponse:
+                              request: Request,
+                              user: User =Security(front_authorize,
+                                            scopes=["admin", "user"])) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You're not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try reconnect",
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         version = get_version(project, version)
         log_message(repr(version))
         return templates.TemplateResponse("forms/update_version_modal.html",

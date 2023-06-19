@@ -4,14 +4,14 @@
 import datetime
 import json
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Security
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
-from app.database.authorization import is_updatable
+from app.database.authorization import front_authorize
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign, update_campaign_occurrence
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_test_results import TestResults
@@ -43,6 +43,7 @@ from app.schema.rest_enum import (
     RestTestResultHeaderEnum,
     RestTestResultRenderingEnum,
 )
+from app.schema.users import User
 from app.utils.log_management import log_error, log_message
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
@@ -57,18 +58,10 @@ router = APIRouter(prefix="/front/v1/projects")
 async def front_project_management(project_name: str,
                                    request: Request,
                                    limit: int = 10,
-                                   skip: int = 0
+                                   skip: int = 0,
+                                   user: User =Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         # campaigns,  = retrieve_campaign(project_name)
 
         if request.headers.get("eaid-request", "") == "table":
@@ -143,23 +136,14 @@ async def front_new_campaign_form(project_name: str,
 
 @router.post("/{project_name}/campaigns",
              tags=["Front - Project"],
-
              include_in_schema=False
              )
 async def front_new_campaign(project_name: str,
                              request: Request,
-                             version: str = Form(...)
+                             version: str = Form(...),
+                             user: User =Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         await create_campaign(project_name, version)
         return templates.TemplateResponse("void.html",
                                           {"request": request},
@@ -172,21 +156,13 @@ async def front_new_campaign(project_name: str,
 
 @router.post("/{project_name}/campaigns/scenarios",
              tags=["Front - Campaign"],
-
              include_in_schema=False)
 async def front_scenarios_selector(project_name: str,
                                    body: dict,
-                                   request: Request) -> HTMLResponse:
+                                   request: Request,
+                                   user: User =Security(front_authorize, scopes=["admin", "user"])
+                                   ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
         return templates.TemplateResponse("forms/add_scenarios_selector.html",
                                           {"project_name": project_name,
@@ -206,18 +182,10 @@ async def front_scenarios_selector(project_name: str,
 async def front_get_campaign(project_name: str,
                              version: str,
                              occurrence: str,
-                             request: Request) -> HTMLResponse:
+                             request: Request,
+                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                             ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox",
-                                                       "HX-Reswap": "innerHTML"})
         if request.headers.get("eaid-request", "") == "table":
             campaign = await db_get_campaign_tickets(project_name, version, occurrence)
             return templates.TemplateResponse("tables/campaign_board_table.html",
@@ -256,24 +224,16 @@ async def front_get_campaign(project_name: str,
 
 @router.patch("/{project_name}/campaigns/{version}/{occurrence}",
               tags=["Front - Campaign"],
-
               include_in_schema=False)
 async def front_update_campaign(project_name: str,
                                 version: str,
                                 occurrence: str,
                                 body: dict,
-                                request: Request) -> HTMLResponse:
+                                request: Request,
+                                user: User =Security(front_authorize, scopes=["admin", "user"])
+                                ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
-            # Do the treatment here
+        # Do the treatment here
         res = await update_campaign_occurrence(project_name,
                                                version,
                                                occurrence,
@@ -312,17 +272,10 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                                  occurrence: str,
                                                  ticket_reference: str,
                                                  request: Request,
+                                                 user: User =Security(front_authorize,
+                                                               scopes=["admin", "user"]),
                                                  initiator: str = None) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         epics = await db_project_epics(project_name)
         if epics:
             features = await db_project_features(project_name, epics[0])
@@ -351,17 +304,10 @@ async def front_get_campaign_ticket(project_name: str,
                                     version: str,
                                     occurrence: str,
                                     ticket_reference: str,
-                                    request: Request) -> HTMLResponse:
+                                    request: Request,
+                                    user: User =Security(front_authorize, scopes=["admin", "user"])
+                                    ) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         if request.headers.get("eaid-request", "") == "statistics":
             stats = await db_get_campaign_ticket_scenarios_status_count(project_name,
                                                                         version,
@@ -403,17 +349,11 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                        ticket_reference: str,
                                                        scenario_id: str,
                                                        updated_status: dict,
-                                                       request: Request) -> HTMLResponse:
+                                                       request: Request,
+                                                       user: User =Security(front_authorize,
+                                                                     scopes=["admin", "user"])
+                                                       ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         result = await db_set_campaign_ticket_scenario_status(project_name,
                                                               version,
                                                               occurrence,
@@ -440,18 +380,12 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             occurrence: str,
                                                             ticket_reference: str,
                                                             scenario_id: str,
-                                                            request: Request) -> HTMLResponse:
+                                                            request: Request,
+                                                            user: User =Security(front_authorize,
+                                                                          scopes=["admin", "user"])
+                                                            ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         scenario = await db_get_campaign_ticket_scenario(project_name,
                                                          version,
                                                          occurrence,
@@ -483,18 +417,12 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
                                                 scenario_id: str,
-                                                request: Request) -> HTMLResponse:
+                                                request: Request,
+                                                user: User =Security(front_authorize,
+                                                              scopes=["admin", "user"])
+                                                ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         await db_delete_campaign_ticket_scenario(project_name,
                                                  version,
                                                  occurrence,
@@ -517,17 +445,10 @@ async def add_scenarios_to_ticket(project_name: str,
                                   occurrence: str,
                                   ticket_reference: str,
                                   element: dict,
-                                  request: Request) -> HTMLResponse:
+                                  request: Request,
+                                  user: User =Security(front_authorize,
+                                                scopes=["admin", "user"])) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         valid = "scenario_ids" in element
         if valid and not isinstance(element["scenario_ids"], list):
             element["scenario_ids"] = [element["scenario_ids"]]
@@ -554,17 +475,10 @@ async def add_scenarios_to_ticket(project_name: str,
 async def front_campaign_version_tickets(project_name: str,
                                          version: str,
                                          occurrence: str,
-                                         request: Request) -> HTMLResponse:
+                                         request: Request,
+                                         user: User =Security(front_authorize, scopes=["admin", "user"])
+                                         ) -> HTMLResponse:
     try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         requested = request.headers.get("eaid-request", "")
         if requested == "FORM":
             tickets = await get_tickets_not_in_campaign(project_name, version, occurrence)
@@ -594,17 +508,10 @@ async def front_campaign_add_tickets(project_name: str,
                                      version: str,
                                      occurrence: str,
                                      request: Request,
-                                     body: dict) -> HTMLResponse:
+                                     body: dict,
+                                     user: User =Security(front_authorize, scopes=["admin", "user"])
+                                     ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         await add_tickets_to_campaign(project_name, version, occurrence, body)
         # TODO capture header and send empty response with headers
         return templates.TemplateResponse("void.html",
@@ -625,7 +532,9 @@ async def front_campaign_add_tickets(project_name: str,
 async def front_campaign_occurrence_status(project_name: str,
                                            version: str,
                                            occurrence: str,
-                                           request: Request) -> HTMLResponse:
+                                           request: Request,
+                                           user: User =Security(front_authorize, scopes=["admin", "user"])
+                                           ) -> HTMLResponse:
     try:
         result = await rs_retrieve_file(f"file:{provide(project_name)}:{version}:"
                                         f"{occurrence}:scenarios:map:text/html")
@@ -657,18 +566,11 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                                     version: str,
                                                     occurrence: str,
                                                     request: Request,
-                                                    background_task: BackgroundTasks) -> \
-        HTMLResponse:
+                                                    background_task: BackgroundTasks,
+                                                    user: User =Security(front_authorize,
+                                                                  scopes=["admin", "user"])
+                                                    ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
             project_name,
             version,
@@ -708,17 +610,11 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                  request: Request,
                                                  deliverable_type: DeliverableTypeEnum =
                                                  DeliverableTypeEnum.TEST_PLAN,
-                                                 ticket_ref: str = None) -> HTMLResponse:
+                                                 ticket_ref: str = None,
+                                                 user: User =Security(front_authorize,
+                                                               scopes=["admin", "user"])
+                                                 ) -> HTMLResponse:
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         if ticket_ref is not None:
             key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" \
                   f"{deliverable_type.value}"

@@ -245,7 +245,7 @@ class TestRestBug:
     def test_get_bug(self, application):
         response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1")
         assert response.status_code == 200
-        assert response.json()["title"] ==  "First"
+        assert response.json()["title"] == "First"
         assert response.json()["version"] == TestRestBug.current_version
         assert response.json()["description"] == "First, only mandatory field"
         assert response.json()["url"] == ""
@@ -258,8 +258,9 @@ class TestRestBug:
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Bug '100' is not found."
+
     def test_get_bug_error_404(self, application):
-        response = application.get(f"/api/v1/projects/unknown/bugs/1")
+        response = application.get("/api/v1/projects/unknown/bugs/1")
 
         assert response.status_code == 404
         assert response.json()["detail"] == "'unknown' is not registered"
@@ -271,6 +272,7 @@ class TestRestBug:
 
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
+
     def test_update_bug_error_401(self, application):
         response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
                                    json={"title": "First updated"})
@@ -278,9 +280,10 @@ class TestRestBug:
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
-    update_bug_404 = [("unknown","1",{"title": "First updated"},"'unknown' is not registered"),
-                      (project_name,"100",{"title": "First updated"},"Bug '100' is not found."),
-                      (project_name, "1",{"version": "6.6.6"}, "The version '6.6.6' is not found.")]
+    update_bug_404 = [("unknown", "1", {"title": "First updated"}, "'unknown' is not registered"),
+                      (project_name, "100", {"title": "First updated"}, "Bug '100' is not found."),
+                      (
+                      project_name, "1", {"version": "6.6.6"}, "The version '6.6.6' is not found.")]
 
     @pytest.mark.parametrize("project_name,bug_id,payload,message", update_bug_404)
     def test_update_bug_error_404(self,
@@ -297,3 +300,36 @@ class TestRestBug:
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
+    def test_update_bug_error_422(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
+                                   json={"status": "reopen"},
+                                   headers=logged)
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == [
+            {'ctx': {'enum_values': ['open', 'closed', 'closed not a defect', 'fix ready']},
+             'loc': ['body', 'status'],
+             'msg': "value is not a valid enumeration member; permitted: 'open', 'closed', "
+                    "'closed not a defect', 'fix ready'",
+             'type': 'type_error.enum'}]
+
+    def test_update_bug_error_500(self, application, logged):
+        with patch('app.routers.rest.bugs.db_update_bugs') as rp:
+            rp.side_effect = Exception("error")
+            response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
+                                       json={"title": "First updated"},
+                                       headers=logged)
+            assert response.status_code == 500
+            assert response.json()["detail"] == "error"
+
+    def test_update_bug(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
+                                   json={"title": "First updated"},
+                                   headers=logged)
+        assert response.status_code == 200
+        assert response.json()["criticality"] == "major"
+        assert response.json()["description"] == "First, only mandatory field"
+        assert response.json()["status"] == "open"
+        assert response.json()["title"] == "First updated"
+        assert response.json()["url"] == ""
+        assert response.json()["version"] == "1.0.0"
