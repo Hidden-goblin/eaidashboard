@@ -8,7 +8,7 @@ from starlette.responses import HTMLResponse
 
 from app.app_exception import front_error_message
 from app.conf import templates
-from app.database.authorization import front_authorize, is_updatable
+from app.database.authorization import front_authorize
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
 from app.database.postgre.pg_projects import create_project_version, get_project, register_project, registered_projects
 from app.database.postgre.pg_tickets import add_ticket, get_tickets
@@ -29,17 +29,11 @@ router = APIRouter(prefix="/front/v1/projects")
 @router.get("",
             tags=["Front - Project"],
             include_in_schema=False)
-async def front_project(request: Request) -> HTMLResponse:
+async def front_project(request: Request,
+                        user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
-        if not is_updatable(request, ("admin",)):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         if request.headers.get("eaid-request") == "FORM":
             return templates.TemplateResponse("forms/create_project.html",
                                               {"request": request,
@@ -56,18 +50,11 @@ async def front_project(request: Request) -> HTMLResponse:
 
              include_in_schema=False)
 async def front_create_project(body: RegisterProject,
-                               request: Request) -> HTMLResponse:
+                               request: Request,
+                               user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
-        if not is_updatable(request, ("admin",)):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
-        log_message(body)
         await register_project(body.name)
         return templates.TemplateResponse("void.html",
                                           {"request": request},
@@ -90,7 +77,7 @@ async def front_create_project(body: RegisterProject,
             include_in_schema=False)
 async def front_project_management(project_name: str,
                                    request: Request,
-                                   user: User =Security(front_authorize, scopes=[])) -> HTMLResponse:
+                                   user: User = Security(front_authorize, scopes=[])) -> HTMLResponse:
     try:
         # TODO refactor with headers
         if request.headers.get("eaid-request", "") == "REDIRECT":
@@ -128,7 +115,7 @@ async def front_project_management(project_name: str,
             include_in_schema=False)
 async def project_versions(project_name: str,
                            request: Request,
-                           user: User =Security(front_authorize, scopes=[])) -> HTMLResponse:
+                           user: User = Security(front_authorize, scopes=[])) -> HTMLResponse:
     try:
         _versions = await get_project(project_name, None)
         versions = [{"value": item["version"], "status": item["status"]} for item in
@@ -156,7 +143,9 @@ async def project_versions(project_name: str,
 async def project_version_tickets(project_name: str,
                                   version: str,
                                   request: Request,
-                                  user: User =Security(front_authorize, scopes=[])) -> HTMLResponse:
+                                  user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
         if request.headers.get("eaid-request", "") == "FORM":
             return templates.TemplateResponse("forms/add_ticket.html",
@@ -201,8 +190,10 @@ async def add_ticket_to_version(project_name: str,
                                 version: str,
                                 request: Request,
                                 body: dict,
-                                user: User =Security(front_authorize,
-                                              scopes=["admin", "user"])) -> HTMLResponse:
+                                user: User = Security(front_authorize,
+                                                      scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
         result = await add_ticket(project_name, version, ToBeTicket(**body))
         if not result.inserted_id:
@@ -236,12 +227,12 @@ async def project_version_update(project_name: str,
                                  version: str,
                                  body: dict,
                                  request: Request,
-                                 user: User =Security(front_authorize,
-                                               scopes=["admin", "user"])) -> HTMLResponse:
+                                 user: User = Security(front_authorize,
+                                                       scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     version = await get_version(project_name, version)
     try:
-        log_message(body)
-
         cleaned_body = {key: value for key, value in body.items() if value}
         await update_version_data(project_name, version.version, UpdateVersion(**cleaned_body))
 
@@ -286,7 +277,7 @@ async def project_version_update(project_name: str,
             include_in_schema=False)
 async def form_version(project_name: str,
                        request: Request,
-                       user: User =Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+                       user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
     try:
         return templates.TemplateResponse("forms/add_version.html",
                                           {
@@ -305,7 +296,7 @@ async def form_version(project_name: str,
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...),
-                      user: User =Security(front_authorize, scopes=["admin", "user"])
+                      user: User = Security(front_authorize, scopes=["admin", "user"])
                       ) -> HTMLResponse:
     try:
         await create_project_version(project_name, RegisterVersion(version=version))

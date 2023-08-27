@@ -1,4 +1,4 @@
-
+{% from "macros/page_numbering.html" import pg_numb %}
 <table class="table table-bordered table-striped">
     <!-- Campaign Table -->
       <thead>
@@ -26,31 +26,5 @@
       </tbody>
     </table>
      {% if nav_bar %}
-      <nav aria-label="campaign navigation">
-        <ul class="pagination">
-            {% for page in pages %}
-              {% if current_page != page[0] and loop.first %}
-                 <li class="page-item"><a class="page-link"
-                                          hx-trigger="click"
-                                          hx-target="#campaign_table"
-                                          hx-headers='{"eaid-request": "table"}'
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">Previous</a></li>
-               {% else %}
-                    {% if current_page != page[0] and loop.last %}
-                      <li class="page-item"><a class="page-link"
-                                          hx-trigger="click"
-                                          hx-target="#campaign_table"
-                                          hx-headers='{"eaid-request": "table"}'
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">Next</a></li>
-                    {% else %}
-                             <li class="page-item"><a class="page-link"
-                                          hx-trigger="click"
-                                          hx-target="#campaign_table"
-                                          hx-headers='{"eaid-request": "table"}'
-                                          hx-get="/front/v1/projects/{{project_name}}/campaigns?limit={{page[1]}}&skip={{page[2]}}">{{page[0]}}</a></li>
-                    {%endif%}
-               {%endif%}
-            {%endfor%}
-        </ul>
-      </nav>
+       {{ pg_numb('#campaign_table', "/front/v1/projects/" ~ project_name ~ "/campaigns" , pages, current_page, 'campaign navigation') }}
       {% endif %}

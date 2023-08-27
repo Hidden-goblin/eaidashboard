@@ -1,0 +1,30 @@
+{% from "macros/page_numbering.html" import pg_numb %}
+<table class="table table-bordered table-striped">
+    <!-- User Table -->
+      <thead>
+       <tr>
+        <th>Username</th>
+        <th>Scopes</th>
+        <th> </th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{user.username}}</td>
+        <td>
+            <ul>
+                {% for scope, value in user.scopes | dictsort %}
+                    <li>{{scope}}: {{value}}</li>
+                {% endfor %}
+            </ul>
+        </td>
+        <td>Edit</td>
+
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+     {% if nav_bar %}
+       {{ pg_numb('#users_table', "/front/v1/users" , pages, current_page, 'user navigation') }}
+      {% endif %}

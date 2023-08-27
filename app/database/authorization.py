@@ -22,16 +22,20 @@ oauth2_scheme = OAuth2PasswordBearer(
     scopes={"admin": "All operations granted",
             "user": "Update"}
 )
+
+
 def path_project(project_name: str = None) -> str:
     return project_name
+
 
 def get_request(request: Request) -> Request:
     return request
 
+
 def authorize_user(security_scopes: SecurityScopes,
                    token: str = Depends(oauth2_scheme),
                    project_name: str = Depends(path_project)) -> User | HTTPException:
-    return __generic_authorization(security_scopes,token,project_name)
+    return __generic_authorization(security_scopes, token, project_name)
 
 
 def __generic_authorization(security_scopes: SecurityScopes,
@@ -56,11 +60,12 @@ def __generic_authorization(security_scopes: SecurityScopes,
             raise credentials_exception
 
         # Check user in db
-        user = get_user(email)
+        user = get_user(email, False)
         if user is None:
             raise credentials_exception
 
         # Check token validity
+        get_token_date(user.username)
         if get_token_date(user.username) is None:
             raise credentials_exception
 
@@ -73,12 +78,14 @@ def __generic_authorization(security_scopes: SecurityScopes,
         log_error("\n".join(exception.args))
         raise credentials_exception from exception
     # Raise if the user has no matching scope
-    if (token_scopes.right(project_name=project_name) is None
-            or token_scopes.right(project_name=project_name) not in security_scopes.scopes):
-        raise credentials_exception
+    if ((token_scopes.right(project_name=project_name) is None
+         or token_scopes.right(project_name=project_name) not in security_scopes.scopes)
+            and security_scopes.scopes):
+        raise HTTPException(403, "You are not authorized to access this resource.")
     renew_token_date(user.username)
 
     return user
+
 
 def is_updatable(request: Request, rights: tuple) -> bool:
     """Authorization method for front usage"""

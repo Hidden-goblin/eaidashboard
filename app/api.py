@@ -19,6 +19,7 @@ from app.routers.front import (
     front_projects_bug,
     front_projects_campaign,
     front_projects_repository,
+    front_users,
 )
 from app.routers.rest import (
     auth,
@@ -51,7 +52,6 @@ app = FastAPI(title="Eaidashboard",
               openapi_tags=DESCRIPTION,
               docs_url=None)
 
-
 app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_credentials=True,
@@ -77,6 +77,7 @@ app.include_router(front_projects_bug.router)
 app.include_router(front_projects_repository.router)
 app.include_router(front_forms.router)
 app.include_router(front_documentation.router)
+app.include_router(front_users.router)
 
 log_message(f"Postgre: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
             f"Redis: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")

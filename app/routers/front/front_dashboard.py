@@ -13,7 +13,7 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
-from app.database.authorization import front_authorize, is_updatable
+from app.database.authorization import front_authorize
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_tickets import get_ticket, get_tickets, update_ticket
 from app.database.postgre.pg_versions import dashboard as db_dash
@@ -51,10 +51,12 @@ async def dashboard(request: Request) -> HTMLResponse:
             include_in_schema=False)
 async def project_version_tickets(request: Request,
                                   project_name: str,
-                                  project_version: str) -> HTMLResponse:
+                                  project_version: str,
+                                  user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
-        return (
-            templates.TemplateResponse(
+        return templates.TemplateResponse(
                 "ticket_view.html",
                 {
                     "request": request,
@@ -64,18 +66,6 @@ async def project_version_tickets(request: Request,
                     "project_version": project_version,
                 },
             )
-            if is_updatable(request, tuple())
-            else templates.TemplateResponse(
-                "error_message.html",
-                {
-                    "request": request,
-                    "highlight": "You are not authorized",
-                    "sequel": " to perform this action.",
-                    "advise": "Try to log again.",
-                },
-                headers={"HX-Retarget": "#messageBox"},
-            )
-        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -124,6 +114,7 @@ async def post_login(request: Request,
         # data={"sub": user.username,
         #       "scopes": user.scopes})
         request.session["token"] = access_token
+        request.session["scopes"] =  user.scopes
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request
@@ -148,9 +139,10 @@ async def post_login(request: Request,
                response_class=HTMLResponse,
                tags=["Front - Login"],
                include_in_schema=False)
-async def logout(request: Request) -> HTMLResponse:
+async def logout(request: Request,
+                 user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
     try:
-        if is_updatable(request, ("admin", "user")):
+        if isinstance(user, User):
             invalidate_token(request.session["token"])
         request.session.clear()
         return templates.TemplateResponse("void.html",
@@ -170,10 +162,12 @@ async def logout(request: Request) -> HTMLResponse:
 async def project_version_ticket_edit(request: Request,
                                       project_name: str,
                                       project_version: str,
-                                      reference: str) -> HTMLResponse:
+                                      reference: str,
+                                      user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, User):
+        return user
     try:
-        return (
-            templates.TemplateResponse(
+        return templates.TemplateResponse(
                 "ticket_row_edit.html",
                 {
                     "request": request,
@@ -185,18 +179,7 @@ async def project_version_ticket_edit(request: Request,
                     "project_version": project_version,
                 },
             )
-            if is_updatable(request, tuple())
-            else templates.TemplateResponse(
-                "error_message.html",
-                {
-                    "request": request,
-                    "highlight": "You are not authorized",
-                    "sequel": " to perform this action.",
-                    "advise": "Try to log again.",
-                },
-                headers={"HX-Retarget": "#messageBox"},
-            )
-        )
+
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -270,9 +253,11 @@ async def project_version_update_ticket(request: Request,
             )
 async def get_navigation_bar(request: Request) -> HTMLResponse:
     projects = await registered_projects()
+    is_admin = request.session.get("scopes", {}).get("*", "user") == "admin"
     return templates.TemplateResponse("navigation.html",
                                       {"request": request,
-                                       "projects": projects or []}
+                                       "projects": projects or [],
+                                       "is_admin": is_admin}
                                       )
 
 

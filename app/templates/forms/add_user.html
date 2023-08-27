@@ -1,0 +1,141 @@
+{% if message %}
+   <!-- This part is the error case -->
+   <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create new user</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                     <!-- The action -->
+                    <form hx-post="/front/v1/users/"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}'>
+
+                        <div class="mb-3" >
+                            <div class="mb-3">
+                            <label class="form-label" for="username">Username</label>
+                            <input class="form-control" type="text" id="username" name="username" value="{{posted.username}}"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Password</label>
+                            <input class="form-control" type="password" id="password" name="password"/>
+                        </div>
+                        <div class="mb-3">
+                            <!-- Your form here -->
+                            <div class="form-check form-switch">
+                                <label class="form-check-label" for="*">Super Administrator</label>
+                                <input class="form-check-input" name="*" type="checkbox" value="1" id="*" {%if '*' in posted%}checked{%endif%}/>
+                            </div>
+                        </div>
+                        <div class="mb-3" >
+                                <label class="form-label" for="admin">Administrator of project:</label>
+                                    <select class="form-select" name="admin" id="admin" multiple aria-label="administrator of project">
+                                        {%for project in projects%}
+                                            <option value="{{project}}" {%if project in posted.admin%}selected{%endif%}>{{project}}</option>
+                                        {%endfor%}
+                                    </select>
+                        </div>
+                        <div class="mb-3" >
+                                <label class="form-label" for="user">User of project:</label>
+                                    <select class="form-select" name="user" id="user" multiple aria-label="user of project">
+                                        {%for project in projects%}
+                                            <option value="{{project}}" {%if project in posted.user%}selected{%endif%}>{{project}}</option>
+                                        {%endfor%}
+                                    </select>
+                        </div>
+                            <!-- Add the form here for each field -->
+                            <span class="text-danger" >
+                                      {{message}}  <!-- The error message you want to display -->
+                            </span>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+              <!-- The dismiss action -->
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+{% else %}
+<!-- Main form -->
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create new user</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-post="/front/v1/users/"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "modalClear"}'>
+                        <div class="mb-3">
+                            <label class="form-label" for="username">Username</label>
+                            <input class="form-control" type="text" id="username" name="username"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Password</label>
+                            <input class="form-control" type="password" id="password" name="password"/>
+                        </div>
+                        <div class="mb-3">
+                            <!-- Your form here -->
+                            <div class="form-check form-switch">
+                                <label class="form-check-label" for="*">Super Administrator</label>
+                                <input class="form-check-input" name="*" type="checkbox" value="1" id="*"/>
+                            </div>
+                        </div>
+                        <div class="mb-3" >
+                                <label class="form-label" for="admin">Administrator of project:</label>
+                                    <select class="form-select" name="admin" id="admin" multiple aria-label="administrator of project">
+                                        {%for project in projects%}
+                                            <option value="{{project}}">{{project}}</option>
+                                        {%endfor%}
+                                    </select>
+                        </div>
+                        <div class="mb-3" >
+                                <label class="form-label" for="user">User of project:</label>
+                                    <select class="form-select" name="user" id="user" multiple aria-label="user of project">
+                                        {%for project in projects%}
+                                            <option value="{{project}}">{{project}}</option>
+                                        {%endfor%}
+                                    </select>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

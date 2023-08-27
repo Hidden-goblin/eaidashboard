@@ -52,6 +52,7 @@ class RegisterVersionResponse(BaseModel):
     """
     inserted_id: str
     acknowledged: bool = True
+    message: Optional[str]
 
 
 class RegisterProject(BaseModel):

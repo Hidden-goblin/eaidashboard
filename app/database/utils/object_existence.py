@@ -30,11 +30,13 @@ async def project_version_raise(project_name: str, version: str = None) -> None:
         log_error(f"Code: {result.error}: {result.message}")
         raise HTTPException(404, result.message)
 
+
 T = TypeVar('T')
 
+
 def if_error_raise_http(result_to_test: T,
-                        headers: dict=None,
-                        to_json: bool=False) -> T | HTTPException | JSONResponse:
+                        headers: dict = None,
+                        to_json: bool = False) -> T | HTTPException | JSONResponse:
     """Return the input variable or raise HTTPException"""
     if isinstance(result_to_test, ApplicationError):
         log_error(f"Code: {result_to_test.error}: {result_to_test.message}")

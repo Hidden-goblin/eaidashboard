@@ -14,7 +14,7 @@ from app.schema.users import User
 
 def authenticate_user(username: str, password: str) -> User | None:
     try:
-        user = get_user(username)
+        user = get_user(username, False)
         return user if verify_password(password, user["password"]) else None
     except Exception as exception:
         log = logging.getLogger("uvicorn.access")

@@ -12,7 +12,7 @@ class TestRestVersions:
                                           "description": "Description"},
                                     headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"acknowledged": True, "inserted_id": "1"}
+        assert response.json() == {"acknowledged": True, "inserted_id": "1", "message": None}
 
     def test_add_ticket_errors_401(self, application):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",

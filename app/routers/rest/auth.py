@@ -9,7 +9,7 @@ from app.database.authentication import authenticate_user, create_access_token
 from app.database.authorization import authorize_user
 from app.database.redis.token_management import revoke
 from app.schema.authentication import TokenData
-from app.schema.users import UpdateUser, User
+from app.schema.users import User
 from app.utils.log_management import log_error
 
 router = APIRouter(
@@ -32,7 +32,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @router.delete("/token",
                tags=["Users"])
 async def expire_access_token(
-        user: User = Security(authorize_user, scopes=["admin", "user"])) -> dict:
+        user: User = Security(authorize_user, scopes=[])) -> dict:
     try:
         revoke(user["username"])
         return {}
