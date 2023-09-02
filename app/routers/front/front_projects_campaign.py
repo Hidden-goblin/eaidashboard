@@ -59,7 +59,7 @@ async def front_project_management(project_name: str,
                                    request: Request,
                                    limit: int = 10,
                                    skip: int = 0,
-                                   user: User =Security(front_authorize, scopes=["admin", "user"])
+                                   user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     try:
         # campaigns,  = retrieve_campaign(project_name)
@@ -141,7 +141,7 @@ async def front_new_campaign_form(project_name: str,
 async def front_new_campaign(project_name: str,
                              request: Request,
                              version: str = Form(...),
-                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                             user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
     try:
         await create_campaign(project_name, version)
@@ -160,7 +160,7 @@ async def front_new_campaign(project_name: str,
 async def front_scenarios_selector(project_name: str,
                                    body: dict,
                                    request: Request,
-                                   user: User =Security(front_authorize, scopes=["admin", "user"])
+                                   user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     try:
         scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
@@ -183,7 +183,7 @@ async def front_get_campaign(project_name: str,
                              version: str,
                              occurrence: str,
                              request: Request,
-                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                             user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
     try:
         if request.headers.get("eaid-request", "") == "table":
@@ -230,7 +230,7 @@ async def front_update_campaign(project_name: str,
                                 occurrence: str,
                                 body: dict,
                                 request: Request,
-                                user: User =Security(front_authorize, scopes=["admin", "user"])
+                                user: User = Security(front_authorize, scopes=["admin", "user"])
                                 ) -> HTMLResponse:
     try:
         # Do the treatment here
@@ -272,8 +272,8 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                                  occurrence: str,
                                                  ticket_reference: str,
                                                  request: Request,
-                                                 user: User =Security(front_authorize,
-                                                               scopes=["admin", "user"]),
+                                                 user: User = Security(front_authorize,
+                                                                       scopes=["admin", "user"]),
                                                  initiator: str = None) -> HTMLResponse:
     try:
         epics = await db_project_epics(project_name)
@@ -305,7 +305,7 @@ async def front_get_campaign_ticket(project_name: str,
                                     occurrence: str,
                                     ticket_reference: str,
                                     request: Request,
-                                    user: User =Security(front_authorize, scopes=["admin", "user"])
+                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                     ) -> HTMLResponse:
     try:
         if request.headers.get("eaid-request", "") == "statistics":
@@ -350,8 +350,8 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                        scenario_id: str,
                                                        updated_status: dict,
                                                        request: Request,
-                                                       user: User =Security(front_authorize,
-                                                                     scopes=["admin", "user"])
+                                                       user: User = Security(front_authorize,
+                                                                             scopes=["admin", "user"])
                                                        ) -> HTMLResponse:
     try:
         result = await db_set_campaign_ticket_scenario_status(project_name,
@@ -381,8 +381,8 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             ticket_reference: str,
                                                             scenario_id: str,
                                                             request: Request,
-                                                            user: User =Security(front_authorize,
-                                                                          scopes=["admin", "user"])
+                                                            user: User = Security(front_authorize,
+                                                                                  scopes=["admin", "user"])
                                                             ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
@@ -418,8 +418,8 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                 ticket_reference: str,
                                                 scenario_id: str,
                                                 request: Request,
-                                                user: User =Security(front_authorize,
-                                                              scopes=["admin", "user"])
+                                                user: User = Security(front_authorize,
+                                                                      scopes=["admin", "user"])
                                                 ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     try:
@@ -446,8 +446,8 @@ async def add_scenarios_to_ticket(project_name: str,
                                   ticket_reference: str,
                                   element: dict,
                                   request: Request,
-                                  user: User =Security(front_authorize,
-                                                scopes=["admin", "user"])) -> HTMLResponse:
+                                  user: User = Security(front_authorize,
+                                                        scopes=["admin", "user"])) -> HTMLResponse:
     try:
         valid = "scenario_ids" in element
         if valid and not isinstance(element["scenario_ids"], list):
@@ -476,7 +476,7 @@ async def front_campaign_version_tickets(project_name: str,
                                          version: str,
                                          occurrence: str,
                                          request: Request,
-                                         user: User =Security(front_authorize, scopes=["admin", "user"])
+                                         user: User = Security(front_authorize, scopes=["admin", "user"])
                                          ) -> HTMLResponse:
     try:
         requested = request.headers.get("eaid-request", "")
@@ -509,7 +509,7 @@ async def front_campaign_add_tickets(project_name: str,
                                      occurrence: str,
                                      request: Request,
                                      body: dict,
-                                     user: User =Security(front_authorize, scopes=["admin", "user"])
+                                     user: User = Security(front_authorize, scopes=["admin", "user"])
                                      ) -> HTMLResponse:
     try:
         await add_tickets_to_campaign(project_name, version, occurrence, body)
@@ -533,7 +533,7 @@ async def front_campaign_occurrence_status(project_name: str,
                                            version: str,
                                            occurrence: str,
                                            request: Request,
-                                           user: User =Security(front_authorize, scopes=["admin", "user"])
+                                           user: User = Security(front_authorize, scopes=["admin", "user"])
                                            ) -> HTMLResponse:
     try:
         result = await rs_retrieve_file(f"file:{provide(project_name)}:{version}:"
@@ -567,8 +567,8 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                                     occurrence: str,
                                                     request: Request,
                                                     background_task: BackgroundTasks,
-                                                    user: User =Security(front_authorize,
-                                                                  scopes=["admin", "user"])
+                                                    user: User = Security(front_authorize,
+                                                                          scopes=["admin", "user"])
                                                     ) -> HTMLResponse:
     try:
         test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
@@ -611,8 +611,8 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                  deliverable_type: DeliverableTypeEnum =
                                                  DeliverableTypeEnum.TEST_PLAN,
                                                  ticket_ref: str = None,
-                                                 user: User =Security(front_authorize,
-                                                               scopes=["admin", "user"])
+                                                 user: User = Security(front_authorize,
+                                                                       scopes=["admin", "user"])
                                                  ) -> HTMLResponse:
     try:
         if ticket_ref is not None:

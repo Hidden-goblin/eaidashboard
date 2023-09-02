@@ -83,9 +83,9 @@ class TestRestProjects:
                                     json={"test": "1.0.0"},
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'version'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'}]
+        assert response.json()["detail"][0]['msg'] == 'Field required'
+        assert response.json()["detail"][0]['type'] == 'missing'
+        assert response.json()["detail"][0]['loc'] == ['body', 'version']
 
     def test_create_version_errors_500(self, application, logged):
         with patch('app.routers.rest.projects.create_project_version') as rp:

@@ -185,9 +185,9 @@ async def update_ticket(project_name: str,
     # SPEC: update the values first then move the ticket to another version
     query = ("update tickets tk"
              " set")
-    update = [f" {key} = %s" for key, value in updated_ticket.dict().items() if
+    update = [f" {key} = %s" for key, value in updated_ticket.model_dump().items() if
               value is not None and key != "version"]
-    data = [value for key, value in updated_ticket.dict().items() if
+    data = [value for key, value in updated_ticket.model_dump().items() if
             value is not None and key != "version"]
     data.extend([provide(project_name), project_version, ticket_reference])
     query = (f"{query} {', '.join(update)}"

@@ -82,24 +82,20 @@ class TestRestUsers:
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
-    payload_error_422 = [({"password": "pass"},
-                          [{'loc': ['body', 'username'],
-                            'msg': 'field required',
-                            'type': 'value_error.missing'}]),
+    payload_error_422 = [({"password": "pass"}, ['body', 'username'], 'Field required', 'missing'),
                          ({"username": "test",
                            "alias": "test",
-                           "password": "pass"},
-                          [{'loc': ['body', 'alias'],
-                            'msg': 'extra fields not permitted',
-                            'type': 'value_error.extra'}])]
+                           "password": "pass"}, ['body', 'alias'], 'Extra inputs are not permitted', 'extra_forbidden')]
 
-    @pytest.mark.parametrize("payload,message", payload_error_422)
-    def test_create_user_error_422(self, application, logged, payload, message):
+    @pytest.mark.parametrize("payload,loc,message,err_type", payload_error_422)
+    def test_create_user_error_422(self, application, logged, payload, loc, message, err_type):
         response = application.post("/api/v1/users",
                                     json=payload,
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == message
+        assert response.json()["detail"][0]['msg'] == message
+        assert response.json()["detail"][0]['loc'] == loc
+        assert response.json()["detail"][0]['type'] == err_type
 
     def test_create_user_error_404(self, application, logged):
         response = application.post("/api/v1/users",
@@ -146,10 +142,10 @@ class TestRestUsers:
                                     json={"username": "test"},
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', '__root__'],
-                                              'msg': "UpdateUser must have at least one"
-                                                     " key of '('password', 'scopes')'",
-                                              'type': 'value_error'}]
+        assert response.json()["detail"][0]['loc'] == ['body']
+        assert response.json()["detail"][0]['msg'] == ("Value error, UpdateUser must have at least one"
+                                                     " key of '('password', 'scopes')'")
+        assert response.json()["detail"][0]['type'] == 'value_error'
 
     def test_get_user_error_401(self, application):
         response = application.get("/api/v1/users/test")

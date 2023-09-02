@@ -6,6 +6,7 @@ import pytest
 
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
+from tests.conftest import error_message_extraction
 
 
 class TestRestBug:
@@ -108,28 +109,28 @@ class TestRestBug:
         assert response.json()["detail"] == message
 
     payload_error_422 = [({}, [{'loc': ['body', 'version'],
-                                'msg': 'field required',
-                                'type': 'value_error.missing'},
+                                'msg': 'Field required',
+                                'type': 'missing'},
                                {'loc': ['body', 'title'],
-                                'msg': 'field required',
-                                'type': 'value_error.missing'},
+                                'msg': 'Field required',
+                                'type': 'missing'},
                                {'loc': ['body', 'description'],
-                                'msg': 'field required',
-                                'type': 'value_error.missing'}
+                                'msg': 'Field required',
+                                'type': 'missing'}
                                ]),
                          ({"version": "1.0.0"}, [{'loc': ['body', 'title'],
-                                                  'msg': 'field required',
-                                                  'type': 'value_error.missing'},
+                                                  'msg': 'Field required',
+                                                  'type': 'missing'},
                                                  {'loc': ['body', 'description'],
-                                                  'msg': 'field required',
-                                                  'type': 'value_error.missing'}
+                                                  'msg': 'Field required',
+                                                  'type': 'missing'}
                                                  ]),
                          ({"version": f"{current_version}",
                            "title": "First bug",
                            "description": "Not to be created",
                            "comment": "mine"}, [{'loc': ['body', 'comment'],
-                                                 'msg': 'extra fields not permitted',
-                                                 'type': 'value_error.extra'}])]
+                                                 'msg': 'Extra inputs are not permitted',
+                                                 'type': 'extra_forbidden'}])]
 
     @pytest.mark.parametrize("payload,message", payload_error_422)
     def test_create_bug_error_422(self, application, logged, payload, message):
@@ -137,7 +138,7 @@ class TestRestBug:
                                     json=payload,
                                     headers=logged)
         assert response.status_code == 422
-        assert all(msg in message for msg in response.json()["detail"])
+        assert all(msg in message for msg in error_message_extraction(response.json()["detail"]))
 
     def test_create_bug_error_500(self, application, logged):
         with patch('app.routers.rest.bugs.insert_bug') as rp:
@@ -169,7 +170,7 @@ class TestRestBug:
                                     json=payload,
                                     headers=logged)
         assert response.status_code == 200
-        assert response.json()["inserted_id"] == str(inserted_id)
+        assert response.json()["inserted_id"] == inserted_id
 
     duplicate_error = [({"title": "Third",
                          "version": current_version,
@@ -306,12 +307,10 @@ class TestRestBug:
                                    headers=logged)
 
         assert response.status_code == 422
-        assert response.json()["detail"] == [
-            {'ctx': {'enum_values': ['open', 'closed', 'closed not a defect', 'fix ready']},
-             'loc': ['body', 'status'],
-             'msg': "value is not a valid enumeration member; permitted: 'open', 'closed', "
-                    "'closed not a defect', 'fix ready'",
-             'type': 'type_error.enum'}]
+        assert error_message_extraction(response.json()["detail"]) == [
+            {'loc': ['body', 'status'],
+             'msg': "Input should be 'open','closed','closed not a defect' or 'fix ready'",
+             'type': 'enum'}]
 
     def test_update_bug_error_500(self, application, logged):
         with patch('app.routers.rest.bugs.db_update_bugs') as rp:

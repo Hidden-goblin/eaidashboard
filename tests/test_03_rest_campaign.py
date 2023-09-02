@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.conftest import error_message_extraction
+
 
 class TestRestCampaign:
     project_name = "test_campaign"
@@ -46,14 +48,15 @@ class TestRestCampaign:
         assert response.json()["detail"] == "'toto' is not registered"
 
         # version not found
-        response = application.get("/api/v1/projects/test/campaigns", params={"version": "3.0.0"})
+        response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+                                   params={"version": "3.0.0"})
         assert response.status_code == 404
         assert response.json()["detail"] == "Version '3.0.0' is not found"
 
     def test_get_campaigns_errors_500(self, application):
         with patch('app.routers.rest.project_campaigns.retrieve_campaign') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/campaigns")
+            response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns")
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
@@ -75,12 +78,12 @@ class TestRestCampaign:
                                    "status": "recorded"}
 
     payload_error_422 = [({}, [{'loc': ['body', 'version'],
-                                'msg': 'field required',
-                                'type': 'value_error.missing'}]),
+                                'msg': 'Field required',
+                                'type': 'missing'}]),
                          ({"version": "1.1.1",
                            "description": "desc"}, [{'loc': ['body', 'description'],
-                                                     'msg': 'extra fields not permitted',
-                                                     'type': 'value_error.extra'}])]
+                                                     'msg': 'Extra inputs are not permitted',
+                                                     'type': 'extra_forbidden'}])]
 
     @pytest.mark.parametrize("payload,message", payload_error_422)
     def test_create_campaigns_errors_422(self, application, logged, payload, message):
@@ -88,7 +91,7 @@ class TestRestCampaign:
                                     json=payload,
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == message
+        assert error_message_extraction(response.json()["detail"]) == message
 
     def test_create_campaigns_errors_404_project(self, application, logged):
         response = application.post("/api/v1/projects/unknown_project/campaigns",
@@ -214,11 +217,11 @@ class TestRestCampaign:
                                      json={"status": "progress", "description": "wonderful"},
                                      headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'status'],
-                                              'msg': "value is not a valid enumeration member; "
-                                                     "permitted: 'recorded', 'in progress', "
-                                                     "'cancelled', 'done', 'closed', 'paused'",
-                                              'type': 'type_error.enum',
-                                              'ctx': {'enum_values': ['recorded', 'in progress',
-                                                                      'cancelled', 'done', 'closed',
-                                                                      'paused']}}]
+        assert response.json()["detail"] == [
+            {'ctx': {'expected': "'recorded','in progress','cancelled','done','closed' or "
+                                 "'paused'"},
+             'input': 'progress',
+             'loc': ['body', 'status'],
+             'msg': "Input should be 'recorded','in progress','cancelled','done','closed' "
+                    "or 'paused'",
+             'type': 'enum'}]

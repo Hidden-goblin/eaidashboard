@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import re
 from logging import getLogger
 
 import jwt.exceptions
@@ -24,8 +25,9 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-def path_project(project_name: str = None) -> str:
-    return project_name
+def path_project(request: Request) -> str:
+    res = re.match(r".*/(api|front)/v[0-9]/projects/(?P<project_name>\w+)",str(request.url))
+    return res["project_name"] if res is not None else None
 
 
 def get_request(request: Request) -> Request:
@@ -60,7 +62,7 @@ def __generic_authorization(security_scopes: SecurityScopes,
             raise credentials_exception
 
         # Check user in db
-        user = get_user(email, False)
+        user = get_user(email, True)
         if user is None:
             raise credentials_exception
 

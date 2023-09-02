@@ -82,7 +82,7 @@ async def post_projects(project_name: str,
     except Exception as exp:
         raise HTTPException(500, detail=" ".join(exp.args)) from exp
 
-    return if_error_raise_http(result).inserted_id
+    return str(if_error_raise_http(result).inserted_id)
 
 
 @router.get("/projects/{project_name}/versions/{version}",

@@ -3,22 +3,22 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
 
 
 class Bugs(BaseModel):
-    open_blocking: Optional[int]
-    open_major: Optional[int]
-    open_minor: Optional[int]
-    closed_blocking: Optional[int]
-    closed_major: Optional[int]
-    closed_minor: Optional[int]
+    open_blocking: Optional[int] = 0
+    open_major: Optional[int] = 0
+    open_minor: Optional[int] = 0
+    closed_blocking: Optional[int] = 0
+    closed_major: Optional[int] = 0
+    closed_minor: Optional[int] = 0
 
     def __getitem__(self: "Bugs", index: str) -> int:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class BugsStatistics(BaseModel):
@@ -30,10 +30,10 @@ class BugsStatistics(BaseModel):
     closed_minor: int = 0
 
     def __getitem__(self: "BugsStatistics", index: str) -> int:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
-class BugTicket(BaseModel, extra=Extra.forbid):
+class BugTicket(BaseModel, extra='forbid'):
     version: str
     title: str
     description: str
@@ -45,21 +45,21 @@ class BugTicket(BaseModel, extra=Extra.forbid):
 
     def __getitem__(self: "BugTicket",
                     index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class BugTicketFull(BugTicket):
     internal_id: int
 
 
-class UpdateBugTicket(BaseModel, extra=Extra.forbid):
-    title: Optional[str]
-    version: Optional[str]
-    description: Optional[str]
+class UpdateBugTicket(BaseModel, extra='forbid'):
+    title: Optional[str] = None
+    version: Optional[str] = None
+    description: Optional[str] = None
     updated: datetime = datetime.now()
-    url: Optional[str]
-    status: Optional[BugStatusEnum]
-    criticality: Optional[BugCriticalityEnum]
+    url: Optional[str] = None
+    status: Optional[BugStatusEnum] = None
+    criticality: Optional[BugCriticalityEnum] = None
 
     def to_dict(self: "UpdateBugTicket") -> dict:
         temp = {"title": self.title,
@@ -77,10 +77,11 @@ class UpdateBugTicket(BaseModel, extra=Extra.forbid):
             temp["status"] = temp["status"].value
         return temp
 
+
 class UpdateVersion(BaseModel):
-    started: Optional[str]
-    end_forecast: Optional[str]
-    status: Optional[str]
+    started: Optional[str] = None
+    end_forecast: Optional[str] = None
+    status: Optional[str] = None
 
     def __getitem__(self: "UpdateVersion", index: str) -> str:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)

@@ -36,7 +36,7 @@ async def post_register_projects(project: RegisterProject,
                                  user: UpdateUser = Security(
                                      authorize_user, scopes=["admin"])) -> Project:
     try:
-        _project_name = await register_project(project.dict()["name"])
+        _project_name = await register_project(project.model_dump()["name"])
         return Project(name=_project_name)
     except ProjectNameInvalid as pni:
         raise HTTPException(400, detail=" ".join(pni.args)) from pni

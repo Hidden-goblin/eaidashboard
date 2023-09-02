@@ -50,7 +50,8 @@ app = FastAPI(title="Eaidashboard",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
               },
               openapi_tags=DESCRIPTION,
-              docs_url=None)
+              docs_url=None,
+              swagger_ui_parameters={"swagger": "2.0"})
 
 app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -103,8 +104,9 @@ async def custom_swagger_ui_html() -> HTMLResponse:
     return get_swagger_ui_html(openapi_url=app.openapi_url,
                                title=f"{app.title} - Swagger UI",
                                oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-                               swagger_js_url="/assets/swagger-ui-bundle.js",
-                               swagger_css_url="/assets/swagger-ui.css")
+                               swagger_js_url="/assets/5_swagger-ui-bundle.js",
+                               swagger_css_url="/assets/5_swagger-ui.css"
+                               )
 
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)

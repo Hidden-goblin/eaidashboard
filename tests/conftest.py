@@ -1,5 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from typing import List
+
 import psycopg
 import pytest
 from pytest import fixture
@@ -16,9 +18,7 @@ def application():
         # Import your FastAPI application
         from app.api import app
 
-        # Create a test client
-        client = TestClient(app)
-        yield client
+        yield TestClient(app)
         # teardown_stuff
         from app.utils.pgdb import pool
         pool.close()
@@ -34,3 +34,20 @@ def logged(application):
     token = response.json()["access_token"]
     yield {"Authorization": f"Bearer {token}"}
     application.delete("/api/v1/token", headers={"Authorization": f"Bearer {token}"})
+
+
+def error_message_extraction(error_messages: List[dict] | dict) -> List[dict] | dict:
+    switch = False
+    if isinstance(error_messages, dict):
+        switch = True
+        error_messages = [error_messages]
+    _result = []
+    for error_message in error_messages:
+        if "url" in error_message:
+            error_message.pop("url")
+        if "ctx" in error_message:
+            error_message.pop("ctx")
+        if "input" in error_message:
+            error_message.pop("input")
+        _result.append(error_message)
+    return _result[0] if switch else _result

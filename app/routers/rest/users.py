@@ -66,10 +66,10 @@ async def update_me(body: UpdateMe,
                         authorize_user, scopes=["admin", "user"])) -> RegisterVersionResponse:
     try:
         # If success register token with a ttl
-        _user = authenticate_user(user["username"], body.dict()["password"])
+        _user = authenticate_user(user["username"], body.password)
         if _user is None:
             raise HTTPException(401, "Unrecognized credentials")
-        return self_update_user(username=user["username"], new_password=body.dict()["new_password"])
+        return self_update_user(username=user["username"], new_password=body.new_password)
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
 

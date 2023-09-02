@@ -4,15 +4,43 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.conftest import error_message_extraction
+
 
 class TestRestVersions:
+    project_name = "test"
+    project_version = "1.0.1"
+    project_new_version = "1.0.2"
+
+    def test_setup(self, application, logged):
+        response = application.get("/api/v1/settings/projects")
+        if TestRestVersions.project_name not in response.json():
+            response = application.post("/api/v1/settings/projects",
+                                        json={"name": TestRestVersions.project_name},
+                                        headers=logged)
+            assert response.status_code == 200
+        response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
+                                   f"versions/{TestRestVersions.project_version}")
+        if response.status_code == 404:
+            response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
+                                        json={"version": TestRestVersions.project_version},
+                                        headers=logged)
+            assert response.status_code == 200
+        response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
+                                   f"versions/{TestRestVersions.project_new_version}")
+        if response.status_code == 404:
+            response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
+                                        json={"version": TestRestVersions.project_new_version},
+                                        headers=logged)
+            assert response.status_code == 200
+
     def test_add_ticket(self, application, logged):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
                                     json={"reference": "ref-001",
                                           "description": "Description"},
                                     headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"acknowledged": True, "inserted_id": "1", "message": None}
+        assert response.json() == {"acknowledged": True, "inserted_id": 1, "message": None}
 
     def test_add_ticket_errors_401(self, application):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
@@ -38,13 +66,13 @@ class TestRestVersions:
                                     json={"test": "test"},
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'reference'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'},
-                                             {'loc': ['body', 'description'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'}
-                                             ]
+        assert error_message_extraction(response.json()["detail"]) == [{'loc': ['body', 'reference'],
+                                                                        'msg': 'Field required',
+                                                                        'type': 'missing'},
+                                                                       {'loc': ['body', 'description'],
+                                                                        'msg': 'Field required',
+                                                                        'type': 'missing'}
+                                                                       ]
 
     def test_add_ticket_errors_400(self, application, logged):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
@@ -191,10 +219,10 @@ class TestRestVersions:
             headers=logged
         )
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'descripion'],
-                                              'msg': 'extra fields not permitted',
-                                              'type': 'value_error.extra'}
-                                             ]
+        assert error_message_extraction(response.json()["detail"]) == [{'loc': ['body', 'descripion'],
+                                                                        'msg': 'Extra inputs are not permitted',
+                                                                        'type': 'extra_forbidden'}
+                                                                       ]
 
         response = application.put(
             "/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
@@ -202,10 +230,11 @@ class TestRestVersions:
             headers=logged
         )
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', '__root__'],
-                                              'msg': "UpdatedTicket must have at least one key of"
-                                                     " '('description', 'status', 'version')'",
-                                              'type': 'value_error'}]
+        assert error_message_extraction(response.json()["detail"]) == [
+            {'loc': ['body'],
+             'msg': "Value error, UpdatedTicket must have at least one key of"
+                    " '('description', 'status', 'version')'",
+             'type': 'value_error'}]
 
     def test_update_ticket_errors_500(self, application, logged):
         with patch('app.routers.rest.version.update_ticket') as rp:

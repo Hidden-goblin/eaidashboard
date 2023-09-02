@@ -38,7 +38,7 @@ async def create_ticket(project_name: str,
                         version: str,
                         ticket: ToBeTicket,
                         user: UpdateUser = Security(authorize_user,
-                                             scopes=["admin", "user"])) -> RegisterVersionResponse:
+                                                    scopes=["admin", "user"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, version)
     try:
         result = await add_ticket(project_name, version, ticket)

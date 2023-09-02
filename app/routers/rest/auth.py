@@ -34,7 +34,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def expire_access_token(
         user: User = Security(authorize_user, scopes=[])) -> dict:
     try:
-        revoke(user["username"])
+        revoke(user.username)
         return {}
     except DecodeError as ve:
         log_error(repr(ve))
