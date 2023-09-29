@@ -9,15 +9,16 @@ from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered, User
 from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_users import get_user, get_users, self_update_user, update_user
-from app.schema.project_schema import ErrorMessage, RegisterVersionResponse
+from app.schema.error_code import ErrorMessage
+from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateMe, UpdateUser, User, UserLight
 
 router = APIRouter(
-    prefix="/api/v1/users"
+    prefix="/api/v1"
 )
 
 
-@router.get("/",
+@router.get("/users",
             tags=["Users"],
             description="Retrieve all users with their scope",
             response_model=List[UserLight | str])
@@ -35,7 +36,8 @@ async def all_users(response: Response,
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
 
-@router.get("/{username}",
+
+@router.get("/users/{username}",
             tags=["Users"],
             description="Retrieve one user with his scopes",
             response_model=UserLight)
@@ -53,7 +55,9 @@ async def one_user(username: str,
         raise HTTPException(404, ", ".join(unfe.args)) from unfe
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
-@router.put("/me",
+
+
+@router.put("/users/me",
             tags=["Users"],
             description="""Self update. Only registered users can update their data.""",
             response_model=RegisterVersionResponse,
@@ -74,7 +78,7 @@ async def update_me(body: UpdateMe,
         raise HTTPException(500, ", ".join(exp.args)) from exp
 
 
-@router.post("/",
+@router.post("/users",
              tags=["Users"],
              description="""Update a user. Only admin can do so.""",
              response_model=RegisterVersionResponse)
@@ -89,3 +93,16 @@ async def create_update(body: UpdateUser,
         raise HTTPException(404, ", ".join(pnr.args)) from pnr
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
+
+
+@router.get("/projects/{project_name}/users",
+            tags=["Users", "Projects"],
+            description="""Get users linked to a projects""",
+            response_model=List[UserLight | str])
+async def all_users_in_project(project_name: str,
+                               response: Response,
+                               limit: int = 10,
+                               skip: int = 0,
+                               is_list: bool = False,
+                               user: User = Security(authorize_user, scopes=["admin"])) -> List[UserLight | str]:
+    pass

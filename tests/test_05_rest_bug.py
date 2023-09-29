@@ -151,17 +151,18 @@ class TestRestBug:
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
+    # Could be flaky because of id
     create_payload = [({"title": "First",
                         "version": current_version,
-                        "description": "First, only mandatory field"}, 1),
+                        "description": "First, only mandatory field"}, 2),
                       ({"title": "Second",
                         "version": current_version,
                         "criticality": "minor",
-                        "description": "Second, with criticality set"}, 2),
+                        "description": "Second, with criticality set"}, 3),
                       ({"title": "Third",
                         "version": current_version,
                         "url": "no check on url",
-                        "description": "Third, with url set"}, 3)
+                        "description": "Third, with url set"}, 4)
                       ]
 
     @pytest.mark.parametrize("payload,inserted_id", create_payload)
@@ -244,7 +245,7 @@ class TestRestBug:
         assert len(response.json()) == count
 
     def test_get_bug(self, application):
-        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1")
+        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2")
         assert response.status_code == 200
         assert response.json()["title"] == "First"
         assert response.json()["version"] == TestRestBug.current_version
@@ -284,7 +285,7 @@ class TestRestBug:
     update_bug_404 = [("unknown", "1", {"title": "First updated"}, "'unknown' is not registered"),
                       (project_name, "100", {"title": "First updated"}, "Bug '100' is not found."),
                       (
-                      project_name, "1", {"version": "6.6.6"}, "The version '6.6.6' is not found.")]
+                      project_name, "2", {"version": "6.6.6"}, "The version '6.6.6' is not found.")]
 
     @pytest.mark.parametrize("project_name,bug_id,payload,message", update_bug_404)
     def test_update_bug_error_404(self,
@@ -322,7 +323,7 @@ class TestRestBug:
             assert response.json()["detail"] == "error"
 
     def test_update_bug(self, application, logged):
-        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/1",
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
                                    json={"title": "First updated"},
                                    headers=logged)
         assert response.status_code == 200

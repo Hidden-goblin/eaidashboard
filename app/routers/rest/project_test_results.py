@@ -17,7 +17,7 @@ from app.database.redis.rs_file_management import rs_invalidate_file, rs_record_
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import insert_result
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
-from app.schema.project_schema import ErrorMessage
+from app.schema.error_code import ErrorMessage
 from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeaderEnum, RestTestResultRenderingEnum
 from app.schema.users import UpdateUser
 from app.utils.project_alias import provide

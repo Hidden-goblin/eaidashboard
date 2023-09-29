@@ -13,21 +13,24 @@ class TestRestVersions:
     project_new_version = "1.0.2"
 
     def test_setup(self, application, logged):
-        response = application.get("/api/v1/settings/projects")
+        response = application.get("/api/v1/settings/projects",
+                                   headers=logged)
         if TestRestVersions.project_name not in response.json():
             response = application.post("/api/v1/settings/projects",
                                         json={"name": TestRestVersions.project_name},
                                         headers=logged)
             assert response.status_code == 200
         response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
-                                   f"versions/{TestRestVersions.project_version}")
+                                   f"versions/{TestRestVersions.project_version}",
+                                   headers=logged)
         if response.status_code == 404:
             response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
                                         json={"version": TestRestVersions.project_version},
                                         headers=logged)
             assert response.status_code == 200
         response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
-                                   f"versions/{TestRestVersions.project_new_version}")
+                                   f"versions/{TestRestVersions.project_new_version}",
+                                   headers=logged)
         if response.status_code == 404:
             response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
                                         json={"version": TestRestVersions.project_new_version},
@@ -86,7 +89,7 @@ class TestRestVersions:
                                              ' ref-001) already exists.')
 
     def test_add_ticket_errors_500(self, application, logged):
-        with patch('app.routers.rest.version.add_ticket') as rp:
+        with patch('app.routers.rest.tickets.add_ticket') as rp:
             rp.side_effect = Exception("error")
             response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
                                         json={"reference": "ref-002",
@@ -109,7 +112,7 @@ class TestRestVersions:
         assert response.json()["detail"] == message
 
     def test_get_ticket_errors_500(self, application):
-        with patch('app.routers.rest.version.get_tickets') as rp:
+        with patch('app.routers.rest.tickets.get_tickets') as rp:
             rp.side_effect = Exception("error")
             response = application.get("/api/v1/projects/test/versions/1.0.1/tickets")
             assert response.status_code == 500
@@ -144,7 +147,7 @@ class TestRestVersions:
         assert response.json()["detail"] == message
 
     def test_get_one_ticket_errors_500(self, application):
-        with patch('app.routers.rest.version.get_ticket') as rp:
+        with patch('app.routers.rest.tickets.get_ticket') as rp:
             rp.side_effect = Exception("error")
             response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
             assert response.status_code == 500
@@ -237,7 +240,7 @@ class TestRestVersions:
              'type': 'value_error'}]
 
     def test_update_ticket_errors_500(self, application, logged):
-        with patch('app.routers.rest.version.update_ticket') as rp:
+        with patch('app.routers.rest.tickets.update_ticket') as rp:
             rp.side_effect = Exception("error")
             response = application.put(
                 "/api/v1/projects/test/versions/1.0.1/tickets/ref-001",

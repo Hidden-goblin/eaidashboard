@@ -29,6 +29,7 @@ from app.routers.rest import (
     project_test_results,
     projects,
     settings,
+    tickets,
     users,
     version,
 )
@@ -66,6 +67,7 @@ app.include_router(projects.router)
 app.include_router(settings.router)
 app.include_router(front_dashboard.router)
 app.include_router(version.router)
+app.include_router(tickets.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(bugs.router)
@@ -80,8 +82,8 @@ app.include_router(front_forms.router)
 app.include_router(front_documentation.router)
 app.include_router(front_users.router)
 
-log_message(f"Postgre: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
-            f"Redis: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")
+log_message(f"\nPostgresql on: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
+            f"Redis on: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")
 
 init_user()
 

@@ -29,3 +29,10 @@ class ApplicationErrorCode(Enum):
 class ApplicationError(BaseModel):
     error: ApplicationErrorCode
     message: str
+
+
+class ErrorMessage(BaseModel):
+    detail: str
+
+    def __getitem__(self: "ErrorMessage", index: str) -> str:
+        return self.model_dump().get(index, None)

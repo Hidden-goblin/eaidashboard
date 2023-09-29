@@ -11,8 +11,9 @@ from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, insert_bug
 from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
+from app.schema.error_code import ErrorMessage
 from app.schema.mongo_enums import BugCriticalityEnum
-from app.schema.project_schema import ErrorMessage, RegisterVersionResponse
+from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import BugStatusEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error

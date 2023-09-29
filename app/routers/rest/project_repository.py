@@ -22,8 +22,8 @@ from app.database.postgre.testrepository import (
     db_project_features,
     db_project_scenarios,
 )
+from app.schema.error_code import ErrorMessage
 from app.schema.postgres_enums import RepositoryEnum
-from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
 from app.schema.users import UpdateUser
 from app.utils.project_alias import provide

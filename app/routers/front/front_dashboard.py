@@ -20,7 +20,7 @@ from app.database.postgre.pg_versions import dashboard as db_dash
 from app.database.postgre.pg_versions import get_version, refresh_version_stats
 from app.schema.authentication import TokenData
 from app.schema.ticket_schema import UpdatedTicket
-from app.schema.users import User
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
@@ -38,9 +38,10 @@ async def dashboard(request: Request) -> HTMLResponse:
             return templates.TemplateResponse("dashboard.html",
                                               {"request": request})
         if request.headers.get("eaid-request", None) == "table":
+            projects, count = await db_dash()
             return templates.TemplateResponse("tables/dashboard_table.html",
                                               {"request": request,
-                                               "project_version": await db_dash()})
+                                               "project_version": projects})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -53,7 +54,7 @@ async def project_version_tickets(request: Request,
                                   project_name: str,
                                   project_version: str,
                                   user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         return templates.TemplateResponse(
@@ -164,7 +165,7 @@ async def project_version_ticket_edit(request: Request,
                                       project_version: str,
                                       reference: str,
                                       user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         return templates.TemplateResponse(

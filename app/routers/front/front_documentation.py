@@ -28,8 +28,15 @@ async def root_document(request: Request,
             include_in_schema=False)
 async def serve_document(filename: str,
                          request: Request) -> HTMLResponse:
-    with open(Path(BASE_DIR) / "documentation" / filename, "r") as f:
-        return HTMLResponse(content=markdown(f.read(), extensions=['fenced_code',
-                                                                   TocExtension(baselevel=2,
-                                                                                title='Contents')]),
+    with open(Path(BASE_DIR) / "documentation" / filename) as f:
+        return HTMLResponse(content=css_wrapper(markdown(f.read(),
+                                                         extensions=['fenced_code',
+                                                                     'tables',
+                                                                     'attr_list',
+                                                                     TocExtension(baselevel=2,
+                                                                                  title='Contents')])),
                             headers={"HX-Retarget": "#docContainer"})
+
+
+def css_wrapper(content: str) -> str:
+    return content.replace("<table>", '<table class="table table-striped table-hover">')

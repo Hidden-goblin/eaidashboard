@@ -1,9 +1,12 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel
 
+from app.schema.bugs_schema import BugsStatistics
+from app.schema.status_enum import StatusEnum
 from app.schema.ticket_schema import TicketVersion
 
 
@@ -26,6 +29,19 @@ class Project(BaseModel):
 
     def __getitem__(self: "Project", index: str) -> str | int:
         return self.model_dump().get(index, None)
+
+
+class Dashboard(BaseModel):
+    name: str
+    alias: str
+    version: str
+    created: datetime
+    updated: datetime
+    started: Optional[datetime] = None
+    end_forecast: Optional[datetime] = None
+    status: StatusEnum
+    statistics: Statistics
+    bugs: BugsStatistics
 
 
 class TicketProject(BaseModel):
@@ -59,11 +75,4 @@ class RegisterProject(BaseModel):
     name: str
 
     def __getitem__(self: "RegisterProject", index: str) -> str:
-        return self.model_dump().get(index, None)
-
-
-class ErrorMessage(BaseModel):
-    detail: str
-
-    def __getitem__(self: "ErrorMessage", index: str) -> str:
         return self.model_dump().get(index, None)

@@ -40,8 +40,8 @@ from app.schema.campaign_schema import (
     TicketScenarioCampaign,
     ToBeCampaign,
 )
+from app.schema.error_code import ErrorMessage
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.project_schema import ErrorMessage
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
@@ -304,6 +304,7 @@ async def update_campaign_ticket_scenario_status(project_name: str,
 
 
 @router.post("/{project_name}/campaigns/{version}/{occurrence}/",
+             description="Generate the result for this particular occurrence",
              tags=["Campaign"])
 async def create_campaign_occurrence_result(project_name: str,
                                             version: str,

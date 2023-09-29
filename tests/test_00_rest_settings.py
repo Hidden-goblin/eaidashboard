@@ -7,7 +7,7 @@ import pytest
 
 class TestSettings:
 
-    def test_log_in(self, application):
+    def test_log_in_errors(self, application):
         response = application.post("/api/v1/token")
         # Assert failing
         assert response.status_code == 422
@@ -15,13 +15,14 @@ class TestSettings:
                                     data={"username": "test", "password": "test"})
         assert response.status_code == 401
 
+    def test_log_in_success(self, application):
         # Assert success
         response = application.post("/api/v1/token",
                                     data={"username": "admin@admin.fr",
                                           "password": "admin"})
         assert response.status_code == 200
 
-    def test_log_out(self, application):
+    def test_log_out_error(self, application):
         response = application.post("/api/v1/token",
                                     data={"username": "admin@admin.fr",
                                           "password": "admin"})
@@ -34,20 +35,29 @@ class TestSettings:
                                       headers={"Authorization": "Bearer"})
         assert response.status_code == 401
 
+    def test_log_out_success(self, application):
+        response = application.post("/api/v1/token",
+                                    data={"username": "admin@admin.fr",
+                                          "password": "admin"})
+        assert response.status_code == 200
+        token = response.json()["access_token"]
+        assert token
         # Assert success
         response = application.delete("/api/v1/token",
                                       headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
 
-    def test_registered_projects(self, application):
-        response = application.get("/api/v1/settings/projects")
+    def test_registered_projects_200(self, application, logged):
+        response = application.get("/api/v1/settings/projects",
+                                   headers=logged)
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_registered_projects_errors_500(self, application):
+    def test_registered_projects_errors_500(self, application, logged):
         with patch('app.routers.rest.settings.registered_projects') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/settings/projects")
+            response = application.get("/api/v1/settings/projects",
+                                       headers=logged)
             assert response.status_code == 500
 
     def test_create_projects(self, application, logged):
@@ -55,7 +65,8 @@ class TestSettings:
                                     json={"name": "test"},
                                     headers=logged)
         assert response.status_code == 200
-        response = application.get("/api/v1/settings/projects")
+        response = application.get("/api/v1/settings/projects",
+                                   headers=logged)
         assert response.status_code == 200
         assert response.json() == ["test"]
 

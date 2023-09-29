@@ -69,11 +69,11 @@ class TestRestUsers:
                                     "scopes": {"*": "admin"}}]
         assert response.headers["X-total-count"] == '1'
 
-
     def test_get_users_list_1(self, application, logged):
         response = application.get("api/v1/users", headers=logged, params={"is_list": True})
         assert response.status_code == 200
         assert response.json() == ["admin@admin.fr"]
+
     def test_create_user_error_401(self, application):
         response = application.post("/api/v1/users",
                                     json={"username": "user1@domain.fr",
@@ -144,7 +144,7 @@ class TestRestUsers:
         assert response.status_code == 422
         assert response.json()["detail"][0]['loc'] == ['body']
         assert response.json()["detail"][0]['msg'] == ("Value error, UpdateUser must have at least one"
-                                                     " key of '('password', 'scopes')'")
+                                                       " key of '('password', 'scopes')'")
         assert response.json()["detail"][0]['type'] == 'value_error'
 
     def test_get_user_error_401(self, application):
@@ -175,7 +175,7 @@ class TestRestUsers:
         assert response.status_code == 200
         assert response.json() == {"username": "test", "scopes": {"*": "user", TestRestUsers.project_name: "user"}}
 
-    def test_user_scopes(self, application):
+    def test_user_scopes_200(self, application):
         # Token
         response = application.post("/api/v1/token",
                                     data={"username": "test",
@@ -191,6 +191,13 @@ class TestRestUsers:
         assert response.status_code == 200
         assert response.json()["inserted_id"] is not None and int(response.json()["inserted_id"])
 
+    def test_user_scopes_403(self, application):
+        # Token
+        response = application.post("/api/v1/token",
+                                    data={"username": "test",
+                                          "password": "test"})
+        token = response.json()["access_token"]
+
         # Create bug on test_users2 -> not authorized
         response = application.post(f"/api/v1/projects/{TestRestUsers.second_project_name}/bugs",
                                     json={"title": "Test user scope",
@@ -199,6 +206,13 @@ class TestRestUsers:
                                     headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 403
         assert response.json()["detail"] == "You are not authorized to access this resource."
+
+    def test_user_scopes_401(self, application):
+        # Token
+        response = application.post("/api/v1/token",
+                                    data={"username": "test",
+                                          "password": "test"})
+        token = response.json()["access_token"]
 
         # Where token expired get not authenticated
         response = application.delete("/api/v1/token",

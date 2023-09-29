@@ -19,7 +19,7 @@ from app.schema.bugs_schema import UpdateVersion
 from app.schema.project_schema import RegisterProject, RegisterVersion
 from app.schema.status_enum import StatusEnum, TicketType
 from app.schema.ticket_schema import ToBeTicket
-from app.schema.users import User
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/front/v1/projects")
             include_in_schema=False)
 async def front_project(request: Request,
                         user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         if request.headers.get("eaid-request") == "FORM":
@@ -52,7 +52,7 @@ async def front_project(request: Request,
 async def front_create_project(body: RegisterProject,
                                request: Request,
                                user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         await register_project(body.name)
@@ -144,7 +144,7 @@ async def project_version_tickets(project_name: str,
                                   version: str,
                                   request: Request,
                                   user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         if request.headers.get("eaid-request", "") == "FORM":
@@ -192,7 +192,7 @@ async def add_ticket_to_version(project_name: str,
                                 body: dict,
                                 user: User = Security(front_authorize,
                                                       scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         result = await add_ticket(project_name, version, ToBeTicket(**body))
@@ -229,7 +229,7 @@ async def project_version_update(project_name: str,
                                  request: Request,
                                  user: User = Security(front_authorize,
                                                        scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     version = await get_version(project_name, version)
     try:

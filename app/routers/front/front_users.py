@@ -10,7 +10,7 @@ from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_users import create_user, get_users
-from app.schema.users import UpdateUser, User
+from app.schema.users import UpdateUser, User, UserLight
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 
@@ -25,7 +25,7 @@ async def front_get_users(request: Request,
                           limit: int = 10,
                           skip: int = 0,
                           user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         if request.headers.get("eaid-request", None) == "REDIRECT":
@@ -71,7 +71,7 @@ async def front_get_users(request: Request,
 async def front_post_users(body: dict,
                            request: Request,
                            user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, User):
+    if isinstance(user, HTMLResponse):
         return user
     try:
         _scopes = {key: "user" for key in body["user"]}
