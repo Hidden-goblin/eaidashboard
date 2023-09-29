@@ -10,7 +10,7 @@ from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.project_schema import Statistics, Dashboard
+from app.schema.project_schema import Dashboard, Statistics
 from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
 from app.utils.log_management import log_message
