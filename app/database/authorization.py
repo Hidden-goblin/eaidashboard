@@ -26,7 +26,8 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 def path_project(request: Request) -> str:
-    res = re.match(r".*/(api|front)/v[0-9]/projects/(?P<project_name>\w+)",str(request.url))
+    # TODO check if the regex match the project naming constraints
+    res = re.match(r".*/(api|front)/v[0-9]/projects/(?P<project_name>[\w \-]+)", str(request.url))
     return res["project_name"] if res is not None else None
 
 

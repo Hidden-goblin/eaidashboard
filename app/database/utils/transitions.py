@@ -86,7 +86,8 @@ def version_transition(current_status: str,
     _to_be_status = element_enum(to_be_status)
     _current_status = element_enum(current_status)
     _transition = transition_dict[_current_status]
+
     if (_current_status not in transition_dict
-            or _to_be_status not in _transition):
+            or _to_be_status not in _transition) and _current_status != _to_be_status:
         raise StatusTransitionForbidden(f"You are not allowed to go from {current_status} to "
                                         f"{to_be_status} status.")

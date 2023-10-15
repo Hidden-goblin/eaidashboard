@@ -39,7 +39,7 @@ async def create_ticket(project_name: str,
                         version: str,
                         ticket: ToBeTicket,
                         user: UpdateUser = Security(authorize_user,
-                                                    scopes=["admin", "user"])) -> RegisterVersionResponse:
+                                                    scopes=["admin"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, version)
     try:
         result = await add_ticket(project_name, version, ticket)
@@ -64,7 +64,10 @@ async def create_ticket(project_name: str,
             },
             tags=["Tickets"],
             description="Retrieve all tickets in a version")
-async def router_get_tickets(project_name: str, version: str) -> List[EnrichedTicket]:
+async def router_get_tickets(project_name: str,
+                             version: str,
+                             user: UpdateUser = Security(authorize_user,
+                                                         scopes=["admin", "user"])) -> List[EnrichedTicket]:
     await project_version_raise(project_name, version)
     try:
         tickets = await get_tickets(project_name, version)
@@ -87,7 +90,11 @@ async def router_get_tickets(project_name: str, version: str) -> List[EnrichedTi
             },
             tags=["Tickets"],
             description="Retrieve one ticket of a version")
-async def get_one_ticket(project_name: str, version: str, reference: str) -> Ticket:
+async def get_one_ticket(project_name: str,
+                         version: str,
+                         reference: str,
+                        user: UpdateUser = Security(authorize_user,
+                                                    scopes=["admin", "user"])) -> Ticket:
     await project_version_raise(project_name, version)
 
     try:

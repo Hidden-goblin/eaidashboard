@@ -39,7 +39,9 @@ async def get_bugs(project_name: str,
                    status: Annotated[list[BugStatusEnum], Query()] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
                    limit: Optional[int] = 100,
-                   skip: Optional[int] = 0
+                   skip: Optional[int] = 0,
+                   user: UpdateUser = Security(
+                       authorize_user, scopes=["admin", "user"])
                    ) -> List[BugTicketFull]:
     await project_version_raise(project_name)
     try:
@@ -68,7 +70,9 @@ async def get_bugs(project_name: str,
             )
 async def get_bug(project_name: str,
                   internal_id: str,
-                  response: Response
+                  response: Response,
+                  user: UpdateUser = Security(
+                      authorize_user, scopes=["admin", "user"])
                   ) -> BugTicketFull:
     await project_version_raise(project_name)
     try:
@@ -78,6 +82,7 @@ async def get_bug(project_name: str,
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
     return if_error_raise_http(result)
+
 
 @router.get("/{project_name}/versions/{version}/bugs",
             tags=["Bug"],
@@ -95,7 +100,10 @@ async def get_bugs_for_version(project_name: str,
                                status: Optional[BugStatusEnum] = None,
                                criticality: Optional[BugCriticalityEnum] = None,
                                limit: Optional[int] = 100,
-                               skip: Optional[int] = 0) -> List[BugTicketFull]:
+                               skip: Optional[int] = 0,
+                               user: UpdateUser = Security(
+                                   authorize_user, scopes=["admin", "user"])
+                               ) -> List[BugTicketFull]:
     await project_version_raise(project_name, version)
     try:
         result, count = await db_g_bugs(project_name=project_name,

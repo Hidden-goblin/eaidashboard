@@ -36,27 +36,31 @@ class TestRestCampaign:
                                     headers=logged)
         assert response.status_code == 200
 
-    def test_get_campaigns(self, application):
-        response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns")
+    def test_get_campaigns(self, application, logged):
+        response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+                                   headers=logged)
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_get_campaigns_errors_404(self, application):
+    def test_get_campaigns_errors_404(self, application, logged):
         # project not found
-        response = application.get("/api/v1/projects/toto/campaigns")
+        response = application.get("/api/v1/projects/toto/campaigns",
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == "'toto' is not registered"
 
         # version not found
         response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
-                                   params={"version": "3.0.0"})
+                                   params={"version": "3.0.0"},
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == "Version '3.0.0' is not found"
 
-    def test_get_campaigns_errors_500(self, application):
+    def test_get_campaigns_errors_500(self, application, logged):
         with patch('app.routers.rest.project_campaigns.retrieve_campaign') as rp:
             rp.side_effect = Exception("error")
-            response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns")
+            response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
@@ -157,10 +161,11 @@ class TestRestCampaign:
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_campaign(self, application):
+    def test_get_campaign(self, application, logged):
         response = application.get(
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/"
-            f"{TestRestCampaign.current_version}/1")
+            f"{TestRestCampaign.current_version}/1",
+            headers=logged)
         assert response.status_code == 200
         assert response.json() == {"description": None,
                                    "status": "recorded",
@@ -178,17 +183,19 @@ class TestRestCampaign:
         (project_name, current_version, 3, "Occurrence '3' not found")]
 
     @pytest.mark.parametrize("project,version,occurrence,message", get_campaign_errors_404)
-    def test_get_campaign_errors_404(self, application, project, version, occurrence, message):
-        response = application.get(f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}")
+    def test_get_campaign_errors_404(self, application, logged, project, version, occurrence, message):
+        response = application.get(f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_campaign_errors_500(self, application):
+    def test_get_campaign_errors_500(self, application, logged):
         with patch('app.routers.rest.project_campaigns.get_campaign_content') as rp:
             rp.side_effect = Exception("error")
             response = application.get(
                 f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/"
-                f"{TestRestCampaign.current_version}/1")
+                f"{TestRestCampaign.current_version}/1",
+                headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
@@ -218,10 +225,10 @@ class TestRestCampaign:
                                      headers=logged)
         assert response.status_code == 422
         assert response.json()["detail"] == [
-            {'ctx': {'expected': "'recorded','in progress','cancelled','done','closed' or "
+            {'ctx': {'expected': "'recorded', 'in progress', 'cancelled', 'done', 'closed' or "
                                  "'paused'"},
              'input': 'progress',
              'loc': ['body', 'status'],
-             'msg': "Input should be 'recorded','in progress','cancelled','done','closed' "
+             'msg': "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' "
                     "or 'paused'",
              'type': 'enum'}]

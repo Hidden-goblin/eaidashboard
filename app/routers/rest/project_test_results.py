@@ -106,7 +106,9 @@ async def rest_export_results(project_name: str,   # noqa:ANN201
                               request: Request,
                               version: str = None,
                               campaign_occurrence: str = None,
-                              accept: RestTestResultHeaderEnum = Header()
+                              accept: RestTestResultHeaderEnum = Header(),
+                              user: UpdateUser = Security(
+                                  authorize_user, scopes=["admin", "user"])
                               ):
     try:
         file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:" \

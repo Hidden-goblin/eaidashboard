@@ -16,7 +16,7 @@ from app.database.postgre.pg_versions import get_versions
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
-from app.schema.users import User
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
@@ -29,8 +29,10 @@ router = APIRouter(prefix="/front/v1/projects")
 async def front_project_bugs(project_name: str,
                              request: Request,
                              display_all: Optional[str] = None,
-                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                             user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         requested_item = request.headers.get("eaid-request", None)
         if request.headers.get("eaid-request", "") == "REDIRECT":
@@ -96,8 +98,10 @@ async def front_project_bugs(project_name: str,
 async def record_bug(project_name: str,
                      body: dict,
                      request: Request,
-                     user: User =Security(front_authorize, scopes=["admin", "user"])
+                     user: User = Security(front_authorize, scopes=["admin", "user"])
                      ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         complement_data = {"status": BugStatusEnum.open}
         res = await insert_bug(project_name, BugTicket(**body, **complement_data))
@@ -122,8 +126,10 @@ async def record_bug(project_name: str,
 async def display_bug(project_name: str,
                       internal_id: str,
                       request: Request,
-                      user: User =Security(front_authorize, scopes=["admin", "user"])
+                      user: User = Security(front_authorize, scopes=["admin", "user"])
                       ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         bug = await db_get_bug(project_name, internal_id)
         versions = await get_versions(project_name)
@@ -149,8 +155,10 @@ async def front_update_bug(project_name: str,
                            internal_id: str,
                            body: UpdateBugTicket,
                            request: Request,
-                           user: User =Security(front_authorize, scopes=["admin", "user"])
+                           user: User = Security(front_authorize, scopes=["admin", "user"])
                            ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         res = await db_update_bugs(project_name, internal_id, body)
         log_message(res)
@@ -176,8 +184,10 @@ async def front_update_bug_patch(project_name: str,
                                  internal_id: str,
                                  body: dict,
                                  request: Request,
-                                 user: User =Security(front_authorize, scopes=["admin", "user"])
+                                 user: User = Security(front_authorize, scopes=["admin", "user"])
                                  ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         res = await db_update_bugs(project_name, internal_id, UpdateBugTicket(**body))
         log_message(res)

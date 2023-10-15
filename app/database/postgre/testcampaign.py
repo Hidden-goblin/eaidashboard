@@ -329,7 +329,7 @@ async def db_delete_campaign_ticket_scenario(project_name: str,
     with pool.connection() as connection:
         connection.row_factory = dict_row
         connection.execute("delete from campaign_ticket_scenarios "
-                           "where campaign_id = %s "
+                           "where campaign_ticket_id = %s "
                            "and scenario_id = %s ",
                            (campaign_ticket_id[0],
                             scenario_internal_id))

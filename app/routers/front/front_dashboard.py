@@ -58,15 +58,15 @@ async def project_version_tickets(request: Request,
         return user
     try:
         return templates.TemplateResponse(
-                "ticket_view.html",
-                {
-                    "request": request,
-                    "tickets": await get_tickets(project_name, project_version),
-                    "project_name": project_name,
-                    "project_name_alias": provide(project_name),
-                    "project_version": project_version,
-                },
-            )
+            "ticket_view.html",
+            {
+                "request": request,
+                "tickets": await get_tickets(project_name, project_version),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            },
+        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -115,7 +115,7 @@ async def post_login(request: Request,
         # data={"sub": user.username,
         #       "scopes": user.scopes})
         request.session["token"] = access_token
-        request.session["scopes"] =  user.scopes
+        request.session["scopes"] = user.scopes
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request
@@ -169,17 +169,17 @@ async def project_version_ticket_edit(request: Request,
         return user
     try:
         return templates.TemplateResponse(
-                "ticket_row_edit.html",
-                {
-                    "request": request,
-                    "ticket": await get_ticket(
-                        project_name, project_version, reference
-                    ),
-                    "project_name": project_name,
-                    "project_name_alias": provide(project_name),
-                    "project_version": project_version,
-                },
-            )
+            "ticket_row_edit.html",
+            {
+                "request": request,
+                "ticket": await get_ticket(
+                    project_name, project_version, reference
+                ),
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "project_version": project_version,
+            },
+        )
 
     except Exception as exception:
         log_error(repr(exception))
@@ -193,8 +193,10 @@ async def project_version_ticket(request: Request,
                                  project_name: str,
                                  project_version: str,
                                  reference: str,
-                                 user: User =Security(front_authorize, scopes=["admin", "user"])
+                                 user: User = Security(front_authorize, scopes=["admin", "user"])
                                  ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         return templates.TemplateResponse(
             "ticket_row.html",
@@ -222,8 +224,10 @@ async def project_version_update_ticket(request: Request,
                                         reference: str,
                                         body: dict,
                                         background_task: BackgroundTasks,
-                             user: User =Security(front_authorize, scopes=["admin", "user"])
+                                        user: User = Security(front_authorize, scopes=["admin", "user"])
                                         ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         # TODO check if a refactor might enhance readability
         res = await update_ticket(project_name,
@@ -255,6 +259,10 @@ async def project_version_update_ticket(request: Request,
 async def get_navigation_bar(request: Request) -> HTMLResponse:
     projects = await registered_projects()
     is_admin = request.session.get("scopes", {}).get("*", "user") == "admin"
+    user_projects = list(request.session.get("scopes", {}).keys())
+    if "*" in user_projects:
+        user_projects.remove("*")
+    projects = projects if is_admin else list(set(user_projects).intersection(projects))
     return templates.TemplateResponse("navigation.html",
                                       {"request": request,
                                        "projects": projects or [],
@@ -294,8 +302,10 @@ async def get_navigation_bar(request: Request) -> HTMLResponse:
 async def get_project_version(project: str,
                               version: str,
                               request: Request,
-                              user: User =Security(front_authorize,
-                                            scopes=["admin", "user"])) -> HTMLResponse:
+                              user: User = Security(front_authorize,
+                                                    scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         version = get_version(project, version)
         log_message(repr(version))

@@ -311,7 +311,7 @@ POSTGRE_UPDATES = [
     },
     {
         "request": """alter table users
-       alter column scopes type json using to_json('{"*":"' || scopes[1] ||'"}');""",
+       alter column scopes type json using json_build_object('*', scopes[1]);""",
         "description": "Move user scope from array to json"
     }
     # Alter table users to use the first scope in the array to a json

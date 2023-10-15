@@ -121,7 +121,6 @@ async def db_update_bugs(project_name: str,
                          internal_id: str,
                          bug_ticket: UpdateBugTicket) -> BugTicketFull | ApplicationError:
 
-
     bug_ticket_dict = bug_ticket.to_dict()
     current_bug: BugTicketFull = await db_get_bug(project_name, internal_id)
     if isinstance(current_bug, ApplicationError):

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.schema.status_enum import TicketType
 
@@ -20,7 +20,7 @@ class Ticket(BaseModel):
 
 
 class ToBeTicket(BaseModel):
-    reference: str
+    reference: str = Field(min_length=1)
     description: str
     status: str = TicketType.OPEN.value
     created: datetime = datetime.now()
@@ -48,7 +48,7 @@ class UpdatedTicket(BaseModel, extra='forbid'):
 
 
 class EnrichedTicket(Ticket):
-    campaign_occurrences: Optional[List[str]]
+    campaign_occurrences: Optional[List[str] | List[int]]
 
     def __getitem__(self: "EnrichedTicket", index: str) -> List[str]:
         return self.model_dump().get(index, None)

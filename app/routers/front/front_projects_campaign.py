@@ -9,7 +9,7 @@ from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
-from app.app_exception import front_error_message
+from app.app_exception import front_access_denied, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign, update_campaign_occurrence
@@ -43,7 +43,7 @@ from app.schema.rest_enum import (
     RestTestResultHeaderEnum,
     RestTestResultRenderingEnum,
 )
-from app.schema.users import User
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error, log_message
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
@@ -61,6 +61,8 @@ async def front_project_management(project_name: str,
                                    skip: int = 0,
                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         # campaigns,  = retrieve_campaign(project_name)
 
@@ -69,9 +71,11 @@ async def front_project_management(project_name: str,
                                              request,
                                              limit,
                                              skip)
-        if request.headers.get("eaid-request", "") == "form":
+        if request.headers.get("eaid-request", "") == "form" and user.right(project_name) == "admin":
             return await front_new_campaign_form(project_name,
                                                  request)
+        if request.headers.get("eaid-request", "") == "form" and user.right(project_name) != "admin":
+            return front_access_denied(templates, request)
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
                                               {
@@ -141,8 +145,10 @@ async def front_new_campaign_form(project_name: str,
 async def front_new_campaign(project_name: str,
                              request: Request,
                              version: str = Form(...),
-                             user: User = Security(front_authorize, scopes=["admin", "user"])
+                             user: User = Security(front_authorize, scopes=["admin"])
                              ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         await create_campaign(project_name, version)
         return templates.TemplateResponse("void.html",
@@ -162,6 +168,8 @@ async def front_scenarios_selector(project_name: str,
                                    request: Request,
                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         scenarios, count = await db_project_scenarios(project_name, body["epic"], body["feature"])
         return templates.TemplateResponse("forms/add_scenarios_selector.html",
@@ -185,6 +193,8 @@ async def front_get_campaign(project_name: str,
                              request: Request,
                              user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         if request.headers.get("eaid-request", "") == "table":
             campaign = await db_get_campaign_tickets(project_name, version, occurrence)
@@ -232,6 +242,8 @@ async def front_update_campaign(project_name: str,
                                 request: Request,
                                 user: User = Security(front_authorize, scopes=["admin", "user"])
                                 ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         # Do the treatment here
         res = await update_campaign_occurrence(project_name,
@@ -275,6 +287,8 @@ async def front_get_campaign_ticket_add_scenario(project_name: str,
                                                  user: User = Security(front_authorize,
                                                                        scopes=["admin", "user"]),
                                                  initiator: str = None) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         epics = await db_project_epics(project_name)
         if epics:
@@ -307,6 +321,8 @@ async def front_get_campaign_ticket(project_name: str,
                                     request: Request,
                                     user: User = Security(front_authorize, scopes=["admin", "user"])
                                     ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         if request.headers.get("eaid-request", "") == "statistics":
             stats = await db_get_campaign_ticket_scenarios_status_count(project_name,
@@ -353,6 +369,8 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                        user: User = Security(front_authorize,
                                                                              scopes=["admin", "user"])
                                                        ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         result = await db_set_campaign_ticket_scenario_status(project_name,
                                                               version,
@@ -385,6 +403,8 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                                                   scopes=["admin", "user"])
                                                             ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         scenario = await db_get_campaign_ticket_scenario(project_name,
                                                          version,
@@ -422,6 +442,8 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                                       scopes=["admin", "user"])
                                                 ) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         await db_delete_campaign_ticket_scenario(project_name,
                                                  version,
@@ -448,6 +470,8 @@ async def add_scenarios_to_ticket(project_name: str,
                                   request: Request,
                                   user: User = Security(front_authorize,
                                                         scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         valid = "scenario_ids" in element
         if valid and not isinstance(element["scenario_ids"], list):
@@ -478,6 +502,8 @@ async def front_campaign_version_tickets(project_name: str,
                                          request: Request,
                                          user: User = Security(front_authorize, scopes=["admin", "user"])
                                          ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         requested = request.headers.get("eaid-request", "")
         if requested == "FORM":
@@ -511,6 +537,8 @@ async def front_campaign_add_tickets(project_name: str,
                                      body: dict,
                                      user: User = Security(front_authorize, scopes=["admin", "user"])
                                      ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         await add_tickets_to_campaign(project_name, version, occurrence, body)
         # TODO capture header and send empty response with headers
@@ -535,6 +563,8 @@ async def front_campaign_occurrence_status(project_name: str,
                                            request: Request,
                                            user: User = Security(front_authorize, scopes=["admin", "user"])
                                            ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         result = await rs_retrieve_file(f"file:{provide(project_name)}:{version}:"
                                         f"{occurrence}:scenarios:map:text/html")
@@ -570,6 +600,8 @@ async def front_campaign_occurrence_snapshot_status(project_name: str,
                                                     user: User = Security(front_authorize,
                                                                           scopes=["admin", "user"])
                                                     ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
             project_name,
@@ -614,6 +646,8 @@ async def front_campaign_occurrence_deliverables(project_name: str,
                                                  user: User = Security(front_authorize,
                                                                        scopes=["admin", "user"])
                                                  ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         if ticket_ref is not None:
             key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" \

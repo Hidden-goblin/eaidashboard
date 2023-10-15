@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
@@ -35,7 +35,7 @@ class BugsStatistics(BaseModel):
 
 class BugTicket(BaseModel, extra='forbid'):
     version: str
-    title: str
+    title: str = Field(min_length=1)
     description: str
     created: datetime = datetime.now()
     updated: datetime = datetime.now()

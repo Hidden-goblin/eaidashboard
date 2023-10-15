@@ -14,7 +14,7 @@ from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
-from app.schema.users import User
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
@@ -30,6 +30,8 @@ async def front_project_repository(project_name: str,
                                    status: Optional[str] = None,
                                    user: User =Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
@@ -68,6 +70,8 @@ async def post_repository(project_name: str,
                           file: UploadFile = File(),
                           user: User =Security(front_authorize, scopes=["admin", "user"])
                           ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         file_content = await file.read()
         try:
@@ -105,6 +109,8 @@ async def get_repository(project_name: str,
                          feature: str = None,
                          user: User =Security(front_authorize, scopes=["admin", "user"])
                          ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         return await repository_dropdowns(project_name, request, epic, feature)
     except Exception as exception:
@@ -123,6 +129,8 @@ async def get_scenario(project_name: str,
                        feature: Optional[str] = None,
                        user: User =Security(front_authorize, scopes=["admin", "user"])
                        ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         scenarios, count = await db_project_scenarios(project_name, epic, feature, limit=limit,
                                                       offset=skip)
@@ -155,6 +163,8 @@ async def filter_repository(project_name: str,
                             request: Request,
                             user: User =Security(front_authorize, scopes=["admin", "user"])
                             ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         scenarios, count = await db_project_scenarios(project_name,
                                                       body["epic"],

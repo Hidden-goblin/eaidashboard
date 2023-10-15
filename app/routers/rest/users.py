@@ -20,17 +20,26 @@ router = APIRouter(
 
 @router.get("/users",
             tags=["Users"],
-            description="Retrieve all users with their scope",
+            description="""Retrieve all users with their scopes.
+
+With the `is_list=true` retrieve only the usernames.
+
+By default, gather all users (everyone is in the special project `*`).
+
+Using a project name and `included=false`, retrieve all users not in this specific project.
+Application administrator are excluded.""",
             response_model=List[UserLight | str])
 async def all_users(response: Response,
                     limit: int = 10,
                     skip: int = 0,
                     is_list: bool = False,
+                    project: str = "*",
+                    included: bool = True,
                     user: User = Security(authorize_user, scopes=["admin"])) -> List[UserLight | str]:
     try:
         if is_list:
-            return get_users(is_list=is_list)
-        users, count = get_users(limit=limit, skip=skip)
+            return get_users(is_list=is_list, project_name=project, included=included)
+        users, count = get_users(limit=limit, skip=skip, project_name=project, included=included)
         response.headers["X-total-count"] = str(count)
         return users
     except Exception as exp:

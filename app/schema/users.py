@@ -58,3 +58,12 @@ class UserLight(BaseModel):
         super().__init__(username=username, scopes=scopes)
         if isinstance(self.scopes, str):
             self.scopes = json.loads(scopes)
+
+    def __getitem__(self: "User", index: str) -> str | dict:
+        return self.model_dump().get(index, None)
+
+    def right(self: "User", project_name: str) -> str:
+        if self.scopes.get("*") == "admin":
+            return "admin"
+        else:
+            return self.scopes.get(project_name)

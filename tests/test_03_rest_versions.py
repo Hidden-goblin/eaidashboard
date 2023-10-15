@@ -98,28 +98,32 @@ class TestRestVersions:
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
-    def test_get_ticket(self, application):
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets")
+    def test_get_ticket(self, application, logged):
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets",
+                                   headers=logged)
 
         assert response.status_code == 200
         keys = ("status", "reference", "description", "created", "updated", "campaign_occurrences")
         assert all(key in response.json()[0].keys() for key in keys)
 
     @pytest.mark.parametrize("project,version,message", ticket_error_404)
-    def test_get_ticket_errors_404(self, application, project, version, message):
-        response = application.get(f"/api/v1/projects/{project}/versions/{version}/tickets")
+    def test_get_ticket_errors_404(self, application, logged, project, version, message):
+        response = application.get(f"/api/v1/projects/{project}/versions/{version}/tickets",
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_ticket_errors_500(self, application):
+    def test_get_ticket_errors_500(self, application, logged):
         with patch('app.routers.rest.tickets.get_tickets') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets")
+            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
-    def test_get_one_ticket(self, application):
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+    def test_get_one_ticket(self, application, logged):
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                   headers=logged)
         assert response.status_code == 200
         keys = ("created",
                 "updated",
@@ -140,16 +144,18 @@ class TestRestVersions:
                              " in project 'test' version '1.0.1'")]
 
     @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
-    def test_get_one_ticket_errors_404(self, application, project, version, ticket, message):
+    def test_get_one_ticket_errors_404(self, application, logged, project, version, ticket, message):
         response = application.get(
-            f"/api/v1/projects/{project}/versions/{version}/tickets/{ticket}")
+            f"/api/v1/projects/{project}/versions/{version}/tickets/{ticket}",
+            headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_one_ticket_errors_500(self, application):
+    def test_get_one_ticket_errors_500(self, application, logged):
         with patch('app.routers.rest.tickets.get_ticket') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
@@ -160,7 +166,8 @@ class TestRestVersions:
                                    headers=logged)
         assert response.status_code == 200
         assert response.json() == "1"
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                   headers=logged)
         assert response.status_code == 200
         assert response.json()["description"] == "Updated description"
         assert response.json()["status"] == "in_progress"

@@ -65,7 +65,7 @@ def _check_scopes(scopes: dict) -> None:
             f"' are not registered.")
 
 
-def get_user(username: str, is_light: bool = True) -> User | UserLight |None:
+def get_user(username: str, is_light: bool = True) -> User | UserLight | None:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute("""select username, password, scopes
@@ -83,62 +83,125 @@ def get_user(username: str, is_light: bool = True) -> User | UserLight |None:
 
 def get_users(limit: int = 10,
               skip: int = 0,
-              is_list: bool = False) -> Tuple[List[UserLight], int] | List[str]:
+              is_list: bool = False,
+              project_name: str = None,
+              included: bool = True) -> Tuple[List[UserLight], int] | List[str]:
     if is_list:
-        return __list_of_users()
+        expected_list = {False: __list_of_user_not_in_project,
+                         True: __list_of_users}
+        return expected_list[included](project_name=project_name)
 
+    if project_name is None or project_name == "*":
+        return __all_users(limit, skip)
+    return __users_in_project(project_name, limit, skip)
+
+
+def __all_users(limit: int = 10,
+                skip: int = 0) -> Tuple[List[UserLight], int]:
     with pool.connection() as connection1:
         connection1.row_factory = None
         connection1.row_factory = dict_row
         rows = connection1.execute("select username, scopes"
-                                  " from users"
-                                  " order by username"
-                                  " limit %s"
-                                  " offset %s;", (limit, skip))
+                                   " from users"
+                                   " order by username"
+                                   " limit %s"
+                                   " offset %s;", (limit, skip))
         count = connection1.execute("select count(distinct username) as count from users;")
         return [UserLight(**row) for row in rows.fetchall()], int(count.fetchone()["count"])
 
 
-def __list_of_users() -> List[str]:
+def __users_in_project(project_name: str,
+                       limit: int = 10,
+                       skip: int = 0) -> Tuple[List[UserLight], int]:
+    with pool.connection() as connection1:
+        connection1.row_factory = None
+        connection1.row_factory = dict_row
+        rows = connection1.execute("select username, scopes"
+                                   " from users"
+                                   " where scopes::jsonb ?| %s"
+                                   " or scopes ->> '*' = 'admin'"
+                                   " order by username"
+                                   " limit %s"
+                                   " offset %s;", (f'{{{project_name}}}', limit, skip))
+        count = connection1.execute("select count(distinct username) as count from users where scopes::jsonb ?| %s"
+                                    " or scopes ->> '*' = 'admin';", (f'{{{project_name}}}',))
+        return [UserLight(**row) for row in rows.fetchall()], int(count.fetchone()["count"])
+
+
+def __list_of_users(project_name: str = "*") -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         rows = connection.execute("select username"
                                   " from users"
-                                  " order by username;")
+                                  " where scopes::jsonb ?| %s"
+                                  " or scopes ->> '*' = 'admin'"
+                                  " order by username;", (f'{{{project_name}}}',))
         return [row[0] for row in rows.fetchall()]
+
+
+def __list_of_user_not_in_project(project_name: str) -> List[str]:
+    with pool.connection() as connection:
+        connection.row_factory = tuple_row
+        rows = connection.execute("select username"
+                                  " from users"
+                                  " where not (scopes::jsonb ?| %s)"
+                                  " and scopes ->> '*' != 'admin'"
+                                  " order by username;", (f'{{{project_name}}}',))
+        return [row[0] for row in rows.fetchall()]
+
+
+def update_user_password(user: UpdateUser) -> RegisterVersionResponse:
+    with pool.connection() as conn:
+        conn.row_factory = tuple_row
+        row = conn.execute("update users "
+                           " set password = %s "
+                           " where username = %s "
+                           " returning id;",
+                           (get_password_hash(user.password), user.username))
+        log_message(f"Update user '{user.username}' password")
+        return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]), message="Password updated.")
+
+
+def update_user_scopes(user: UpdateUser) -> RegisterVersionResponse:
+    _user = get_user(user.username)
+    with pool.connection() as conn:
+        conn.row_factory = tuple_row
+        # Check project: include special project "*"
+        _check_scopes(user.scopes)
+        # Combine actual with to be scope
+        merged_scopes = {**_user.scopes,
+                         **user.scopes}
+        row = conn.execute("update users "
+                           " set scopes = %s "
+                           " where username = %s "
+                           " returning id;",
+                           (Json(merged_scopes), user.username))
+        log_message(f"Update user '{user.username}' scopes with {user.scopes}")
+        return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]), message="Scopes updated")
 
 
 def update_user(user: UpdateUser) -> RegisterVersionResponse:
     _user = get_user(user.username)
-    upsert = _user is not None
-    if not upsert:
+    if _user is None:
         return create_user(user)
 
-    with pool.connection() as conn:
-        conn.row_factory = tuple_row
+    current_response: RegisterVersionResponse = None
 
-        log_message(f"Update user {user.username} with updated {user.scopes} scopes")
-        if user.password is not None:
-            row = conn.execute("update users "
-                               " set password = %s "
-                               " where username = %s "
-                               " returning id;",
-                               (get_password_hash(user.password), user.username))
-        if user.scopes is not None:
-            # Check project: include special project "*"
-            _check_scopes(user.scopes)
-            # Combine actual with to be scope
-            merged_scopes = {**_user.scopes,
-                             **user.scopes}
-            row = conn.execute("update users "
-                               " set scopes = %s "
-                               " where username = %s "
-                               " returning id;",
-                               (Json(merged_scopes), user.username))
-            return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]))
+    log_message(f"Update user {user.username} with updated {user.scopes} scopes")
+    if user.password is not None:
+        current_response = update_user_password(user)
+
+    if user.scopes is not None:
+        if current_response is None:
+            current_response = update_user_scopes(user)
+        else:
+            _additional_response = update_user_scopes(user)
+            current_response.message = f"{current_response.message} {_additional_response.message}"
+
+    return current_response
 
 
 def self_update_user(username: str, new_password: str) -> RegisterVersionResponse:
-    result = update_user(UpdateUser(username=username, password=new_password))
+    result = update_user_password(UpdateUser(username=username, password=new_password))
     revoke(username)
     return result

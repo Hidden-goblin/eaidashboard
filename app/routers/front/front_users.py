@@ -71,7 +71,7 @@ async def front_get_users(request: Request,
 async def front_post_users(body: dict,
                            request: Request,
                            user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if isinstance(user, HTMLResponse):
+    if not isinstance(user, (User, UserLight)):
         return user
     try:
         _scopes = {key: "user" for key in body["user"]}

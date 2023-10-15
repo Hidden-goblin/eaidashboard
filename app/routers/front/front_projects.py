@@ -6,7 +6,7 @@ from psycopg.errors import CheckViolation, UniqueViolation
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
-from app.app_exception import front_error_message
+from app.app_exception import front_access_denied, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
@@ -16,7 +16,7 @@ from app.database.postgre.pg_versions import get_version, update_version_data
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.database.utils.transitions import authorized_transition
 from app.schema.bugs_schema import UpdateVersion
-from app.schema.project_schema import RegisterProject, RegisterVersion
+from app.schema.project_schema import RegisterProject, RegisterVersion, RegisterVersionResponse
 from app.schema.status_enum import StatusEnum, TicketType
 from app.schema.ticket_schema import ToBeTicket
 from app.schema.users import User, UserLight
@@ -31,6 +31,10 @@ router = APIRouter(prefix="/front/v1/projects")
             include_in_schema=False)
 async def front_project(request: Request,
                         user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+    """Retrieve the create project form
+
+    SPEC: Only application admin can create a new project
+    """
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -47,11 +51,14 @@ async def front_project(request: Request,
 
 @router.post("",
              tags=["Front - Project"],
-
              include_in_schema=False)
 async def front_create_project(body: RegisterProject,
                                request: Request,
                                user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+    """Process create project
+
+    SPEC: Only application admin can create project
+    """
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -77,9 +84,14 @@ async def front_create_project(body: RegisterProject,
             include_in_schema=False)
 async def front_project_management(project_name: str,
                                    request: Request,
-                                   user: User = Security(front_authorize, scopes=[])) -> HTMLResponse:
+                                   user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    """Retrieve the project
+
+    SPEC: Only authenticated user for the project can access
+    """
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        # TODO refactor with headers
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
                                               {
@@ -115,7 +127,12 @@ async def front_project_management(project_name: str,
             include_in_schema=False)
 async def project_versions(project_name: str,
                            request: Request,
-                           user: User = Security(front_authorize, scopes=[])) -> HTMLResponse:
+                           user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    """Retrieve the project's version
+
+    SPEC: Only authenticated user can access project's version"""
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         _versions = await get_project(project_name, None)
         versions = [{"value": item["version"], "status": item["status"]} for item in
@@ -144,10 +161,14 @@ async def project_version_tickets(project_name: str,
                                   version: str,
                                   request: Request,
                                   user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+    """Retrieve """
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        if request.headers.get("eaid-request", "") == "FORM":
+        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) != "admin":
+            return front_access_denied(templates, request)
+
+        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) == "admin":
             return templates.TemplateResponse("forms/add_ticket.html",
                                               {
                                                   "request": request,
@@ -156,6 +177,7 @@ async def project_version_tickets(project_name: str,
                                                   "version": version,
                                                   "status": [status.value for status in TicketType]
                                               })
+
         if request.headers.get("eaid-request", "") == "versionUpdate":
             version = await get_version(project_name, version)
             log_message(repr(version))
@@ -191,13 +213,15 @@ async def add_ticket_to_version(project_name: str,
                                 request: Request,
                                 body: dict,
                                 user: User = Security(front_authorize,
-                                                      scopes=["admin", "user"])) -> HTMLResponse:
+                                                      scopes=["admin"])) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
         result = await add_ticket(project_name, version, ToBeTicket(**body))
-        if not result.inserted_id:
-            return "error"
+        if not isinstance(result,
+                          RegisterVersionResponse):
+            raise Exception(result.message)
+
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,
@@ -277,7 +301,9 @@ async def project_version_update(project_name: str,
             include_in_schema=False)
 async def form_version(project_name: str,
                        request: Request,
-                       user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+                       user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         return templates.TemplateResponse("forms/add_version.html",
                                           {
@@ -296,8 +322,10 @@ async def form_version(project_name: str,
 async def add_version(project_name: str,
                       request: Request,
                       version: str = Form(...),
-                      user: User = Security(front_authorize, scopes=["admin", "user"])
+                      user: User = Security(front_authorize, scopes=["admin"])
                       ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
         await create_project_version(project_name, RegisterVersion(version=version))
         return templates.TemplateResponse("void.html",

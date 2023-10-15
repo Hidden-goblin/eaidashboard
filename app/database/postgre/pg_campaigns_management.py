@@ -150,9 +150,9 @@ async def enrich_tickets_with_campaigns(project_name: str,
                                       " and cp.project_id = %s "
                                       " and cpt.ticket_reference = %s",
                                       (version, project_name, ticket.reference))
+            occ = [row['occurrence'] for row in rows]
             _tickets.append(EnrichedTicket(**{**ticket.model_dump(),
-                                              "campaign_occurrences": [row['occurrence'] for row in
-                                                                       rows]}))
+                                              "campaign_occurrences": occ}))
 
     return _tickets
 
