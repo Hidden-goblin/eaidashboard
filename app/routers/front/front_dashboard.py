@@ -3,10 +3,8 @@
 
 
 import json
-import logging
 
 from fastapi import APIRouter, Form, Security
-from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
@@ -15,14 +13,10 @@ from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.pg_tickets import get_ticket, get_tickets, update_ticket
 from app.database.postgre.pg_versions import dashboard as db_dash
-from app.database.postgre.pg_versions import get_version, refresh_version_stats
 from app.schema.authentication import TokenData
-from app.schema.ticket_schema import UpdatedTicket
-from app.schema.users import User, UserLight
-from app.utils.log_management import log_error, log_message
-from app.utils.project_alias import provide
+from app.schema.users import User
+from app.utils.log_management import log_error
 
 router = APIRouter()
 
@@ -42,31 +36,6 @@ async def dashboard(request: Request) -> HTMLResponse:
             return templates.TemplateResponse("tables/dashboard_table.html",
                                               {"request": request,
                                                "project_version": projects})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.get("/{project_name}/versions/{project_version}/tickets",
-            tags=["Front - Utils"],
-            include_in_schema=False)
-async def project_version_tickets(request: Request,
-                                  project_name: str,
-                                  project_version: str,
-                                  user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        return templates.TemplateResponse(
-            "ticket_view.html",
-            {
-                "request": request,
-                "tickets": await get_tickets(project_name, project_version),
-                "project_name": project_name,
-                "project_name_alias": provide(project_name),
-                "project_version": project_version,
-            },
-        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -157,101 +126,6 @@ async def logout(request: Request,
         return front_error_message(templates, request, exception)
 
 
-@router.get("/{project_name}/versions/{project_version}/tickets/{reference}/edit",
-            tags=["Front - Tickets"],
-            include_in_schema=False)
-async def project_version_ticket_edit(request: Request,
-                                      project_name: str,
-                                      project_version: str,
-                                      reference: str,
-                                      user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        return templates.TemplateResponse(
-            "ticket_row_edit.html",
-            {
-                "request": request,
-                "ticket": await get_ticket(
-                    project_name, project_version, reference
-                ),
-                "project_name": project_name,
-                "project_name_alias": provide(project_name),
-                "project_version": project_version,
-            },
-        )
-
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.get("/{project_name}/versions/{project_version}/tickets/{reference}",
-            tags=["Front - Tickets"],
-            include_in_schema=False)
-async def project_version_ticket(request: Request,
-                                 project_name: str,
-                                 project_version: str,
-                                 reference: str,
-                                 user: User = Security(front_authorize, scopes=["admin", "user"])
-                                 ) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        return templates.TemplateResponse(
-            "ticket_row.html",
-            {
-                "request": request,
-                "ticket": await get_ticket(
-                    project_name, project_version, reference
-                ),
-                "project_name": project_name,
-                "project_name_alias": provide(project_name),
-                "project_version": project_version,
-            }
-        )
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.put("/{project_name}/versions/{project_version}/tickets/{reference}",
-            tags=["Front - Tickets"],
-            include_in_schema=False)
-async def project_version_update_ticket(request: Request,
-                                        project_name: str,
-                                        project_version: str,
-                                        reference: str,
-                                        body: dict,
-                                        background_task: BackgroundTasks,
-                                        user: User = Security(front_authorize, scopes=["admin", "user"])
-                                        ) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        # TODO check if a refactor might enhance readability
-        res = await update_ticket(project_name,
-                                  project_version,
-                                  reference,
-                                  UpdatedTicket(description=body["description"],
-                                                status=body["status"]))
-        if not res.acknowledged:
-            logging.getLogger().error("Not done")
-        background_task.add_task(refresh_version_stats, project_name, project_version)
-        return templates.TemplateResponse("ticket_row.html",
-                                          {"request": request,
-                                           "ticket": await get_ticket(project_name,
-                                                                      project_version,
-                                                                      reference),
-                                           "project_name": project_name,
-                                           "project_name_alias": provide(project_name),
-                                           "project_version": project_version},
-                                          headers={"HX-Trigger": "update-dashboard"})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
 @router.get("/front/v1/navigation",
             tags=["Front - Campaign"],
             include_in_schema=False
@@ -295,24 +169,3 @@ async def get_navigation_bar(request: Request) -> HTMLResponse:
 #         return front_error_message(templates, request, exception)
 
 
-@router.get("front/v1/projects/{project}/versions/{version}",
-            tags=["Front - Campaign"],
-            include_in_schema=False
-            )
-async def get_project_version(project: str,
-                              version: str,
-                              request: Request,
-                              user: User = Security(front_authorize,
-                                                    scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        version = get_version(project, version)
-        log_message(repr(version))
-        return templates.TemplateResponse("forms/update_version_modal.html",
-                                          {
-                                              "request": request,
-                                              "version": repr(version)
-                                          })
-    except Exception as exception:
-        return front_error_message(templates, request, exception)

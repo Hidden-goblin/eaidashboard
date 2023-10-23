@@ -5,11 +5,11 @@ Feature: Register project
   Rule: Cannot register a project with an existing name
 
     Scenario Outline: Register project right
-      Given I am "<user>"
-      When I register a new project
-      Then I "<result>"
+      Given "<user>" is logged in
+      When he registers "new project"
+      Then he "<result>"
 
       Examples:
-        | user            | result  |
-        | Aaron Appleseed | succeed |
-        | Paul Abbot      | fail    |
+        | user            | result   |
+        | Aaron Appleseed | succeeds |
+        | Paul Abbot      | fails    |

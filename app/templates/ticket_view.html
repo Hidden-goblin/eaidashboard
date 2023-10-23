@@ -16,7 +16,8 @@
             <td>{{ticket.description}}</td>
             <td>
         <button class="btn btn-danger"
-                hx-get="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}/edit"
+                hx-get="/front/v1/projects/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}"
+                hx-headers='{"eaid-request": "form"}'
                 hx-trigger="edit"
                 _="on click
                      if .editing is not empty

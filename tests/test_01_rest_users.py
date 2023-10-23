@@ -83,7 +83,7 @@ class TestRestUsers:
         assert response.json()["detail"] == "Not authenticated"
 
     payload_error_422 = [({"password": "pass"}, ['body', 'username'], 'Field required', 'missing'),
-                         ({"username": "test",
+                         ({"username": "test@test.fr",
                            "alias": "test",
                            "password": "pass"}, ['body', 'alias'], 'Extra inputs are not permitted', 'extra_forbidden')]
 
@@ -99,7 +99,7 @@ class TestRestUsers:
 
     def test_create_user_error_404(self, application, logged):
         response = application.post("/api/v1/users",
-                                    json={"username": "test",
+                                    json={"username": "test@test.fr",
                                           "password": "pwd",
                                           "scopes": {"*": "user",
                                                      "unknown": "admin"}},
@@ -109,7 +109,7 @@ class TestRestUsers:
 
     def test_create_user_error_400(self, application, logged):
         response = application.post("/api/v1/users",
-                                    json={"username": "test",
+                                    json={"username": "test@test.fr",
                                           "scopes": {"*": "user"}},
                                     headers=logged)
         assert response.status_code == 400
@@ -117,7 +117,7 @@ class TestRestUsers:
 
     def test_create_user(self, application, logged):
         response = application.post("/api/v1/users",
-                                    json={"username": "test",
+                                    json={"username": "test@test.fr",
                                           "password": "test",
                                           "scopes": {"*": "user"}},
                                     headers=logged)
@@ -126,20 +126,20 @@ class TestRestUsers:
 
     def test_newly_created_user_can_log_in(self, application):
         response = application.post("/api/v1/token",
-                                    data={"username": "test",
+                                    data={"username": "test@test.fr",
                                           "password": "test"})
         assert response.status_code == 200
         assert response.json()["access_token"]
 
     def test_update_user_error_401(self, application):
-        response = application.post("/api/v1/users",
-                                    json={"username": "test"})
+        response = application.patch("/api/v1/users",
+                                    json={"username": "test@test.fr"})
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
     def test_update_user_error_422(self, application, logged):
-        response = application.post("/api/v1/users",
-                                    json={"username": "test"},
+        response = application.patch("/api/v1/users",
+                                    json={"username": "test@test.fr"},
                                     headers=logged)
         assert response.status_code == 422
         assert response.json()["detail"][0]['loc'] == ['body']
@@ -148,7 +148,7 @@ class TestRestUsers:
         assert response.json()["detail"][0]['type'] == 'value_error'
 
     def test_get_user_error_401(self, application):
-        response = application.get("/api/v1/users/test")
+        response = application.get("/api/v1/users/test@test.fr")
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
@@ -159,26 +159,28 @@ class TestRestUsers:
         assert response.json()["detail"] == "User 'unknown' is not found."
 
     def test_get_user(self, application, logged):
-        response = application.get("/api/v1/users/test",
+        response = application.get("/api/v1/users/test@test.fr",
                                    headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"username": "test", "scopes": {"*": "user"}}
+        assert response.json() == {"username": "test@test.fr", "scopes": {"*": "user"}}
 
     def test_update_user(self, application, logged):
-        response = application.post("/api/v1/users",
-                                    json={"username": "test",
-                                          "scopes": {TestRestUsers.project_name: "user"}},
+        user = application.get("/api/v1/users/test@test.fr", headers=logged).json()
+        response = application.patch("/api/v1/users",
+                                    json={"username": "test@test.fr",
+                                          "scopes": {**user["scopes"],
+                                                     TestRestUsers.project_name: "user"}},
                                     headers=logged)
         assert response.status_code == 200
-        response = application.get("/api/v1/users/test",
+        response = application.get("/api/v1/users/test@test.fr",
                                    headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"username": "test", "scopes": {"*": "user", TestRestUsers.project_name: "user"}}
+        assert response.json() == {"username": "test@test.fr", "scopes": {"*": "user", TestRestUsers.project_name: "user"}}
 
     def test_user_scopes_200(self, application):
         # Token
         response = application.post("/api/v1/token",
-                                    data={"username": "test",
+                                    data={"username": "test@test.fr",
                                           "password": "test"})
         token = response.json()["access_token"]
 
@@ -194,7 +196,7 @@ class TestRestUsers:
     def test_user_scopes_403(self, application):
         # Token
         response = application.post("/api/v1/token",
-                                    data={"username": "test",
+                                    data={"username": "test@test.fr",
                                           "password": "test"})
         token = response.json()["access_token"]
 
@@ -210,7 +212,7 @@ class TestRestUsers:
     def test_user_scopes_401(self, application):
         # Token
         response = application.post("/api/v1/token",
-                                    data={"username": "test",
+                                    data={"username": "test@test.fr",
                                           "password": "test"})
         token = response.json()["access_token"]
 

@@ -3,7 +3,7 @@
 import json
 from typing import Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class UpdateMe(BaseModel):
@@ -15,7 +15,7 @@ class UpdateMe(BaseModel):
 
 
 class UpdateUser(BaseModel, extra='forbid'):
-    username: str
+    username: str = Field(pattern=r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
     password: Optional[str] = None
     scopes: Optional[dict] = {}
 
@@ -31,7 +31,7 @@ class UpdateUser(BaseModel, extra='forbid'):
 
 
 class User(BaseModel):
-    username: str
+    username: str = Field(pattern=r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
     scopes: str | dict
     password: Optional[str] = None
 
@@ -51,7 +51,7 @@ class User(BaseModel):
 
 
 class UserLight(BaseModel):
-    username: str
+    username: str = Field(pattern=r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
     scopes: dict | str
 
     def __init__(self: "User", username: str, scopes: str | dict) -> None:
@@ -67,3 +67,11 @@ class UserLight(BaseModel):
             return "admin"
         else:
             return self.scopes.get(project_name)
+
+    def to_admin_user_list(self: "User") -> dict:
+        result = {"username": self.username,
+                  "admin": [key for key, value in self.scopes.items() if key != "*" and value != "user"],
+                  "user": [key for key, value in self.scopes.items() if key != "*" and value != "admin"]}
+        if self.scopes["*"] == "admin":
+            result["*"] = "true"
+        return result

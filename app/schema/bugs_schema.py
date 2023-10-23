@@ -34,7 +34,7 @@ class BugsStatistics(BaseModel):
 
 
 class BugTicket(BaseModel, extra='forbid'):
-    version: str
+    version: str = Field(min_length=1)
     title: str = Field(min_length=1)
     description: str
     created: datetime = datetime.now()

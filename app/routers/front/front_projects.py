@@ -134,6 +134,17 @@ async def project_versions(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
+        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) != "admin":
+            return front_access_denied(templates, request)
+
+        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) == "admin":
+            return templates.TemplateResponse("forms/add_version.html",
+                                              {
+                                                  "request": request,
+                                                  "project_name": project_name,
+                                                  "project_name_alias": provide(project_name)
+                                              })
+
         _versions = await get_project(project_name, None)
         versions = [{"value": item["version"], "status": item["status"]} for item in
                     _versions["future"]]
@@ -296,26 +307,6 @@ async def project_version_update(project_name: str,
                                                    "HX-Reswap": "beforeend"})
 
 
-@router.get("/{project_name}/forms/version",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def form_version(project_name: str,
-                       request: Request,
-                       user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        return templates.TemplateResponse("forms/add_version.html",
-                                          {
-                                              "request": request,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name)
-                                          })
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
 @router.post("/{project_name}/versions",
              tags=["Front - Project"],
              include_in_schema=False)
@@ -366,3 +357,26 @@ async def repository_dropdowns(project_name: str,
                                               "project_name_alias": provide(project_name),
                                               "features": features
                                           })
+
+
+@router.get("front/v1/projects/{project}/versions/{version}",
+            tags=["Front - Campaign"],
+            include_in_schema=False
+            )
+async def get_project_version(project: str,
+                              version: str,
+                              request: Request,
+                              user: User = Security(front_authorize,
+                                                    scopes=["admin", "user"])) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
+    try:
+        version = get_version(project, version)
+        log_message(repr(version))
+        return templates.TemplateResponse("forms/update_version_modal.html",
+                                          {
+                                              "request": request,
+                                              "version": repr(version)
+                                          })
+    except Exception as exception:
+        return front_error_message(templates, request, exception)

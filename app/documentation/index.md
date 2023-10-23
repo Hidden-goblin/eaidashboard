@@ -94,7 +94,7 @@ services:
        - dashboard
   app:
     container_name: dash_application
-    image: hiddengob/eaidashboard:1.5
+    image: hiddengob/eaidashboard:3.8
     environment:
       SESSION_KEY: 'averylongsessionkeyyouhavegenerated'  
       TIMEDELTA: 10

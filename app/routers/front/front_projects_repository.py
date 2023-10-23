@@ -28,7 +28,7 @@ router = APIRouter(prefix="/front/v1/projects")
 async def front_project_repository(project_name: str,
                                    request: Request,
                                    status: Optional[str] = None,
-                                   user: User =Security(front_authorize, scopes=["admin", "user"])
+                                   user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
@@ -41,6 +41,14 @@ async def front_project_repository(project_name: str,
                                               headers={
                                                   "HX-Redirect": f"/front/v1/projects/"
                                                                  f"{project_name}/repository"})
+        if request.headers.get("eaid-request", "") == "form":
+            if user.right(project_name) == "admin":
+                return templates.TemplateResponse("forms/import_repository_from_csv.html",
+                                                  {"request": request,
+                                                   "project_name": project_name})
+            else:
+                raise Exception("You are not authorized to access this page")
+
         # if status is not None:
         #     bugs = await get_bugs(project_name)
         # else:
@@ -68,7 +76,7 @@ async def front_project_repository(project_name: str,
 async def post_repository(project_name: str,
                           request: Request,
                           file: UploadFile = File(),
-                          user: User =Security(front_authorize, scopes=["admin", "user"])
+                          user: User = Security(front_authorize, scopes=["admin", "user"])
                           ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
@@ -107,7 +115,7 @@ async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,
                          feature: str = None,
-                         user: User =Security(front_authorize, scopes=["admin", "user"])
+                         user: User = Security(front_authorize, scopes=["admin", "user"])
                          ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
@@ -127,7 +135,7 @@ async def get_scenario(project_name: str,
                        skip: int,
                        epic: Optional[str] = None,
                        feature: Optional[str] = None,
-                       user: User =Security(front_authorize, scopes=["admin", "user"])
+                       user: User = Security(front_authorize, scopes=["admin", "user"])
                        ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
@@ -161,7 +169,7 @@ async def get_scenario(project_name: str,
 async def filter_repository(project_name: str,
                             body: dict,
                             request: Request,
-                            user: User =Security(front_authorize, scopes=["admin", "user"])
+                            user: User = Security(front_authorize, scopes=["admin", "user"])
                             ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user

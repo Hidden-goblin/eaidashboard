@@ -19,7 +19,9 @@
                 {% endfor %}
             </ul>
         </td>
-        <td>Edit</td>
+          <td><button class="btn btn-link" hx-get="/front/v1/users/{{user.username}}"
+                 hx-headers='{"eaid-request":"form"}'
+          hx-target='#modals-here'> Edit</button></td>
 
       </tr>
       {% endfor %}

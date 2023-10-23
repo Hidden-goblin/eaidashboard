@@ -20,6 +20,7 @@ class ApplicationErrorCode(Enum):
     epic_not_found = 7
     feature_not_found = 8
     scenario_not_found = 9
+    user_not_found = 10
 
     duplicate_element = 100
     transition_forbidden = 101

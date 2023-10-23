@@ -3,19 +3,19 @@
    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create new user</h5>
+                <h5 class="modal-title">Update user</h5>
             </div>
             <div class="modal-body">
                 <div class="container">
                      <!-- The action -->
-                    <form hx-post="/front/v1/users/"
+                    <form hx-patch="/front/v1/users/{{posted.username}}"
                           hx-ext='json-enc'
                           hx-headers='{"eaid-next": "modalClear"}'>
 
                         <div class="mb-3" >
                             <div class="mb-3">
-                            <label class="form-label" for="username">Username</label>
-                            <input class="form-control" type="email" id="username" name="username" value="{{posted.username}}"/>
+                            <label class="form-label" for="username">User {{posted.username}}</label>
+                            <input class="form-control" type="hidden" id="username" name="username" value="{{posted.username}}"/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="password">Password</label>
@@ -78,16 +78,16 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create new user</h5>
+                <h5 class="modal-title">Update user</h5>
             </div>
             <div class="modal-body">
                 <div class="container">
-                    <form hx-post="/front/v1/users/"
+                    <form hx-patch="/front/v1/users/{{posted.username}}"
                           hx-ext='json-enc'
                           hx-headers='{"eaid-next": "modalClear"}'>
                         <div class="mb-3">
-                            <label class="form-label" for="username">Username</label>
-                            <input class="form-control" type="email" id="username" name="username"/>
+                            <label class="form-label" for="username">User {{posted.username}}</label>
+                            <input class="form-control" type="hidden" id="username" name="username" value="{{posted.username}}"/>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="password">Password</label>
@@ -97,14 +97,14 @@
                             <!-- Your form here -->
                             <div class="form-check form-switch">
                                 <label class="form-check-label" for="*">Super Administrator</label>
-                                <input class="form-check-input" name="*" type="checkbox" value="1" id="*"/>
+                                <input class="form-check-input" name="*" type="checkbox" value="1" id="*" {%if '*' in posted%}checked{%endif%}/>
                             </div>
                         </div>
                         <div class="mb-3" >
                                 <label class="form-label" for="admin">Administrator of project:</label>
                                     <select class="form-select" name="admin" id="admin" multiple aria-label="administrator of project">
                                         {%for project in projects%}
-                                            <option value="{{project}}">{{project}}</option>
+                                            <option value="{{project}}" {%if project in posted.admin%}selected{%endif%}>{{project}}</option>
                                         {%endfor%}
                                     </select>
                         </div>
@@ -112,14 +112,14 @@
                                 <label class="form-label" for="user">User of project:</label>
                                     <select class="form-select" name="user" id="user" multiple aria-label="user of project">
                                         {%for project in projects%}
-                                            <option value="{{project}}">{{project}}</option>
+                                            <option value="{{project}}" {%if project in posted.user%}selected{%endif%}>{{project}}</option>
                                         {%endfor%}
                                     </select>
                         </div>
                         <div id="modalErrorMessage" class="container show"></div>
                         <div class="button">
                             <button type="submit" class="btn btn-secondary">
-                                Create
+                                Update
                             </button>
                         </div>
                     </form>

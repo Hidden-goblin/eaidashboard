@@ -1,0 +1,69 @@
+@startjson
+{
+"/": {"get": "base dashboard",
+      "api": {
+        "v1": {}
+      },
+      "front": {
+        "v1": {
+            "navigation": {
+                "get": "provide the navigation bar"
+            },
+            "projects": {
+                "get + req = FORM": "Create project form",
+                "post": "Create project action",
+                "<project_name>":{
+                    "get + req = REDIRECT": "Redirect to the project page",
+                    "get": "Project page (multi tab)",
+                    "versions": {
+                        "get": "Project's versions",
+                        "get + req = FORM": "Add version form",
+                        "post": "Add version action",
+                        "<version>":{
+                            "get": "update version modal",
+                            "get + req = FORM": "Add ticket form",
+                            "get + req = versionUpdate": "Dashboard version update form",
+                            "post": "Add ticket action",
+                            "put": "Update version action",
+                            "tickets": {
+                                "get": "Table of tickets",
+                                "<ticket_reference>": {
+                                    "get + req = FORM": "Updatable row form",
+                                    "get + req = row": "Single ticket as table row",
+                                    "put": "Update ticket action"
+                                }
+                            }
+                        }
+                    },
+                    "bugs": {
+                        "get + req = REDIRECT": "Redirect to bugs tab",
+                        "get": "Bugs tab",
+                        "get + req = FORM": "Add new bug form",
+                        "get + req = TABLE": "Bugs table",
+                        "post": "Create bug action",
+                        "<internal_id>": {
+                            "get": "View (editable) specific bug",
+                            "put": "Update bug action (via form)",
+                            "patch": "Update bug action (via button)"
+                        }
+                    }
+                }
+            }
+        }
+      },
+      "clear": {
+        "delete": "front clear target"},
+      "login": {
+        "get" : "login form",
+        "post": "login action",
+        "delete": "log out"
+      },
+      "documentation": {
+        "get": "provide the html documentation source",
+        "<filename>": {
+            "get": "provide the html content related to filename (target in docContainer)"
+        }
+      }
+    }
+}
+@endjson

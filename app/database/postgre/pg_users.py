@@ -10,6 +10,7 @@ from psycopg.types.json import Json
 from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered
 from app.database.redis.token_management import revoke
 from app.database.utils.password_management import get_password_hash
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateUser, User, UserLight
 from app.utils.log_management import log_error, log_message
@@ -17,11 +18,8 @@ from app.utils.pgdb import pool
 from app.utils.project_alias import contains
 
 
-class UserUpdate:
-    pass
-
-
 def init_user() -> None:
+    """Create the default admin profile"""
     with pool.connection() as conn:
         log_message("Init user")
         row = conn.execute("select id from users where username='admin@admin.fr'").fetchone()
@@ -32,10 +30,20 @@ def init_user() -> None:
 
 
 def create_user(user: UpdateUser) -> RegisterVersionResponse:
+    """
+    SPEC Cannot create a user without a password and a username
+    SPEC Cannot create a user which scopes contain non-existing project
+    SPEC Without scopes, add user scope for "*" project
+    :param user:
+    :return: RegisterVersionResponse
+    """
     log_message(f"Create user {user.username} with {user.scopes}")
     if user.password is None or user.password == "":
         raise IncorrectFieldsRequest("Cannot create user without password")
-    _check_scopes(user.scopes)
+    if user.scopes:
+        _check_scopes(user.scopes)
+    else:
+        user.scopes["*"] = "user"
     try:
         with pool.connection() as conn:
             log_message(f"Create user {user.username} with {user.scopes}")
@@ -48,6 +56,12 @@ def create_user(user: UpdateUser) -> RegisterVersionResponse:
             return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]))
     except psycopg.errors.UniqueViolation as uve:
         log_error("\n".join(uve.args))
+        raise
+    except TypeError as te:
+        log_error("\n".join(te.args))
+        raise
+    except ValueError as ve:
+        log_error("\n".join(ve.args))
         raise
     except Exception as exception:
         log_error("\n".join(exception.args))
@@ -65,7 +79,8 @@ def _check_scopes(scopes: dict) -> None:
             f"' are not registered.")
 
 
-def get_user(username: str, is_light: bool = True) -> User | UserLight | None:
+def get_user(username: str,
+             is_light: bool = True) -> User | UserLight | None:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute("""select username, password, scopes
@@ -86,6 +101,15 @@ def get_users(limit: int = 10,
               is_list: bool = False,
               project_name: str = None,
               included: bool = True) -> Tuple[List[UserLight], int] | List[str]:
+    """
+
+    :param limit: default 10 (only for list of UserLight)
+    :param skip: default 0 (only for list of UserLight)
+    :param is_list: only the usernames as a list
+    :param project_name: filter users regarding the project
+    :param included: additional filtering related to project_name filter. Included in project_name or excluded
+    :return:
+    """
     if is_list:
         expected_list = {False: __list_of_user_not_in_project,
                          True: __list_of_users}
@@ -163,27 +187,26 @@ def update_user_password(user: UpdateUser) -> RegisterVersionResponse:
 
 
 def update_user_scopes(user: UpdateUser) -> RegisterVersionResponse:
+    """Update scopes to the provided scopes regardless the existing scopes"""
     _user = get_user(user.username)
     with pool.connection() as conn:
         conn.row_factory = tuple_row
         # Check project: include special project "*"
         _check_scopes(user.scopes)
-        # Combine actual with to be scope
-        merged_scopes = {**_user.scopes,
-                         **user.scopes}
         row = conn.execute("update users "
                            " set scopes = %s "
                            " where username = %s "
                            " returning id;",
-                           (Json(merged_scopes), user.username))
-        log_message(f"Update user '{user.username}' scopes with {user.scopes}")
+                           (Json(user.scopes), user.username))
+        log_message(f"Update user '{user.username}' scopes to {user.scopes}")
         return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]), message="Scopes updated")
 
 
-def update_user(user: UpdateUser) -> RegisterVersionResponse:
+def update_user(user: UpdateUser) -> ApplicationError | RegisterVersionResponse:
     _user = get_user(user.username)
     if _user is None:
-        return create_user(user)
+        return ApplicationError(error=ApplicationErrorCode.user_not_found,
+                                message=f"Check '{user.username}' user please.")
 
     current_response: RegisterVersionResponse = None
 

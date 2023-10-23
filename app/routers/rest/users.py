@@ -8,7 +8,7 @@ from starlette.responses import Response
 from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered, UserNotFoundException
 from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_users import get_user, get_users, self_update_user, update_user
+from app.database.postgre.pg_users import create_user, get_user, get_users, self_update_user, update_user
 from app.schema.error_code import ErrorMessage
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateMe, UpdateUser, User, UserLight
@@ -87,6 +87,23 @@ async def update_me(body: UpdateMe,
         raise HTTPException(500, ", ".join(exp.args)) from exp
 
 
+@router.patch("/users",
+              tags=["Users"],
+              description="""Update a user. Only admin can do so.""",
+              response_model=RegisterVersionResponse)
+async def patch_user(body: UpdateUser,
+                     user: User = Security(
+                         authorize_user, scopes=["admin"])) -> RegisterVersionResponse:
+    try:
+        return update_user(body)
+    except IncorrectFieldsRequest as ifr:
+        raise HTTPException(400, ", ".join(ifr.args)) from ifr
+    except ProjectNotRegistered as pnr:
+        raise HTTPException(404, ", ".join(pnr.args)) from pnr
+    except Exception as exp:
+        raise HTTPException(500, ", ".join(exp.args)) from exp
+
+
 @router.post("/users",
              tags=["Users"],
              description="""Update a user. Only admin can do so.""",
@@ -95,7 +112,7 @@ async def create_update(body: UpdateUser,
                         user: User = Security(
                             authorize_user, scopes=["admin"])) -> RegisterVersionResponse:
     try:
-        return update_user(body)
+        return create_user(body)
     except IncorrectFieldsRequest as ifr:
         raise HTTPException(400, ", ".join(ifr.args)) from ifr
     except ProjectNotRegistered as pnr:

@@ -118,7 +118,7 @@ def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
             "request": request,
             "highlight": "The server could not compute data",
             "sequel": " to perform this action.",
-            "advise": f"Try to reload the page. \n Error message is {repr(exception)}",
+            "advise": f"Try to reload the page. \n Error message is {','.join(exception.args)}",
         },
         headers={"HX-Retarget": retarget,
                  "HX-Reswap": "innerHTML"}
