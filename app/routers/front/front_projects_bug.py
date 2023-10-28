@@ -4,9 +4,9 @@
 from typing import Optional
 
 from fastapi import APIRouter, Security
+from pydantic import ValidationError
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from pydantic import ValidationError
 
 from app.app_exception import front_error_message
 from app.conf import templates

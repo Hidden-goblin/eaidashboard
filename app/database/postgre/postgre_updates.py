@@ -320,14 +320,14 @@ POSTGRE_UPDATES = [
         "description": "Username accept longer string"
     },
     {
-        "request": """UPDATE users 
+        "request": r"""UPDATE users 
                       SET username = CONCAT(username, '@test.fr')
                       WHERE NOT username ~* '([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+';
                     """,
         "description": "Move username to email format if not already"
     },
     {
-        "request": """ALTER TABLE users
+        "request": r"""ALTER TABLE users
                       ADD CONSTRAINT check_email 
                       CHECK (username ~* '([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+');
         """,
