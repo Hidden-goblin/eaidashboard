@@ -53,6 +53,7 @@ After the migration is done, restart the application to be sure not to use the m
 - 3.8
   - Add role management
   - Remap some front routes
+  - Fix deliverable not regenerated when bug is updated
   - Introduce some feature documentation (living documentation planned)
   - Upgrade Pydantic to version 2.+
   - Limitation: Project Admin cannot grant rights to user for their project

@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.database.postgre.pg_versions import version_internal_id
+from app.database.redis.rs_file_management import rs_invalidate_file
 from app.database.utils.transitions import bug_authorized_transition, version_transition
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
@@ -143,6 +144,8 @@ async def db_update_bugs(project_name: str,
         if isinstance(version_id, ApplicationError):
             return version_id
         values.append(version_id)
+        # SPEC: Invalidate all files of the future version
+        await rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
         # ToDo: update statuses from past version to current version
 
     values.append(internal_id)
@@ -155,6 +158,8 @@ async def db_update_bugs(project_name: str,
                                  f" returning id;",
                                  values)
         log_message(row.statusmessage)
+    # SPEC invalidate all files of the current version
+    await rs_invalidate_file(f"file:{project_name}:{current_bug.version}:*")
     return await db_get_bug(project_name, internal_id)
 
 
@@ -186,4 +191,5 @@ async def insert_bug(project_name: str,
                         f" and pj.id = ve.project_id"
                         f" and ve.version = %s;")
         connection.execute(update_query, (provide(project_name), bug_ticket.version))
-        return RegisterVersionResponse(inserted_id=row[0])
+        await rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
+    return RegisterVersionResponse(inserted_id=row[0])

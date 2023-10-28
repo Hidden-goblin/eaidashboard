@@ -51,10 +51,10 @@ async def get_bugs(project_name: str,
                                         limit=limit,
                                         skip=skip)
         response.headers["X-total-count"] = str(count)
-        return result
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.get("/{project_name}/bugs/{internal_id}",
@@ -113,10 +113,10 @@ async def get_bugs_for_version(project_name: str,
                                         limit=limit,
                                         skip=skip)
         response.headers["X-total-count"] = str(count)
-        return result
     except Exception as exp:
-        log_error(repr(exp))
+        log_error(" ".join(exp.args))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.post("/{project_name}/bugs",
@@ -128,7 +128,7 @@ async def create_bugs(project_name: str,
                           authorize_user, scopes=["admin", "user"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, bug.version)
     try:
-        return await insert_bug(project_name, bug)
+        result = await insert_bug(project_name, bug)
     except UniqueViolation as uv:
         log_error(repr(uv))
         raise HTTPException(409,
@@ -136,8 +136,9 @@ async def create_bugs(project_name: str,
                             f"'{bug.title}'.\n"
                             f"Please check your data.") from uv
     except Exception as exp:
-        log_error(repr(exp))
+        log_error(" ".join(exp.args))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.put("/{project_name}/bugs/{bug_internal_id}",

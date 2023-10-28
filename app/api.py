@@ -14,7 +14,6 @@ from app.database.utils.password_management import generate_keys
 from app.routers.front import (
     front_dashboard,
     front_documentation,
-    front_forms,
     front_project_version_tickets,
     front_projects,
     front_projects_bug,
@@ -79,7 +78,6 @@ app.include_router(front_projects.router)
 app.include_router(front_projects_campaign.router)
 app.include_router(front_projects_bug.router)
 app.include_router(front_projects_repository.router)
-app.include_router(front_forms.router)
 app.include_router(front_documentation.router)
 app.include_router(front_users.router)
 app.include_router(front_project_version_tickets.router)
