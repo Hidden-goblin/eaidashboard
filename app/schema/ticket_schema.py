@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.schema.status_enum import TicketType
 
@@ -16,41 +16,42 @@ class Ticket(BaseModel):
     updated: datetime
 
     def __getitem__(self: "Ticket", index: str) -> str | datetime:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class ToBeTicket(BaseModel):
-    reference: str
+    reference: str = Field(min_length=1)
     description: str
     status: str = TicketType.OPEN.value
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
 
     def __getitem__(self: "ToBeTicket", index: str) -> str | datetime:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
-class UpdatedTicket(BaseModel, extra=Extra.forbid):
+class UpdatedTicket(BaseModel, extra='forbid'):
     description: Optional[str] = None
     status: Optional[str] = None
     version: Optional[str] = None
     updated: datetime = datetime.now()
 
     def __getitem__(self: "UpdatedTicket", index: str) -> str | datetime:
-        return self.dict().get(index, None)
-    @root_validator
-    def check_at_least_one(cls, values: dict) -> dict: # noqa: ANN101
+        return self.model_dump().get(index, None)
+
+    @model_validator(mode='before')
+    def check_at_least_one(cls, ticket: 'UpdatedTicket'):  # noqa: ANN101, ANN201
         keys = ("description", "status", "version")
-        if all(values.get(key) is None for key in keys):
+        if all(ticket.get(key) is None for key in keys):
             raise ValueError(f"UpdatedTicket must have at least one key of '{keys}'")
-        return values
+        return ticket
 
 
 class EnrichedTicket(Ticket):
-    campaign_occurrences: Optional[List[str]]
+    campaign_occurrences: Optional[List[str] | List[int]]
 
     def __getitem__(self: "EnrichedTicket", index: str) -> List[str]:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class UpdateTickets(BaseModel):
@@ -61,7 +62,7 @@ class UpdateTickets(BaseModel):
     done: Optional[int]
 
     def __getitem__(self: "UpdateTickets", index: str) -> int:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class TicketVersion(BaseModel):
@@ -73,4 +74,4 @@ class TicketVersion(BaseModel):
     status: str
 
     def __getitem__(self: "TicketVersion", index: str) -> str | datetime:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)

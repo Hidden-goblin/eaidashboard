@@ -94,7 +94,7 @@ services:
        - dashboard
   app:
     container_name: dash_application
-    image: hiddengob/eaidashboard:1.5
+    image: hiddengob/eaidashboard:3.8
     environment:
       SESSION_KEY: 'averylongsessionkeyyouhavegenerated'  
       TIMEDELTA: 10
@@ -140,6 +140,8 @@ The docker-hub link for [app image](https://hub.docker.com/r/hiddengob/eaidashbo
 <a class="link-primary" hx-get="/documentation/00-workflows.md">Designed workflows</a>
 
 <a class="link-primary" hx-get="/documentation/00-how_to.md">How-to page</a>
+
+<a class="link-primary" hx-get="/documentation/00-br_rights.md">Roles and permissions</a>
 
 
 

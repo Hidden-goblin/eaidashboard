@@ -308,5 +308,32 @@ POSTGRE_UPDATES = [
         add constraint check_started_before_end_forecast
         check (started is NULL or end_forecast is NULL or started < end_forecast);""",
         "description": "Add constraint on started and end_forecast on versions table"
+    },
+    {
+        "request": """alter table users
+       alter column scopes type json using json_build_object('*', scopes[1]);""",
+        "description": "Move user scope from array to json"
+    },
+    {
+        "request": """ALTER TABLE users 
+                      ALTER COLUMN username TYPE varchar(255);""",
+        "description": "Username accept longer string"
+    },
+    {
+        "request": r"""UPDATE users 
+                      SET username = CONCAT(username, '@test.fr')
+                      WHERE NOT username ~* '([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+';
+                    """,
+        "description": "Move username to email format if not already"
+    },
+    {
+        "request": r"""ALTER TABLE users
+                      ADD CONSTRAINT check_email 
+                      CHECK (username ~* '([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+');
+        """,
+        "description": "Add constraint on email format"
     }
+    # Alter table users to use the first scope in the array to a json
+    # alter table users
+    #   alter column scopes type json using to_json('{"*":"' || scopes[1] ||'"}')
 ]

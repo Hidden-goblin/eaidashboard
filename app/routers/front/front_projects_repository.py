@@ -3,17 +3,18 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, Security, UploadFile
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.app_exception import MalformedCsvFile, front_error_message
 from app.conf import templates
-from app.database.authorization import is_updatable
+from app.database.authorization import front_authorize
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
+from app.schema.users import User, UserLight
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
 from app.utils.project_alias import provide
@@ -26,17 +27,12 @@ router = APIRouter(prefix="/front/v1/projects")
             include_in_schema=False)
 async def front_project_repository(project_name: str,
                                    request: Request,
-                                   status: Optional[str] = None) -> HTMLResponse:
+                                   status: Optional[str] = None,
+                                   user: User = Security(front_authorize, scopes=["admin", "user"])
+                                   ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        if not is_updatable(request, tuple()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         if request.headers.get("eaid-request", "") == "REDIRECT":
             return templates.TemplateResponse("void.html",
                                               {
@@ -45,6 +41,14 @@ async def front_project_repository(project_name: str,
                                               headers={
                                                   "HX-Redirect": f"/front/v1/projects/"
                                                                  f"{project_name}/repository"})
+        if request.headers.get("eaid-request", "") == "form":
+            if user.right(project_name) == "admin":
+                return templates.TemplateResponse("forms/import_repository_from_csv.html",
+                                                  {"request": request,
+                                                   "project_name": project_name})
+            else:
+                raise Exception("You are not authorized to access this page")
+
         # if status is not None:
         #     bugs = await get_bugs(project_name)
         # else:
@@ -72,17 +76,11 @@ async def front_project_repository(project_name: str,
 async def post_repository(project_name: str,
                           request: Request,
                           file: UploadFile = File(),
+                          user: User = Security(front_authorize, scopes=["admin", "user"])
                           ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again"
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         file_content = await file.read()
         try:
             await process_upload(file_content.decode(), project_name)
@@ -116,17 +114,12 @@ async def post_repository(project_name: str,
 async def get_repository(project_name: str,
                          request: Request,
                          epic: str = None,
-                         feature: str = None) -> HTMLResponse:
+                         feature: str = None,
+                         user: User = Security(front_authorize, scopes=["admin", "user"])
+                         ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        if not is_updatable(request, ()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         return await repository_dropdowns(project_name, request, epic, feature)
     except Exception as exception:
         log_error(repr(exception))
@@ -141,17 +134,12 @@ async def get_scenario(project_name: str,
                        limit: int,
                        skip: int,
                        epic: Optional[str] = None,
-                       feature: Optional[str] = None) -> HTMLResponse:
+                       feature: Optional[str] = None,
+                       user: User = Security(front_authorize, scopes=["admin", "user"])
+                       ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        if not is_updatable(request, ()):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         scenarios, count = await db_project_scenarios(project_name, epic, feature, limit=limit,
                                                       offset=skip)
         pages, current_page = page_numbering(count, limit=limit, skip=skip)
@@ -180,17 +168,12 @@ async def get_scenario(project_name: str,
              )
 async def filter_repository(project_name: str,
                             body: dict,
-                            request: Request) -> HTMLResponse:
+                            request: Request,
+                            user: User = Security(front_authorize, scopes=["admin", "user"])
+                            ) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
     try:
-        if not is_updatable(request, ("admin", "user")):
-            return templates.TemplateResponse("error_message.html",
-                                              {
-                                                  "request": request,
-                                                  "highlight": "You are not authorized",
-                                                  "sequel": " to perform this action.",
-                                                  "advise": "Try to log again."
-                                              },
-                                              headers={"HX-Retarget": "#messageBox"})
         scenarios, count = await db_project_scenarios(project_name,
                                                       body["epic"],
                                                       body["feature"],

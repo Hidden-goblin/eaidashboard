@@ -4,15 +4,46 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.conftest import error_message_extraction
+
 
 class TestRestVersions:
+    project_name = "test"
+    project_version = "1.0.1"
+    project_new_version = "1.0.2"
+
+    def test_setup(self, application, logged):
+        response = application.get("/api/v1/settings/projects",
+                                   headers=logged)
+        if TestRestVersions.project_name not in response.json():
+            response = application.post("/api/v1/settings/projects",
+                                        json={"name": TestRestVersions.project_name},
+                                        headers=logged)
+            assert response.status_code == 200
+        response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
+                                   f"versions/{TestRestVersions.project_version}",
+                                   headers=logged)
+        if response.status_code == 404:
+            response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
+                                        json={"version": TestRestVersions.project_version},
+                                        headers=logged)
+            assert response.status_code == 200
+        response = application.get(f"/api/v1/projects/{TestRestVersions.project_name}/"
+                                   f"versions/{TestRestVersions.project_new_version}",
+                                   headers=logged)
+        if response.status_code == 404:
+            response = application.post(f"/api/v1/projects/{TestRestVersions.project_name}/versions",
+                                        json={"version": TestRestVersions.project_new_version},
+                                        headers=logged)
+            assert response.status_code == 200
+
     def test_add_ticket(self, application, logged):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
                                     json={"reference": "ref-001",
                                           "description": "Description"},
                                     headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"acknowledged": True, "inserted_id": "1"}
+        assert response.json() == {"acknowledged": True, "inserted_id": 1, "message": None}
 
     def test_add_ticket_errors_401(self, application):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
@@ -38,13 +69,13 @@ class TestRestVersions:
                                     json={"test": "test"},
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'reference'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'},
-                                             {'loc': ['body', 'description'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'}
-                                             ]
+        assert error_message_extraction(response.json()["detail"]) == [{'loc': ['body', 'reference'],
+                                                                        'msg': 'Field required',
+                                                                        'type': 'missing'},
+                                                                       {'loc': ['body', 'description'],
+                                                                        'msg': 'Field required',
+                                                                        'type': 'missing'}
+                                                                       ]
 
     def test_add_ticket_errors_400(self, application, logged):
         response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
@@ -58,7 +89,7 @@ class TestRestVersions:
                                              ' ref-001) already exists.')
 
     def test_add_ticket_errors_500(self, application, logged):
-        with patch('app.routers.rest.version.add_ticket') as rp:
+        with patch('app.routers.rest.tickets.add_ticket') as rp:
             rp.side_effect = Exception("error")
             response = application.post("/api/v1/projects/test/versions/1.0.1/tickets",
                                         json={"reference": "ref-002",
@@ -67,28 +98,32 @@ class TestRestVersions:
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
-    def test_get_ticket(self, application):
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets")
+    def test_get_ticket(self, application, logged):
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets",
+                                   headers=logged)
 
         assert response.status_code == 200
         keys = ("status", "reference", "description", "created", "updated", "campaign_occurrences")
         assert all(key in response.json()[0].keys() for key in keys)
 
     @pytest.mark.parametrize("project,version,message", ticket_error_404)
-    def test_get_ticket_errors_404(self, application, project, version, message):
-        response = application.get(f"/api/v1/projects/{project}/versions/{version}/tickets")
+    def test_get_ticket_errors_404(self, application, logged, project, version, message):
+        response = application.get(f"/api/v1/projects/{project}/versions/{version}/tickets",
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_ticket_errors_500(self, application):
-        with patch('app.routers.rest.version.get_tickets') as rp:
+    def test_get_ticket_errors_500(self, application, logged):
+        with patch('app.routers.rest.tickets.get_tickets') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets")
+            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
-    def test_get_one_ticket(self, application):
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+    def test_get_one_ticket(self, application, logged):
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                   headers=logged)
         assert response.status_code == 200
         keys = ("created",
                 "updated",
@@ -109,16 +144,18 @@ class TestRestVersions:
                              " in project 'test' version '1.0.1'")]
 
     @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
-    def test_get_one_ticket_errors_404(self, application, project, version, ticket, message):
+    def test_get_one_ticket_errors_404(self, application, logged, project, version, ticket, message):
         response = application.get(
-            f"/api/v1/projects/{project}/versions/{version}/tickets/{ticket}")
+            f"/api/v1/projects/{project}/versions/{version}/tickets/{ticket}",
+            headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_one_ticket_errors_500(self, application):
-        with patch('app.routers.rest.version.get_ticket') as rp:
+    def test_get_one_ticket_errors_500(self, application, logged):
+        with patch('app.routers.rest.tickets.get_ticket') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+            response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json()["detail"] == "error"
 
@@ -129,7 +166,8 @@ class TestRestVersions:
                                    headers=logged)
         assert response.status_code == 200
         assert response.json() == "1"
-        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001")
+        response = application.get("/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
+                                   headers=logged)
         assert response.status_code == 200
         assert response.json()["description"] == "Updated description"
         assert response.json()["status"] == "in_progress"
@@ -191,10 +229,10 @@ class TestRestVersions:
             headers=logged
         )
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'descripion'],
-                                              'msg': 'extra fields not permitted',
-                                              'type': 'value_error.extra'}
-                                             ]
+        assert error_message_extraction(response.json()["detail"]) == [{'loc': ['body', 'descripion'],
+                                                                        'msg': 'Extra inputs are not permitted',
+                                                                        'type': 'extra_forbidden'}
+                                                                       ]
 
         response = application.put(
             "/api/v1/projects/test/versions/1.0.1/tickets/ref-001",
@@ -202,13 +240,14 @@ class TestRestVersions:
             headers=logged
         )
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', '__root__'],
-                                              'msg': "UpdatedTicket must have at least one key of"
-                                                     " '('description', 'status', 'version')'",
-                                              'type': 'value_error'}]
+        assert error_message_extraction(response.json()["detail"]) == [
+            {'loc': ['body'],
+             'msg': "Value error, UpdatedTicket must have at least one key of"
+                    " '('description', 'status', 'version')'",
+             'type': 'value_error'}]
 
     def test_update_ticket_errors_500(self, application, logged):
-        with patch('app.routers.rest.version.update_ticket') as rp:
+        with patch('app.routers.rest.tickets.update_ticket') as rp:
             rp.side_effect = Exception("error")
             response = application.put(
                 "/api/v1/projects/test/versions/1.0.1/tickets/ref-001",

@@ -1,6 +1,6 @@
 # Stage 1 - Install dependencies
 
-FROM python:3.11.0-slim-buster AS builder-dep
+FROM python:3.11-slim-bookworm AS builder-dep
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-directory
 RUN poetry export -f requirements.txt --output requirements.txt
 
-FROM python:3.11.0-slim-buster AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ RUN java -jar plantuml.jar -tsvg diagrams/*.puml
 
 
 # Stage 3 - Build final image
-FROM python:3.11.0-slim-buster
+FROM python:3.11-slim-bookworm
 
 WORKDIR /usr/src/dashboard
 

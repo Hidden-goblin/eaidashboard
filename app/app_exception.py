@@ -61,6 +61,8 @@ class DuplicateFutureVersion(Exception):
 class IncorrectTicketCount(Exception):
     pass
 
+class UserNotFoundException(Exception):
+    pass
 
 class CampaignNotFound(Exception):
     pass
@@ -105,7 +107,7 @@ class DuplicateTestResults(Exception):
     pass
 
 
-def front_error_message(templates: Jinja2Templates, # noqa: ANN201
+def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
                         request: Request,
                         exception: Exception,
                         retarget: str = "#messageBox"):
@@ -116,8 +118,22 @@ def front_error_message(templates: Jinja2Templates, # noqa: ANN201
             "request": request,
             "highlight": "The server could not compute data",
             "sequel": " to perform this action.",
-            "advise": f"Try to reload the page. \n Error message is {repr(exception)}",
+            "advise": f"Try to reload the page. \n Error message is {','.join(exception.args)}",
         },
         headers={"HX-Retarget": retarget,
                  "HX-Reswap": "innerHTML"}
+    )
+
+
+def front_access_denied(templates: Jinja2Templates, # noqa: ANN201
+                        request: Request):
+    return templates.TemplateResponse(
+        "error_message.html",
+        {
+            "request": request,
+            "highlight": "You are not authorized",
+            "sequel": " to perform this action.",
+            "advise": "Try to log again.",
+        },
+        headers={"HX-Retarget": "#messageBox"},
     )

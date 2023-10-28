@@ -18,8 +18,8 @@
     </div>
     <button id="importRepository"
             class="btn btn-primary"
-            hx-headers='{"HX-PROJECT": "{{project_name}}"}'
-            hx-get="/front/v1/forms/importRepository"
+            hx-headers='{"eaid-request": "form"}'
+            hx-get="/front/v1/projects/{{project_name}}/repository"
             hx-target="#repositoryMessage"
             >Import and update repository</button>
   </div>

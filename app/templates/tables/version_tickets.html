@@ -20,7 +20,8 @@
         {%for occurrence in ticket.campaign_occurrences %}
         <button class="btn btn-secondary btn-sm"
                 hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}"
-                hx-headers='{"eaid-request": "REDIRECT"}'
+                hx-target="#content-block"
+                hx-headers='{"eaid-request": ""}'
                 >{{occurrence}}</button>
         {%endfor%}
       </td>

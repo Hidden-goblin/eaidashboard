@@ -11,8 +11,9 @@ from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, insert_bug
 from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
+from app.schema.error_code import ErrorMessage
 from app.schema.mongo_enums import BugCriticalityEnum
-from app.schema.project_schema import ErrorMessage, RegisterVersionResponse
+from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import BugStatusEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
@@ -38,7 +39,9 @@ async def get_bugs(project_name: str,
                    status: Annotated[list[BugStatusEnum], Query()] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
                    limit: Optional[int] = 100,
-                   skip: Optional[int] = 0
+                   skip: Optional[int] = 0,
+                   user: UpdateUser = Security(
+                       authorize_user, scopes=["admin", "user"])
                    ) -> List[BugTicketFull]:
     await project_version_raise(project_name)
     try:
@@ -48,10 +51,10 @@ async def get_bugs(project_name: str,
                                         limit=limit,
                                         skip=skip)
         response.headers["X-total-count"] = str(count)
-        return result
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.get("/{project_name}/bugs/{internal_id}",
@@ -67,7 +70,9 @@ async def get_bugs(project_name: str,
             )
 async def get_bug(project_name: str,
                   internal_id: str,
-                  response: Response
+                  response: Response,
+                  user: UpdateUser = Security(
+                      authorize_user, scopes=["admin", "user"])
                   ) -> BugTicketFull:
     await project_version_raise(project_name)
     try:
@@ -77,6 +82,7 @@ async def get_bug(project_name: str,
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
     return if_error_raise_http(result)
+
 
 @router.get("/{project_name}/versions/{version}/bugs",
             tags=["Bug"],
@@ -94,7 +100,10 @@ async def get_bugs_for_version(project_name: str,
                                status: Optional[BugStatusEnum] = None,
                                criticality: Optional[BugCriticalityEnum] = None,
                                limit: Optional[int] = 100,
-                               skip: Optional[int] = 0) -> List[BugTicketFull]:
+                               skip: Optional[int] = 0,
+                               user: UpdateUser = Security(
+                                   authorize_user, scopes=["admin", "user"])
+                               ) -> List[BugTicketFull]:
     await project_version_raise(project_name, version)
     try:
         result, count = await db_g_bugs(project_name=project_name,
@@ -104,10 +113,10 @@ async def get_bugs_for_version(project_name: str,
                                         limit=limit,
                                         skip=skip)
         response.headers["X-total-count"] = str(count)
-        return result
     except Exception as exp:
-        log_error(repr(exp))
+        log_error(" ".join(exp.args))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.post("/{project_name}/bugs",
@@ -119,7 +128,7 @@ async def create_bugs(project_name: str,
                           authorize_user, scopes=["admin", "user"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, bug.version)
     try:
-        return await insert_bug(project_name, bug)
+        result = await insert_bug(project_name, bug)
     except UniqueViolation as uv:
         log_error(repr(uv))
         raise HTTPException(409,
@@ -127,8 +136,9 @@ async def create_bugs(project_name: str,
                             f"'{bug.title}'.\n"
                             f"Please check your data.") from uv
     except Exception as exp:
-        log_error(repr(exp))
+        log_error(" ".join(exp.args))
         raise HTTPException(500, " ".join(exp.args)) from exp
+    return if_error_raise_http(result)
 
 
 @router.put("/{project_name}/bugs/{bug_internal_id}",

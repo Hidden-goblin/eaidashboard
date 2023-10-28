@@ -6,18 +6,37 @@ from typing import List, Union
 from fastapi import APIRouter, HTTPException, Query, Response, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import create_project_version, get_project, get_projects
-from app.database.postgre.pg_versions import get_version, update_version_data
-from app.database.utils.object_existence import if_error_raise_http, project_version_exists, project_version_raise
-from app.schema.bugs_schema import UpdateVersion
-from app.schema.error_code import ApplicationError
-from app.schema.project_schema import ErrorMessage, Project, RegisterVersion, TicketProject
+from app.database.postgre.pg_projects import get_project, get_projects
+from app.database.postgre.pg_versions import dashboard
+from app.database.utils.object_existence import project_version_raise
+from app.schema.error_code import ErrorMessage
+from app.schema.project_schema import Dashboard, Project, TicketProject
 from app.schema.users import UpdateUser
-from app.schema.versions_schema import Version
 
 router = APIRouter(
     prefix="/api/v1"
 )
+
+
+@router.get("/dashboard",
+            description="""Summarize the projects' status on current testing.
+
+**Please note**: the x-total-count in the header represents the total count of projects not the different
+versions under test.
+            """,
+            tags=["Dashboard"],
+            response_model=List[Dashboard])
+async def api_dashboard(response: Response,
+                        skip: int = 0,
+                        limit: int = 10
+                        ) -> List[Dashboard]:
+    try:
+        # TODO add total # of project in response header
+        elements, count = await dashboard(skip, limit)
+        response.headers["X-total-count"] = str(count)
+        return elements
+    except Exception as exp:
+        raise HTTPException(500, " ".join(exp.args)) from exp
 
 
 @router.get("/projects",
@@ -26,10 +45,16 @@ router = APIRouter(
             description="Retrieve all projects")
 async def projects(response: Response,
                    skip: int = 0,
-                   limit: int = 100) -> List[Project]:
+                   limit: int = 100,
+                   user: UpdateUser = Security(
+                       authorize_user, scopes=["admin", "user"])
+
+                   ) -> List[Project]:
     try:
         # TODO add total # of project in response header
-        return await get_projects(skip, limit)
+        elements, count = await get_projects(skip, limit)
+        response.headers["X-total-count"] = str(count)
+        return elements
     except Exception as exp:
         raise HTTPException(500, " ".join(exp.args)) from exp
 
@@ -53,93 +78,12 @@ denoting the project's version you want to retrieve.
             """
             )
 async def one_project(project_name: str,
-                      sections: Union[List[str], None] = Query(default=None)) -> TicketProject:
+                      sections: Union[List[str], None] = Query(default=None),
+                      user: UpdateUser = Security(
+                          authorize_user, scopes=["admin", "user"])
+                      ) -> TicketProject:
     await project_version_raise(project_name)
     try:
         return await get_project(project_name.casefold(), sections)
     except Exception as exp:
         raise HTTPException(500, detail=" ".join(exp.args)) from exp
-
-
-@router.post("/projects/{project_name}/versions",
-             response_model=str,
-             responses={
-                 404: {"model": ErrorMessage,
-                       "description": "Project name is not registered (ignore case)"},
-                 400: {"model": ErrorMessage,
-                       "description": "version already exist"}
-             },
-             tags=["Projects"],
-             description="""Create a new version of this project
-Only admin can create new version.""")
-async def post_projects(project_name: str,
-                        project: RegisterVersion,
-                        user: UpdateUser = Security(authorize_user, scopes=["admin"])) -> str:
-    await project_version_raise(project_name)
-
-    try:
-        result = await create_project_version(project_name, project)
-    except Exception as exp:
-        raise HTTPException(500, detail=" ".join(exp.args)) from exp
-
-    return if_error_raise_http(result).inserted_id
-
-
-@router.get("/projects/{project_name}/versions/{version}",
-            response_model=Union[Version, ApplicationError, dict],
-            responses={
-                404: {"model": ErrorMessage,
-                      "description": "Project name is not registered (ignore case)"}
-            },
-            tags=["Versions"],
-            description="Retrieve a specific project's version details")
-async def version_details(project_name: str,
-                          version: str) -> Version | ApplicationError:
-    await project_version_raise(project_name, version)
-
-    try:
-        result = await get_version(project_name.casefold(), version.casefold())
-    except Exception as exp:
-        raise HTTPException(500, detail=" ".join(exp.args)) from exp
-
-    return if_error_raise_http(result)
-
-
-@router.put("/projects/{project_name}/versions/{version}",
-            response_model=Version,
-            responses={
-                404: {"model": ErrorMessage,
-                      "description": "Project name is not registered (ignore case)"}
-            },
-            tags=["Versions"],
-            description="""Update the project-version on status, issues and bugs.
-
-**started** and **end_forecast** are dates in YYY-mm-dd format.
-
-**status** is one of:
-
-   - recorded
-   - campaign started
-   - campaign ended
-   - test plan writing
-   - test plan sent
-   - test plan accepted
-   - ter writing
-   - ter sent
-   - cancelled
-   - archived
-
-Only admin or user can update a version"""
-            )
-async def update_version(project_name: str,
-                         version: str,
-                         body: UpdateVersion,
-                         user: UpdateUser = Security(
-                             authorize_user,
-                             scopes=["admin", "user"])) -> Version | ApplicationError:
-    await project_version_exists(project_name, version)
-    try:
-        result = await update_version_data(project_name.casefold(), version.casefold(), body)
-    except Exception as exp:
-        raise HTTPException(500, " ".join(exp.args)) from exp
-    return if_error_raise_http(result)

@@ -11,7 +11,7 @@ class Feature(BaseModel):
     filename: str
 
     def __getitem__(self: "Feature", index: str) -> str:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class Scenario(BaseModel):
@@ -25,7 +25,7 @@ class Scenario(BaseModel):
     steps: str
 
     def __getitem__(self: "Scenario", index: str) -> str | int:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class TestFeature(BaseModel):
@@ -37,7 +37,7 @@ class TestFeature(BaseModel):
     tags: str
 
     def __getitem__(self: "TestFeature", index: str) -> str:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)
 
 
 class TestScenario(BaseModel):
@@ -51,4 +51,4 @@ class TestScenario(BaseModel):
     tags: str
 
     def __getitem__(self: "TestScenario", index: str) -> str | bool:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)

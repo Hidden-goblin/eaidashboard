@@ -20,6 +20,7 @@ class ApplicationErrorCode(Enum):
     epic_not_found = 7
     feature_not_found = 8
     scenario_not_found = 9
+    user_not_found = 10
 
     duplicate_element = 100
     transition_forbidden = 101
@@ -29,3 +30,10 @@ class ApplicationErrorCode(Enum):
 class ApplicationError(BaseModel):
     error: ApplicationErrorCode
     message: str
+
+
+class ErrorMessage(BaseModel):
+    detail: str
+
+    def __getitem__(self: "ErrorMessage", index: str) -> str:
+        return self.model_dump().get(index, None)

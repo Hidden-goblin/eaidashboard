@@ -1,0 +1,25 @@
+@startuml
+start
+if (is user admin?) then (yes)
+    :access user management tool
+    ----
+    Endpoint: /api/v1/users
+    ----
+     - CRUD on users
+     - All scopes even top level
+     - Can CRUD admin users except if this is the last one;
+else (no)
+    :no top level user management;
+    if (is user project admin?) then (yes)
+        :access project user management tool
+        ----
+        Endpoint: /api/v1/projects/{project_name}/users
+        ----
+        - Add user to project scope
+        - Add/update right to project even if this is the last one with admin right on the project;
+    else (no)
+        :no user management at all;
+    endif
+endif
+end
+@enduml

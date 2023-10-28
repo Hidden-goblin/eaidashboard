@@ -6,13 +6,15 @@ import pytest
 
 
 class TestRestProjects:
-    def test_get_projects(self, application):
-        response = application.get("/api/v1/projects")
+    def test_get_projects(self, application, logged):
+        response = application.get("/api/v1/projects",
+                                   headers=logged)
         assert response.status_code == 200
-        assert response.json() == [{'archived': 0, 'current': 0, 'future': 0, 'name': 'test'}]
+        projects = [pjt['name'] for pjt in response.json()]
+        assert all(name in ["test", "test_users", "test_users2"] for name in projects)
 
-    def test_get_projects_limit(self, application):
-        response = application.get("/api/v1/projects", params={"skip": 4, "limit": 2})
+    def test_get_projects_limit(self, application, logged):
+        response = application.get("/api/v1/projects", params={"skip": 4, "limit": 2}, headers=logged)
         assert response.status_code == 200
         assert response.json() == []
 
@@ -21,31 +23,31 @@ class TestRestProjects:
         (4, -2, "LIMIT must not be negative")]
 
     @pytest.mark.parametrize("skip,limit,message", limit_outbound)
-    def test_get_projects_limit_outbound(self, application, skip, limit, message):
-        response = application.get("/api/v1/projects", params={"skip": skip, "limit": limit})
+    def test_get_projects_limit_outbound(self, application, skip, limit, message, logged):
+        response = application.get("/api/v1/projects", params={"skip": skip, "limit": limit}, headers=logged)
         assert response.status_code == 500
         assert response.json() == {"detail": message}
 
-    def test_get_projects_errors_500(self, application):
+    def test_get_projects_errors_500(self, application, logged):
         with patch('app.routers.rest.projects.get_projects') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects")
+            response = application.get("/api/v1/projects", headers=logged)
             assert response.status_code == 500
 
-    def test_get_one_project(self, application):
-        response = application.get("/api/v1/projects/test")
+    def test_get_one_project(self, application, logged):
+        response = application.get("/api/v1/projects/test", headers=logged)
         assert response.status_code == 200
         assert response.json() == {'archived': [], 'current': [], 'future': [], 'name': 'test'}
 
-    def test_get_one_projects_errors_404(self, application):
-        response = application.get("/api/v1/projects/unknown")
+    def test_get_one_projects_errors_404(self, application, logged):
+        response = application.get("/api/v1/projects/unknown", headers=logged)
         assert response.status_code == 404
         assert response.json() == {"detail": "'unknown' is not registered"}
 
-    def test_get_one_projects_errors_500(self, application):
+    def test_get_one_projects_errors_500(self, application, logged):
         with patch('app.routers.rest.projects.get_project') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test")
+            response = application.get("/api/v1/projects/test", headers=logged)
             assert response.status_code == 500
             assert response.json() == {"detail": "error"}
 
@@ -59,7 +61,7 @@ class TestRestProjects:
                                     json={"version": "1.0.0"},
                                     headers=logged)
         assert response.status_code == 200
-        assert response.json() == "1"
+        assert response.json()["inserted_id"] == 7
 
     def test_create_version_errors_404(self, application, logged):
         response = application.post("/api/v1/projects/tests/versions",
@@ -83,12 +85,12 @@ class TestRestProjects:
                                     json={"test": "1.0.0"},
                                     headers=logged)
         assert response.status_code == 422
-        assert response.json()["detail"] == [{'loc': ['body', 'version'],
-                                              'msg': 'field required',
-                                              'type': 'value_error.missing'}]
+        assert response.json()["detail"][0]['msg'] == 'Field required'
+        assert response.json()["detail"][0]['type'] == 'missing'
+        assert response.json()["detail"][0]['loc'] == ['body', 'version']
 
     def test_create_version_errors_500(self, application, logged):
-        with patch('app.routers.rest.projects.create_project_version') as rp:
+        with patch('app.routers.rest.version.create_project_version') as rp:
             rp.side_effect = Exception("error")
             response = application.post("/api/v1/projects/test/versions",
                                         json={"version": "1.0.0"},
@@ -130,8 +132,8 @@ class TestRestProjects:
                                    headers=logged)
         assert response.status_code == 200
 
-    def test_get_one_project_with_version(self, application):
-        response = application.get("/api/v1/projects/test")
+    def test_get_one_project_with_version(self, application, logged):
+        response = application.get("/api/v1/projects/test", headers=logged)
         assert response.status_code == 200
         assert len(response.json()["archived"]) == 1
         assert len(response.json()["current"]) == 1
@@ -178,7 +180,7 @@ class TestRestProjects:
         assert response.json()["detail"] == message
 
     def test_update_versions_500(self, application, logged):
-        with patch('app.routers.rest.projects.update_version_data') as rp:
+        with patch('app.routers.rest.version.update_version_data') as rp:
             rp.side_effect = Exception("error")
             response = application.put("/api/v1/projects/test/versions/1.0.1",
                                        json={"status": "cancelled"},
@@ -186,8 +188,9 @@ class TestRestProjects:
             assert response.status_code == 500
             assert response.json() == {"detail": "error"}
 
-    def test_get_version(self, application):
-        response = application.get("/api/v1/projects/test/versions/1.0.1")
+    def test_get_version(self, application, logged):
+        response = application.get("/api/v1/projects/test/versions/1.0.1",
+                                   headers=logged)
         assert response.status_code == 200
         keys = ("bugs",
                 "statistics",
@@ -203,14 +206,16 @@ class TestRestProjects:
                           ("test", "2.0.0", "Version '2.0.0' is not found")]
 
     @pytest.mark.parametrize("project,version,message", version_errors_404)
-    def test_get_version_errors_404(self, application, project, version, message):
-        response = application.get(f"/api/v1/projects/{project}/versions/{version}")
+    def test_get_version_errors_404(self, application,logged, project, version, message):
+        response = application.get(f"/api/v1/projects/{project}/versions/{version}",
+                                   headers=logged)
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
-    def test_get_version_errors_500(self, application):
-        with patch('app.routers.rest.projects.get_version') as rp:
+    def test_get_version_errors_500(self, application, logged):
+        with patch('app.routers.rest.version.get_version') as rp:
             rp.side_effect = Exception("error")
-            response = application.get("/api/v1/projects/test/versions/1.0.1")
+            response = application.get("/api/v1/projects/test/versions/1.0.1",
+                                       headers=logged)
             assert response.status_code == 500
             assert response.json() == {"detail": "error"}

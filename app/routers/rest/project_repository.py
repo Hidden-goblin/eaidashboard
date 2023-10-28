@@ -22,8 +22,8 @@ from app.database.postgre.testrepository import (
     db_project_features,
     db_project_scenarios,
 )
+from app.schema.error_code import ErrorMessage
 from app.schema.postgres_enums import RepositoryEnum
-from app.schema.project_schema import ErrorMessage
 from app.schema.repository_schema import Feature, Scenario, TestFeature, TestScenario
 from app.schema.users import UpdateUser
 from app.utils.project_alias import provide
@@ -37,7 +37,9 @@ router = APIRouter(
             response_model=List[str],
             tags=["Repository"],
             description="Retrieve all epics linked to the project.")
-async def get_epics(project_name: str) -> List[str]:
+async def get_epics(project_name: str,
+                    user: UpdateUser = Security(
+                        authorize_user, scopes=["admin", "user"])) -> List[str]:
     try:
         return await db_project_epics(project_name.casefold())
     except Exception as exp:
@@ -48,7 +50,10 @@ async def get_epics(project_name: str) -> List[str]:
             response_model=List[Feature],
             tags=["Repository"],
             description="Retrieve all features linked to the project for this epic")
-async def get_feature(project_name: str, epic: str) -> List[Feature]:
+async def get_feature(project_name: str,
+                      epic: str,
+                      user: UpdateUser = Security(
+                          authorize_user, scopes=["admin", "user"])) -> List[Feature]:
     try:
         return await db_project_features(project_name, epic)
     except Exception as exp:
@@ -67,8 +72,10 @@ async def get_scenarios(project_name: str,
                         limit: int = 100,
                         offset: int = 0,
                         epic: str = None,
-                        feature: str = None) -> List[str] | List[Feature] | List[
-    Scenario] | JSONResponse:
+                        feature: str = None,
+                        user: UpdateUser = Security(
+                            authorize_user, scopes=["admin", "user"])) -> List[str] | List[Feature] |\
+                                                                          List[Scenario] | JSONResponse:
     try:
         if elements == RepositoryEnum.epics:
             return await db_project_epics(project_name, limit=limit, offset=offset)
@@ -104,7 +111,7 @@ async def get_scenarios(project_name: str,
                        "description": "project not found"}
              },
              tags=["Repository"])
-async def upload_repository(project_name: str, # noqa: ANN201
+async def upload_repository(project_name: str,  # noqa: ANN201
                             background_task: BackgroundTasks,
                             file: UploadFile = File(),
                             user: UpdateUser = Security(

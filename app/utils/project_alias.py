@@ -14,7 +14,7 @@ def _compute_alias(project_name: str) -> str:
     return _alias
 
 
-def register(project_name: str, alias: str = None)->None:
+def register(project_name: str, alias: str = None) -> None:
     forbidden_char = ['/', '\\', '.', ' ', '"', '$', '*', '<', '>', ':', '|', '?']
     has_forbidden_char = any(char in project_name for char in forbidden_char)
 

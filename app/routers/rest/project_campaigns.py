@@ -40,8 +40,8 @@ from app.schema.campaign_schema import (
     TicketScenarioCampaign,
     ToBeCampaign,
 )
+from app.schema.error_code import ErrorMessage
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.project_schema import ErrorMessage
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
@@ -128,7 +128,9 @@ async def get_campaigns(project_name: str,
                         version: str = None,
                         status: CampaignStatusEnum = None,
                         limit: int = 10,
-                        skip: int = 0) -> List[CampaignLight]:
+                        skip: int = 0,
+                        user: UpdateUser = Security(
+                            authorize_user, scopes=["admin", "user"])) -> List[CampaignLight]:
     await project_version_raise(project_name, version)
     try:
         campaigns, count = await retrieve_campaign(project_name,
@@ -200,7 +202,9 @@ async def update_campaign_occurrence(project_name: str,
             )
 async def get_campaign(project_name: str,
                        version: str,
-                       occurrence: str) -> CampaignFull:
+                       occurrence: str,
+                       user: UpdateUser = Security(
+                           authorize_user, scopes=["admin", "user"])) -> CampaignFull:
     await project_version_raise(project_name, version)
     try:
         result = await get_campaign_content(project_name, version, occurrence)
@@ -216,7 +220,10 @@ async def get_campaign(project_name: str,
             description="Retrieve a campaign tickets")
 async def get_campaign_tickets(project_name: str,
                                version: str,
-                               occurrence: str) -> CampaignFull:
+                               occurrence: str,
+                               user: UpdateUser = Security(
+                                   authorize_user, scopes=["admin", "user"])
+                               ) -> CampaignFull:
     await project_version_raise(project_name, version)
     try:
         return await db_get_campaign_tickets(project_name, version, occurrence)
@@ -233,7 +240,9 @@ async def get_campaign_tickets(project_name: str,
 async def get_campaign_ticket(project_name: str,
                               version: str,
                               occurrence: str,
-                              ticket_ref: str) -> List[ScenarioInternal]:
+                              ticket_ref: str,
+                              user: UpdateUser = Security(
+                                  authorize_user, scopes=["admin", "user"])) -> List[ScenarioInternal]:
     try:
         return await db_get_campaign_ticket_scenarios(project_name, version, occurrence, ticket_ref)
     except Exception as exp:
@@ -269,7 +278,9 @@ async def get_campaign_ticket_scenario(project_name: str,
                                        version: str,
                                        occurrence: str,
                                        reference: str,
-                                       scenario_id: str) -> dict:
+                                       scenario_id: str,
+                                       user: UpdateUser = Security(
+                                           authorize_user, scopes=["admin", "user"])) -> dict:
     try:
         return await db_get_campaign_ticket_scenario(project_name,
                                                      version,
@@ -304,6 +315,7 @@ async def update_campaign_ticket_scenario_status(project_name: str,
 
 
 @router.post("/{project_name}/campaigns/{version}/{occurrence}/",
+             description="Generate the result for this particular occurrence",
              tags=["Campaign"])
 async def create_campaign_occurrence_result(project_name: str,
                                             version: str,

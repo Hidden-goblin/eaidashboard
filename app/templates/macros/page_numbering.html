@@ -1,0 +1,29 @@
+{% macro pg_numb(target, url, pages, current_page, aria_label) -%}
+<nav aria-label="{{ aria_label }}">
+        <ul class="pagination">
+            {% for page in pages %}
+              {% if current_page != page[0] and loop.first %}
+                 <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="{{ target }}"
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="{{ url }}?limit={{page[1]}}&skip={{page[2]}}">Previous</a></li>
+               {% else %}
+                    {% if current_page != page[0] and loop.last %}
+                      <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="{{ target }}"
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="{{ url }}?limit={{page[1]}}&skip={{page[2]}}">Next</a></li>
+                    {% else %}
+                             <li class="page-item"><a class="page-link"
+                                          hx-trigger="click"
+                                          hx-target="{{ target }}"
+                                          hx-headers='{"eaid-request": "table"}'
+                                          hx-get="{{ url }}?limit={{page[1]}}&skip={{page[2]}}">{{page[0]}}</a></li>
+                    {%endif%}
+               {%endif%}
+            {%endfor%}
+        </ul>
+      </nav>
+{%- endmacro %}

@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
@@ -10,7 +10,7 @@ from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.project_schema import Statistics
+from app.schema.project_schema import Dashboard, Statistics
 from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
 from app.utils.log_management import log_message
@@ -163,16 +163,16 @@ async def update_version_data(project_name: str,
     return await get_version(project_name, version)
 
 
-async def dashboard() -> List[dict]:
+async def dashboard(skip: int = 0, limit: int = 10) -> Tuple[List[Dashboard], int]:
     """TODO Fix potential defect where more than 10 """
-    projects = await get_projects()
+    projects, count = await get_projects(skip, limit)
     result = []
     for project in projects:
         project_versions = await get_project_versions(project["name"], True)
         result.extend({"name": project["name"],
                        "alias": provide(project["name"]),
-                       **version.dict()} for version in project_versions)
-    return result
+                       **version.model_dump()} for version in project_versions)
+    return [Dashboard(**res) for res in result], count
 
 
 async def update_status_for_ticket_in_version(project_name: str,
@@ -218,6 +218,7 @@ async def version_internal_id(project_name: str, version: str) -> int | Applicat
             return ApplicationError(error=ApplicationErrorCode.version_not_found,
                                     message=f"The version '{version}' is not found.")
         return result[0]
+
 
 async def refresh_version_stats(project_name: str = None, version: str = None) -> None:
     # TODO: Limit to project-version in general except for future cron task

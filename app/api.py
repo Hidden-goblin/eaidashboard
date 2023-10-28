@@ -14,11 +14,12 @@ from app.database.utils.password_management import generate_keys
 from app.routers.front import (
     front_dashboard,
     front_documentation,
-    front_forms,
+    front_project_version_tickets,
     front_projects,
     front_projects_bug,
     front_projects_campaign,
     front_projects_repository,
+    front_users,
 )
 from app.routers.rest import (
     auth,
@@ -28,6 +29,7 @@ from app.routers.rest import (
     project_test_results,
     projects,
     settings,
+    tickets,
     users,
     version,
 )
@@ -49,8 +51,8 @@ app = FastAPI(title="Eaidashboard",
                   "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
               },
               openapi_tags=DESCRIPTION,
-              docs_url=None)
-
+              docs_url=None,
+              swagger_ui_parameters={"swagger": "2.0"})
 
 app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -65,6 +67,7 @@ app.include_router(projects.router)
 app.include_router(settings.router)
 app.include_router(front_dashboard.router)
 app.include_router(version.router)
+app.include_router(tickets.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(bugs.router)
@@ -75,11 +78,12 @@ app.include_router(front_projects.router)
 app.include_router(front_projects_campaign.router)
 app.include_router(front_projects_bug.router)
 app.include_router(front_projects_repository.router)
-app.include_router(front_forms.router)
 app.include_router(front_documentation.router)
+app.include_router(front_users.router)
+app.include_router(front_project_version_tickets.router)
 
-log_message(f"Postgre: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
-            f"Redis: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")
+log_message(f"\nPostgresql on: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
+            f"Redis on: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")
 
 init_user()
 
@@ -102,8 +106,9 @@ async def custom_swagger_ui_html() -> HTMLResponse:
     return get_swagger_ui_html(openapi_url=app.openapi_url,
                                title=f"{app.title} - Swagger UI",
                                oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-                               swagger_js_url="/assets/swagger-ui-bundle.js",
-                               swagger_css_url="/assets/swagger-ui.css")
+                               swagger_js_url="/assets/5_swagger-ui-bundle.js",
+                               swagger_css_url="/assets/5_swagger-ui.css"
+                               )
 
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)

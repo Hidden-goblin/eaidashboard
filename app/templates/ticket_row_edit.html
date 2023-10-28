@@ -11,11 +11,12 @@
   <td><input name='description' value="{{ticket.description}}"> </td>
   <td>
     <button class="btn btn-danger"
-            hx-get="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}">
+            hx-get="/front/v1/projects/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}"
+            hx-headers='{"eaid-request":"row"}'>
       Cancel
     </button>
     <button class="btn btn-danger"
-            hx-put="/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}"
+            hx-put="/front/v1/projects/{{project_name}}/versions/{{project_version}}/tickets/{{ticket.reference}}"
             hx-include="closest tr">
       Save
     </button>

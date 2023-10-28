@@ -14,11 +14,11 @@ class Version(BaseModel):
     version: str
     created: datetime
     updated: datetime
-    started: Optional[datetime]
-    end_forecast: Optional[datetime]
+    started: Optional[datetime] = None
+    end_forecast: Optional[datetime] = None
     status: StatusEnum
     statistics: Statistics
     bugs: Bugs
 
     def __getitem__(self: "Version", index: str) -> str | datetime | StatusEnum | Statistics | Bugs:
-        return self.dict().get(index, None)
+        return self.model_dump().get(index, None)

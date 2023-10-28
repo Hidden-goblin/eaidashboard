@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from psycopg import DatabaseError, IntegrityError
 from psycopg.rows import dict_row, tuple_row
@@ -21,6 +21,8 @@ async def register_project(project_name: str) -> str:
     forbidden_char = ["\\", "/", "$"]
     if any(char in project_name for char in forbidden_char):
         raise ProjectNameInvalid("Project name must not contain \\ / $ characters")
+    if project_name == "*":
+        raise ProjectNameInvalid("Project name must be different from '*' special project")
     if contains(project_name):
         raise DuplicateProject(f"Project name '{project_name}' "
                                f"already exists. Please update the name "
@@ -39,7 +41,7 @@ async def registered_projects() -> List[str]:
         return [item[0] for item in connection.execute("select name from projects;").fetchall()]
 
 
-async def get_projects(skip: int = 0, limit: int = 10) -> List[Project]:
+async def get_projects(skip: int = 0, limit: int = 10) -> Tuple[List[Project], int]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # The query returns null instead of 0 value.
@@ -65,7 +67,8 @@ async def get_projects(skip: int = 0, limit: int = 10) -> List[Project]:
             " from projects as pj"
             " order by pj.name "
             " limit %s offset %s;", (limit, skip))
-        return list(rows.fetchall())
+        count = connection.execute("select count(distinct id) as total from projects;")
+        return list(rows.fetchall()), int(count.fetchone()['total'])
 
 
 async def create_project_version(project_name: str,
