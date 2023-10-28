@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, Security
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
+from pydantic import ValidationError
 
 from app.app_exception import front_error_message
 from app.conf import templates
@@ -115,6 +116,9 @@ async def record_bug(project_name: str,
                                           headers={
                                               "HX-Trigger": request.headers.get('eaid-next', "")
                                           })
+    except ValidationError as exception:
+        log_error(",\n".join(exception.args))
+        return front_error_message(templates, request, Exception(repr(exception).split("[")[0]))
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
