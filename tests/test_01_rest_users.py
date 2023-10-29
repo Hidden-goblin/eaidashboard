@@ -190,7 +190,7 @@ class TestRestUsers:
                                           "version": TestRestUsers.current_version,
                                           "description": "First description"},
                                     headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert response.json()["inserted_id"] is not None and int(response.json()["inserted_id"])
 
     def test_user_scopes_403(self, application):

@@ -65,6 +65,7 @@ class RegisterVersionResponse(BaseModel):
     """Attributes:
         inserted_id (str)
         acknowledged (bool)
+        message (str) = None
     """
     inserted_id: str | int
     acknowledged: bool = True

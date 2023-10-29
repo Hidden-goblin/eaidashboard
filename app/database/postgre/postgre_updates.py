@@ -332,6 +332,21 @@ POSTGRE_UPDATES = [
                       CHECK (username ~* '([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+');
         """,
         "description": "Add constraint on email format"
+    },
+    {
+        "request": """create table if not exists bugs_issues (
+        id serial primary key,
+        bug_id int,
+        campaign_ticket_scenario_id int);
+        """,
+        "description": "Create bugs_issues table"
+    },
+    {
+        "request": """alter table bugs_issues
+        add constraint bugs_issues_bug_id_fk foreign key (bug_id) references bugs(id) match full,
+        add constraint bugs_issues_campaign_ticket_scenario_id_fk foreign key (campaign_ticket_scenario_id)
+         references campaign_ticket_scenarios(id) match full;""",
+        "description": "Add fk constraint on bugs_issues"
     }
     # Alter table users to use the first scope in the array to a json
     # alter table users

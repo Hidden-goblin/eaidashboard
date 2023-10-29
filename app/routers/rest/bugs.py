@@ -11,7 +11,7 @@ from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, insert_bug
 from app.database.postgre.pg_bugs import get_bugs as db_g_bugs
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.schema.bugs_schema import BugTicket, BugTicketFull, UpdateBugTicket
-from app.schema.error_code import ErrorMessage
+from app.schema.error_code import ApplicationError, ErrorMessage
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import BugStatusEnum
@@ -36,6 +36,7 @@ router = APIRouter(
             )
 async def get_bugs(project_name: str,
                    response: Response,
+                   version: Optional[str] = None,
                    status: Annotated[list[BugStatusEnum], Query()] = None,
                    criticality: Optional[BugCriticalityEnum] = None,
                    limit: Optional[int] = 100,
@@ -43,13 +44,14 @@ async def get_bugs(project_name: str,
                    user: UpdateUser = Security(
                        authorize_user, scopes=["admin", "user"])
                    ) -> List[BugTicketFull]:
-    await project_version_raise(project_name)
+    await project_version_raise(project_name, version)
     try:
         result, count = await db_g_bugs(project_name=project_name,
                                         status=status,
                                         criticality=criticality,
                                         limit=limit,
-                                        skip=skip)
+                                        skip=skip,
+                                        version=version)
         response.headers["X-total-count"] = str(count)
     except Exception as exp:
         log_error(repr(exp))
@@ -59,7 +61,7 @@ async def get_bugs(project_name: str,
 
 @router.get("/{project_name}/bugs/{internal_id}",
             tags=["Bug"],
-            description="Retrieve all bugs for a project no matter the versions",
+            description="Retrieve a bug",
             response_model=BugTicketFull,
             responses={
                 404: {"model": ErrorMessage,
@@ -84,51 +86,26 @@ async def get_bug(project_name: str,
     return if_error_raise_http(result)
 
 
-@router.get("/{project_name}/versions/{version}/bugs",
-            tags=["Bug"],
-            description="Retrieve all bugs within a version for a project",
-            response_model=List[BugTicketFull],
-            responses={
-                404: {"model": ErrorMessage,
-                      "description": "Project or version is not fount"},
-                500: {"model": ErrorMessage,
-                      "description": "Computation error"}
-            })
-async def get_bugs_for_version(project_name: str,
-                               version: str,
-                               response: Response,
-                               status: Optional[BugStatusEnum] = None,
-                               criticality: Optional[BugCriticalityEnum] = None,
-                               limit: Optional[int] = 100,
-                               skip: Optional[int] = 0,
-                               user: UpdateUser = Security(
-                                   authorize_user, scopes=["admin", "user"])
-                               ) -> List[BugTicketFull]:
-    await project_version_raise(project_name, version)
-    try:
-        result, count = await db_g_bugs(project_name=project_name,
-                                        version=version,
-                                        status=status,
-                                        criticality=criticality,
-                                        limit=limit,
-                                        skip=skip)
-        response.headers["X-total-count"] = str(count)
-    except Exception as exp:
-        log_error(" ".join(exp.args))
-        raise HTTPException(500, " ".join(exp.args)) from exp
-    return if_error_raise_http(result)
-
-
 @router.post("/{project_name}/bugs",
              response_model=RegisterVersionResponse,
+             status_code=201,
+             responses={
+                 404: {"model": ErrorMessage,
+                       "description": "Project is not found"},
+                 500: {"model": ErrorMessage,
+                       "description": "Computation error"}
+             },
              tags=["Bug"])
 async def create_bugs(project_name: str,
                       bug: BugTicket,
+                      response: Response,
                       user: UpdateUser = Security(
                           authorize_user, scopes=["admin", "user"])) -> RegisterVersionResponse:
     await project_version_raise(project_name, bug.version)
     try:
         result = await insert_bug(project_name, bug)
+        if not isinstance(result, ApplicationError):
+            response.headers["Location"] = f"/api/v1/projects/{project_name}/bugs/{result.inserted_id}"
     except UniqueViolation as uv:
         log_error(repr(uv))
         raise HTTPException(409,

@@ -36,35 +36,6 @@ class TestRestBug:
                                     headers=logged)
         assert response.status_code == 200
 
-    def test_get_bugs_from_version(self, application, logged):
-        response = application.get(
-            f"/api/v1/projects/{TestRestBug.project_name}/versions/"
-            f"{TestRestBug.previous_version}/bugs", headers=logged)
-        assert response.status_code == 200
-        assert response.json() == []
-
-    fake_project_version = [(project_name, "5.0.0", "Version '5.0.0' is not found"),
-                            ("unknown", current_version, "'unknown' is not registered"),
-                            ("unknown", "5.0.0", "'unknown' is not registered")]
-
-    @pytest.mark.parametrize("project_name,version,message", fake_project_version)
-    def test_get_bugs_from_version_error_404(self, application, logged, project_name, version, message):
-        response = application.get(
-            f"/api/v1/projects/{project_name}/versions/"
-            f"{version}/bugs",
-            headers=logged)
-        assert response.status_code == 404
-        assert response.json()["detail"] == message
-
-    def test_get_bugs_from_version_error_500(self, application, logged):
-        with patch('app.routers.rest.bugs.db_g_bugs') as rp:
-            rp.side_effect = Exception("error")
-            response = application.get(
-                f"/api/v1/projects/{TestRestBug.project_name}/versions/"
-                f"{TestRestBug.previous_version}/bugs", headers=logged)
-            assert response.status_code == 500
-            assert response.json()["detail"] == "error"
-
     def test_get_bugs_from_project(self, application, logged):
         response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs", headers=logged)
         assert response.status_code == 200
@@ -172,7 +143,7 @@ class TestRestBug:
         response = application.post(f"/api/v1/projects/{TestRestBug.project_name}/bugs",
                                     json=payload,
                                     headers=logged)
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert response.json()["inserted_id"] == inserted_id
 
     duplicate_error = [({"title": "Third",
@@ -228,7 +199,7 @@ class TestRestBug:
         response = application.post(f"/api/v1/projects/{TestRestBug.project_name}/bugs",
                                     json=payload,
                                     headers=logged)
-        assert response.status_code == 200
+        assert response.status_code == 201
 
     def test_get_bugs_from_version_populated(self, application, logged):
         response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs", headers=logged)

@@ -1,0 +1,35 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+
+'https://github.com/Hidden-goblin/eaidashboard/issues/67
+
+* Bugs are linked to failing tests and could move to specific tests
+** Create link bug to test
+*** .--Update database model--
+***: Update GET request to get links
+--GET /bugs or /bugs/bug_id -> in the field 'related_to'--;
+***: --Update POST request to add link--
+ --Add location header to response--;
+*** Update PUT request to add another link
+** Bug response schema
+*** .--Update Pydantic model--
+*** .--Update db request--
+**** .--Set data--
+**** .--Get data--
+**** Update data
+** Update front to show links
+*** In Bugs table show links
+*** In Bug creation form allow to select tests (failed tests)
+**** Query campaign and occurrence
+***** Query issues and scenarios
+*** In scenario allow to create bug when test fail
+**** Bug creation in dialog
+*****: Move bug creation form
+from placeholder in the page to dialog;
+** Create move to test from bug table
+*** Check redirect link
+** Fix unit test
+*** Fix current ones
+*** Add new for the feature
+
+@endwbs

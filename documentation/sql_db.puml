@@ -238,6 +238,20 @@ FK project_id: projects.id
 unique(project_id, version_id, reference)
 }
 
+entity bugs_issues {
+id: int autoincrement
+---
+bug_id: int FK
+campaign_ticket_scenario_id: int FK
+---
+FK bug_id: bugs.id
+FK campaign_ticket_scenario_id: campaign_ticket_scenarios.id
+}
+
+' one bug to many issues, one issue to many bugs
+bugs ||--|| bugs_issues
+bugs_issues ||--|| campaign_ticket_scenarios
+
 projects ||--o{ versions
 versions ||--o{ tickets
 tickets ||--|| campaign_tickets

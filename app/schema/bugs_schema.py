@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,6 +33,12 @@ class BugsStatistics(BaseModel):
         return self.model_dump().get(index, None)
 
 
+class CampaignTicketScenario(BaseModel, extra='forbid'):
+    ticket_reference: str = Field(min_length=1)
+    scenario_tech_id: int
+    occurrence: int
+
+
 class BugTicket(BaseModel, extra='forbid'):
     version: str = Field(min_length=1)
     title: str = Field(min_length=1)
@@ -42,6 +48,7 @@ class BugTicket(BaseModel, extra='forbid'):
     url: Optional[str] = ""
     status: BugStatusEnum = BugStatusEnum.open
     criticality: BugCriticalityEnum = BugCriticalityEnum.major
+    related_to: Optional[List[CampaignTicketScenario | str | int | None]] = []
 
     def __getitem__(self: "BugTicket",
                     index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:

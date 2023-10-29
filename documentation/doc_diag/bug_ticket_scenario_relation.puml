@@ -1,0 +1,48 @@
+@startuml bug_creation
+'rectangle bug
+'rectangle ticket
+'rectangle scenario
+'
+'bug .> ticket : related to
+'note on link
+'    {
+'       "affects": ["ticket reference",],
+'       "breaks": ["scenario reference",]
+'    }
+'end note
+'
+'ticket <- scenario : tested by
+
+start
+-> Record a bug;
+:Bug Item
+----
+* Title
+* Version
+* Description
+* Severity
+* Status = Open
+* Related to
+;
+end
+@enduml
+
+@startuml Bug_lifecycle
+Actor User
+Participant Server
+Database DB
+== Bug creation ==
+User -> Server: POST **/v1/projects/{project_name}/bugs
+Server -> DB: insert new bug
+DB --> Server: inserted id
+Server --> User: 201 Created (??)
+note right
+    TODO check if return a 201
+     with the location header
+end note
+== Bugs reading ==
+User -> Server: GET **/v1/projects/{project_name}/bugs
+Server -> DB: Select all bugs\n join with bug_issues
+DB --> Server: list of bugs
+Server --> User: 200 OK
+@enduml
