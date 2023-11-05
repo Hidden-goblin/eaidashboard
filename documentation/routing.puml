@@ -70,7 +70,10 @@
                         "post": "Create new bug",
                         "<internal_id>": {
                             "get":"Retrieve specific bug",
-                            "put": "Update bug"
+                            "put": "Update bug",
+                            "relatedTo": {
+                                "delete": "Remove a link"
+                            }
                         }
                     }
                 }

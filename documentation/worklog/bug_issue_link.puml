@@ -5,27 +5,37 @@
 
 * Bugs are linked to failing tests and could move to specific tests
 ** Create link bug to test
-*** .--Update database model--
-***: Update GET request to get links
---GET /bugs or /bugs/bug_id -> in the field 'related_to'--;
-***: --Update POST request to add link--
+***[#green] .--Update database model--
+*** Update GET request to get links
+****[#green] .--GET /bugs or /bugs/bug_id -> in the field 'related_to'--
+**** Update json response to include links
+***[#green]: --Update POST request to add link--
  --Add location header to response--;
 *** Update PUT request to add another link
-** Bug response schema
-*** .--Update Pydantic model--
-*** .--Update db request--
-**** .--Set data--
-**** .--Get data--
-**** Update data
+**[#green] .--Bug response schema--
+***[#green] .--Update Pydantic model--
+***[#green]: .--Update db request--
+----
+Link is now a soft link not using sql FK
+When inserting there is still check for
+consistency;
+****[#green] .--Set data--
+****[#green]: .--Get data--
+----
+Bug with no relation came with a list containing
+ with empty objet;
+****[#green] .--Update data--
 ** Update front to show links
 *** In Bugs table show links
 *** In Bug creation form allow to select tests (failed tests)
 **** Query campaign and occurrence
 ***** Query issues and scenarios
 *** In scenario allow to create bug when test fail
-**** Bug creation in dialog
-*****: Move bug creation form
-from placeholder in the page to dialog;
+****[#green] .--Bug creation in dialog--
+*****[#green]: --Move bug creation form--
+--from placeholder in the page to dialog--;
+****[#green] .--Bug update in dialog--
+**** Add bug creation link per scenario
 ** Create move to test from bug table
 *** Check redirect link
 ** Fix unit test

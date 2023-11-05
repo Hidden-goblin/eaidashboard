@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Security
@@ -55,6 +55,7 @@ async def front_project_bugs(project_name: str,
                                                   "project_name_alias": provide(project_name)
                                               })
         elif requested_item.casefold() == "FORM".casefold():
+
             versions = await get_versions(project_name)
             return templates.TemplateResponse("forms/add_bug.html",
                                               {
@@ -64,7 +65,8 @@ async def front_project_bugs(project_name: str,
                                                   "project_name_alias": provide(project_name),
                                                   "criticality": [f"{crit}" for crit in
                                                                   BugCriticalityEnum]
-                                              })
+                                              },
+                                              headers={"hx-retarget": "#modals-here"})
         elif requested_item.casefold() == "TABLE".casefold():
             if display_all == "on".casefold():
                 bugs, count = await get_bugs(project_name)
@@ -94,7 +96,6 @@ async def front_project_bugs(project_name: str,
 
 @router.post("/{project_name}/bugs",
              tags=["Front - Project"],
-
              include_in_schema=False)
 async def record_bug(project_name: str,
                      body: dict,
@@ -104,8 +105,9 @@ async def record_bug(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        complement_data = {"status": BugStatusEnum.open}
-        res = await insert_bug(project_name, BugTicket(**body, **complement_data))
+        body = BugTicket(**body)
+        # complement_data = {"status": BugStatusEnum.open}
+        res = await insert_bug(project_name, body)
         log_message(repr(res))
         return templates.TemplateResponse("void.html",
                                           {
@@ -114,11 +116,26 @@ async def record_bug(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           },
                                           headers={
-                                              "HX-Trigger": request.headers.get('eaid-next', "")
+                                              "HX-Trigger": json.dumps({"modalClear": "", "form-refresh": ""})
                                           })
     except ValidationError as exception:
-        log_error(",\n".join(exception.args))
-        return front_error_message(templates, request, Exception(repr(exception).split("[")[0]))
+        log_error(repr(exception))
+        message = ""
+        for mess in json.loads(exception.json()):
+            message = f"{message}{mess['loc'][-1]}: {mess['msg']}. "
+        return templates.TemplateResponse("forms/add_bug.html",
+                                          {
+                                              "request": request,
+                                              "versions": [body["version"]],
+                                              "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
+                                              "criticality": [f"{crit}" for crit in
+                                                              BugCriticalityEnum],
+                                              "posted": body,
+                                              "message": message
+                                          },
+                                          headers={"HX-Retarget": "#modal",  # Retarget
+                                                   "HX-Reswap": "beforeend"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -146,7 +163,8 @@ async def display_bug(project_name: str,
                                               "criticality": [f"{crit}" for crit in
                                                               BugCriticalityEnum],
                                               "bug": bug
-                                          })
+                                          },
+                                          headers={"hx-retarget": "#modals-here"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -173,11 +191,27 @@ async def front_update_bug(project_name: str,
                                               "project_name_alias": provide(project_name)
                                           },
                                           headers={
-                                              "HX-Trigger": request.headers.get('eaid-next', "")
+                                              "HX-Trigger": json.dumps({"modalClear": "", "form-refresh": ""})
                                           })
     except Exception as exception:
         log_error(repr(exception))
-        return front_error_message(templates, request, exception)
+        posted = await db_get_bug(project_name, internal_id)
+        posted = {**posted.model_dump(), **body.model_dump()}
+        versions = await get_versions(project_name)
+        return templates.TemplateResponse("forms/update_bug.html",
+                                          {
+                                              "request": request,
+                                              "project_name": project_name,
+                                              "project_name_alias": provide(project_name),
+                                              "versions": versions,
+                                              "criticality": [f"{crit}" for crit in
+                                                              BugCriticalityEnum],
+                                              "bug": posted,
+                                              "message": ("The update cannot be done. Ensure that the bug title is not "
+                                                          "empty or does not exist for this project.")
+                                          },
+                                          headers={"HX-Retarget": "#modal",
+                                                   "HX-Reswap": "beforeend"})
 
 
 @router.patch("/{project_name}/bugs/{internal_id}",

@@ -120,7 +120,15 @@ async def create_bugs(project_name: str,
 
 @router.put("/{project_name}/bugs/{bug_internal_id}",
             tags=["Bug"],
-            response_model=BugTicketFull)
+            response_model=BugTicketFull,
+            status_code=200,
+            responses={
+                404: {"model": ErrorMessage,
+                      "description": "Project is not found"},
+                500: {"model": ErrorMessage,
+                      "description": "Computation error"}
+            },
+            )
 async def update_bugs(project_name: str,
                       bug_internal_id: str,
                       body: UpdateBugTicket,

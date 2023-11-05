@@ -337,16 +337,26 @@ POSTGRE_UPDATES = [
         "request": """create table if not exists bugs_issues (
         id serial primary key,
         bug_id int,
-        campaign_ticket_scenario_id int);
+        occurrence int,
+        ticket_reference varchar(50),
+        scenario_id int);
         """,
         "description": "Create bugs_issues table"
     },
     {
         "request": """alter table bugs_issues
-        add constraint bugs_issues_bug_id_fk foreign key (bug_id) references bugs(id) match full,
-        add constraint bugs_issues_campaign_ticket_scenario_id_fk foreign key (campaign_ticket_scenario_id)
-         references campaign_ticket_scenarios(id) match full;""",
+        add constraint bugs_issues_bug_id_fk foreign key (bug_id) references bugs(id) match full;""",
         "description": "Add fk constraint on bugs_issues"
+    },
+    {
+        "request": """alter table campaign_tickets
+        alter column ticket_reference type varchar(50);""",
+        "description": "Update ticket_reference column type from text to varchar(50) campaign_tickets"
+    },
+    {
+        "request": """alter table bugs
+        add constraint title_length check (length(title) > 1);""",
+        "description": "Add constraint on title length for bugs table"
     }
     # Alter table users to use the first scope in the array to a json
     # alter table users

@@ -32,7 +32,12 @@ async def get_bugs(project_name: str,
              " bg.status,"
              " bg.created,"
              " bg.updated,"
-             " array_agg(bugs_issues.campaign_ticket_scenario_id) as related_to"
+             " json_agg("
+             " 	json_strip_nulls(json_build_object("
+             " 'occurrence', bugs_issues.occurrence,"
+             " 'ticket_reference', bugs_issues.ticket_reference,"
+             " 'scenario_tech_id', bugs_issues.scenario_id)"
+             "))  as related_to"
              " from bugs as bg"
              " join projects as pj on pj.id = bg.project_id"
              " join versions as ve on ve.id = bg.version_id"
@@ -68,6 +73,7 @@ async def get_bugs(project_name: str,
         data.pop()
         data.pop()
         count = connection.execute(final_count_query, data).fetchone()["total"]
+
         return [BugTicketFull(**row) for row in rows], count
 
 
@@ -84,7 +90,12 @@ async def db_get_bug(project_name: str,
                                  " bg.status,"
                                  " bg.created,"
                                  " bg.updated,"
-                                 " array_agg(bugs_issues.campaign_ticket_scenario_id) as related_to"
+                                 " json_agg("
+                                 " 	json_strip_nulls(json_build_object("
+                                 " 'occurrence', bugs_issues.occurrence,"
+                                 " 'ticket_reference', bugs_issues.ticket_reference,"
+                                 " 'scenario_tech_id', bugs_issues.scenario_id)"
+                                 "))  as related_to"
                                  " from bugs as bg"
                                  " join projects as pj on pj.id = bg.project_id"
                                  " join versions as ve on ve.id = bg.version_id"
@@ -140,11 +151,13 @@ async def db_update_bugs(project_name: str,
                            BugStatusEnum,
                            bug_authorized_transition)
     __update_bug_status(current_bug, bug_ticket)
-
+    # All fields update from bug_ticket
     to_set = ',\n '.join(f'{key} = %s' for key in bug_ticket.to_sql().keys() if key != "version")
     values = [value for key, value in bug_ticket.to_sql().items() if key != "version"]
+    version = current_bug.version
     # TIPS: convert string version into internal id version
     if "version" in bug_ticket_dict:
+        version = bug_ticket_dict["version"]
         to_set = f"{to_set}, version_id = %s"
         version_id = await version_internal_id(project_name, bug_ticket_dict["version"])
         if isinstance(version_id, ApplicationError):
@@ -164,6 +177,8 @@ async def db_update_bugs(project_name: str,
                                  f" returning id;",
                                  values)
         log_message(row.statusmessage)
+    if bug_ticket.related_to:
+        await make_link_to_scenario(project_name, version, bug_ticket.related_to, int(internal_id))
     # SPEC invalidate all files of the current version
     await rs_invalidate_file(f"file:{project_name}:{current_bug.version}:*")
     return await db_get_bug(project_name, internal_id)
@@ -173,29 +188,35 @@ async def make_link_to_scenario(project_name: str,
                                 version: str,
                                 related_to: List[CampaignTicketScenario],
                                 bug_id: int) -> int:
-    query = ("insert into bugs_issues (bug_id, campaign_ticket_scenario_id)"
-             " select %s, cts.id"
+    # validate existence
+
+    # Insert
+    query = ("insert into bugs_issues (bug_id, occurrence, ticket_reference, scenario_id)"
+             " select %(bug_id)s, %(occurrence)s, %(ticket_reference)s::varchar, %(scenario_tech_id)s"
              " from campaign_ticket_scenarios as cts"
              " join campaign_tickets as ct on ct.id = cts.campaign_ticket_id"
              " join campaigns as ca on ca.id = ct.campaign_id"
              " join scenarios as sc on sc.id = cts.scenario_id"
-             " where ca.project_id = %s"
-             " and ca.version = %s"
-             " and ca.occurrence = %s"
-             " and ct.ticket_reference = %s"
-             " and sc.id = %s")
+             " where ca.project_id = %(project_name)s"
+             " and ca.version = %(version)s"
+             " and ca.occurrence = %(occurrence)s"
+             " and ct.ticket_reference = %(ticket_reference)s::varchar"
+             " and sc.id = %(scenario_tech_id)s")
     # Flatten list of related to
-    data = [(bug_id,
-             project_name,
-             version,
-             elem.occurrence,
-             elem.ticket_reference,
-             elem.scenario_tech_id) for elem in related_to]
+    data = [{"bug_id": bug_id,
+             "project_name": project_name,
+             "version": version,
+             "occurrence": elem.occurrence,
+             "ticket_reference": str(elem.ticket_reference),
+             "scenario_tech_id": elem.scenario_tech_id} for elem in related_to]
     try:
         with pool.connection() as connection:
             connection.row_factory = dict_row
             with connection.cursor() as cursor:
                 cursor.executemany(query, data)
+                log_message(f"linked {cursor.rowcount} scenarios to bug {bug_id}")
+                if len(data) != cursor.rowcount:
+                    raise Exception(f"linked {cursor.rowcount} scenarios to bug {bug_id} while expecting {len(data)}")
     except Exception as exception:
         log_message(repr(exception))
         return 0

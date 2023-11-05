@@ -48,7 +48,7 @@ class BugTicket(BaseModel, extra='forbid'):
     url: Optional[str] = ""
     status: BugStatusEnum = BugStatusEnum.open
     criticality: BugCriticalityEnum = BugCriticalityEnum.major
-    related_to: Optional[List[CampaignTicketScenario | str | int | None]] = []
+    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict]] = []
 
     def __getitem__(self: "BugTicket",
                     index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:
@@ -67,6 +67,7 @@ class UpdateBugTicket(BaseModel, extra='forbid'):
     url: Optional[str] = None
     status: Optional[BugStatusEnum] = None
     criticality: Optional[BugCriticalityEnum] = None
+    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict]] = []
 
     def to_dict(self: "UpdateBugTicket") -> dict:
         temp = {"title": self.title,

@@ -52,7 +52,7 @@ def update_function(body, request):
 
 ```html
 <!-- There is still duplication -->
-{% if name %} 
+{% if name %}  <!-- May just be the presence of message -->
    <!-- This part is the error case -->
    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
