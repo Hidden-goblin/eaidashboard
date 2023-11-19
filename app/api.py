@@ -20,6 +20,7 @@ from app.routers.front import (
     front_projects_campaign,
     front_projects_repository,
     front_users,
+    front_versions,
 )
 from app.routers.rest import (
     auth,
@@ -81,6 +82,7 @@ app.include_router(front_projects_repository.router)
 app.include_router(front_documentation.router)
 app.include_router(front_users.router)
 app.include_router(front_project_version_tickets.router)
+app.include_router(front_versions.router)
 
 log_message(f"\nPostgresql on: {config.get('PG_URL')}:{config.get('PG_PORT')}, {config.get('PG_DB')}\n"
             f"Redis on: {config.get('REDIS_URL')}:{config.get('REDIS_PORT')}")

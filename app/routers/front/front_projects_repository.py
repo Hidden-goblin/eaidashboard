@@ -33,14 +33,7 @@ async def front_project_repository(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        if request.headers.get("eaid-request", "") == "REDIRECT":
-            return templates.TemplateResponse("void.html",
-                                              {
-                                                  "request": request
-                                              },
-                                              headers={
-                                                  "HX-Redirect": f"/front/v1/projects/"
-                                                                 f"{project_name}/repository"})
+
         if request.headers.get("eaid-request", "") == "form":
             if user.right(project_name) == "admin":
                 return templates.TemplateResponse("forms/import_repository_from_csv.html",
@@ -49,16 +42,9 @@ async def front_project_repository(project_name: str,
             else:
                 raise Exception("You are not authorized to access this page")
 
-        # if status is not None:
-        #     bugs = await get_bugs(project_name)
-        # else:
-        #     bugs = await get_bugs(project_name, status=BugStatusEnum.open)
-        # log_message(bugs)
-        projects = await registered_projects()
         return templates.TemplateResponse("repository_board.html",
                                           {
                                               "request": request,
-                                              "projects": projects,
                                               "repository": {},
                                               "display_closed": status,
                                               "project_name": project_name,

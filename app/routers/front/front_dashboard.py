@@ -24,18 +24,13 @@ router = APIRouter()
 @router.get("/",
             include_in_schema=False,
             tags=["Front - Dashboard"])
-async def dashboard(request: Request) -> HTMLResponse:
+async def dashboard(request: Request,
+                    path: str = "/front/v1/dashboard") -> HTMLResponse:
     try:
-        # if not is_updatable(request, ()):
-        #     request.session.pop("token", None)
-        if request.headers.get("eaid-request", None) is None:
-            return templates.TemplateResponse("dashboard.html",
-                                              {"request": request})
-        if request.headers.get("eaid-request", None) == "table":
-            projects, count = await db_dash()
-            return templates.TemplateResponse("tables/dashboard_table.html",
-                                              {"request": request,
-                                               "project_version": projects})
+
+        return templates.TemplateResponse("index.html",
+                                          {"request": request,
+                                           "path": path})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -143,6 +138,24 @@ async def get_navigation_bar(request: Request) -> HTMLResponse:
                                        "is_admin": is_admin}
                                       )
 
+
+@router.get("/front/v1/dashboard",
+            tags=["Front - Campaign"],
+            include_in_schema=False)
+async def get_dashboard(request: Request) -> HTMLResponse:
+    try:
+        if request.headers.get("eaid-request", None) is None:
+            return templates.TemplateResponse("dashboard.html",
+                                              {"request": request})
+
+        if request.headers.get("eaid-request", None) == "table":
+            projects, count = await db_dash()
+            return templates.TemplateResponse("tables/dashboard_table.html",
+                                              {"request": request,
+                                               "project_version": projects})
+    except Exception as exception:
+        log_error(repr(exception))
+        return front_error_message(templates, request, exception)
 
 # @router.get("/testResults",
 #             response_class=HTMLResponse,

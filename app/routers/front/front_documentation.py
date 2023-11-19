@@ -21,7 +21,8 @@ async def root_document(request: Request,
     return templates.TemplateResponse("documentation.html",
                                       {"request": request,
                                        "first": page,
-                                       "app_version": APP_VERSION})
+                                       "app_version": APP_VERSION},
+                                      headers={"HX-Retarget": "#content-block"})
 
 
 @router.get("/{filename}",

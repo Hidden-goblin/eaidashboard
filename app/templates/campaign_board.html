@@ -47,8 +47,7 @@
             hx-headers='{"eaid-request": "FORM"}'
             hx-target="#addTickets">Add ticket to campaign</button>
     <button class="btn btn-secondary"
-            hx-get="/front/v1/projects/{{project_name}}/campaigns"
-            hx-headers='{"eaid-request": "REDIRECT"}'>Return to campaigns board</button>
+            hx-get="/front/v1/projects/{{project_name}}?tab=campaigns">Return to campaigns board</button>
     </div>
     <div id="addTickets"></div>
     <div id="addResults"></div>

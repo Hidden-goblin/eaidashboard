@@ -1,12 +1,8 @@
-{% extends "base.html" %}
-{% block titre %}  {% endblock %}
-
-{% block contenu %}
 <div class="container">
     <button class="btn btn-primary"
+            hx-get="/front/v1/users"
             hx-headers='{"eaid-request":"form"}'
-            hx-target="#modals-here"
-            hx-get="/front/v1/users">Create user</button>
+            hx-target="#modals-here">Create user</button>
     <div id="users_table"
          hx-trigger="load, form-delete from:body"
          hx-target="#users_table"
@@ -15,4 +11,3 @@
          class="container">
   </div>
 </div>
-{% endblock %}

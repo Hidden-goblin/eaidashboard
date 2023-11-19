@@ -96,12 +96,15 @@
             "navigation": {
                 "get": "provide the navigation bar"
             },
+            "dashboard": {
+                "get": "provide main dashboard",
+                "get + req = TABLE": "Dashboard table"
+            },
             "projects": {
                 "get + req = FORM": "Create project form",
                 "post": "Create project action",
                 "<project_name>":{
-                    "get + req = REDIRECT": "Redirect to the project page",
-                    "get": "Project page (multi tab)",
+                    "get": "Project page (multi tab) + tab param",
                     "versions": {
                         "get": "Project's versions",
                         "get + req = FORM": "Add version form",
@@ -133,6 +136,12 @@
                             "put": "Update bug action (via form)",
                             "patch": "Update bug action (via button)"
                         }
+                    },
+                    "repository": {
+                        "get": "Repository tab"
+                    },
+                    "campaigns": {
+                        "get": "Campaigns tab"
                     }
                 }
             }

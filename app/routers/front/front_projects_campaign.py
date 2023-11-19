@@ -76,19 +76,10 @@ async def front_project_management(project_name: str,
                                                  request)
         if request.headers.get("eaid-request", "") == "form" and user.right(project_name) != "admin":
             return front_access_denied(templates, request)
-        if request.headers.get("eaid-request", "") == "REDIRECT":
-            return templates.TemplateResponse("void.html",
-                                              {
-                                                  "request": request
-                                              },
-                                              headers={
-                                                  "HX-Redirect": f"/front/v1/projects/"
-                                                                 f"{project_name}/campaigns"})
-        projects = await registered_projects()
+
         return templates.TemplateResponse("campaign.html",
                                           {
                                               "request": request,
-                                              "projects": projects,
                                               "campaigns": True,
                                               "project_name": project_name,
                                               "project_name_alias": provide(project_name)

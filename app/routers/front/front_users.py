@@ -28,13 +28,6 @@ async def front_get_users(request: Request,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        if request.headers.get("eaid-request", None) == "REDIRECT":
-            return templates.TemplateResponse("void.html",
-                                              {
-                                                  "request": request
-                                              },
-                                              headers={
-                                                  "HX-Redirect": "/front/v1/users"})
         if request.headers.get("eaid-request", None) == "table":
             users, total = get_users(limit, skip)
             pages, current_page = page_numbering(total, limit, skip)
@@ -53,11 +46,9 @@ async def front_get_users(request: Request,
                                                   "request": request,
                                                   "projects": projects
                                               })
-        projects = await registered_projects()
         return templates.TemplateResponse("base_user.html",
                                           {
-                                              "request": request,
-                                              "projects": projects
+                                              "request": request
                                           })
     except Exception as exception:
         log_error(repr(exception))

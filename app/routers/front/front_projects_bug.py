@@ -36,14 +36,6 @@ async def front_project_bugs(project_name: str,
         return user
     try:
         requested_item = request.headers.get("eaid-request", None)
-        if request.headers.get("eaid-request", "") == "REDIRECT":
-            return templates.TemplateResponse("void.html",
-                                              {
-                                                  "request": request
-                                              },
-                                              headers={
-                                                  "HX-Redirect": f"/front/v1/projects/"
-                                                                 f"{project_name}/bugs"})
         if requested_item is None:
             projects = await registered_projects()
             return templates.TemplateResponse("bugs.html",
@@ -54,8 +46,8 @@ async def front_project_bugs(project_name: str,
                                                   "project_name": project_name,
                                                   "project_name_alias": provide(project_name)
                                               })
-        elif requested_item.casefold() == "FORM".casefold():
 
+        elif requested_item.casefold() == "FORM".casefold():
             versions = await get_versions(project_name)
             return templates.TemplateResponse("forms/add_bug.html",
                                               {
@@ -67,6 +59,7 @@ async def front_project_bugs(project_name: str,
                                                                   BugCriticalityEnum]
                                               },
                                               headers={"hx-retarget": "#modals-here"})
+
         elif requested_item.casefold() == "TABLE".casefold():
             if display_all == "on".casefold():
                 bugs, count = await get_bugs(project_name)
@@ -183,7 +176,6 @@ async def front_update_bug(project_name: str,
         return user
     try:
         res = await db_update_bugs(project_name, internal_id, body)
-        log_message(res)
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,
@@ -228,7 +220,6 @@ async def front_update_bug_patch(project_name: str,
         return user
     try:
         res = await db_update_bugs(project_name, internal_id, UpdateBugTicket(**body))
-        log_message(res)
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,

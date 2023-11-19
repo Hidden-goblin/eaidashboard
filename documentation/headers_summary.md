@@ -5,6 +5,7 @@
     - FORM
     - TABLE
     - REDIRECT
+    - MAIN
 
 # Headers sent
 

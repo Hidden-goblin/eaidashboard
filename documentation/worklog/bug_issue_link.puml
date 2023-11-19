@@ -25,9 +25,12 @@ consistency;
 Bug with no relation came with a list containing
  with empty objet;
 ****[#green] .--Update data--
-** Update front to show links
-*** In Bugs table show links
-*** In Bug creation form allow to select tests (failed tests)
+**: Front refactoring
+----
+Rework pagination so that one-page app is real;
+*** Update front to show links
+**** In Bugs table show links
+**** In Bug creation form allow to select tests (failed tests)
 **** Query campaign and occurrence
 ***** Query issues and scenarios
 *** In scenario allow to create bug when test fail
@@ -36,10 +39,9 @@ Bug with no relation came with a list containing
 --from placeholder in the page to dialog--;
 ****[#green] .--Bug update in dialog--
 **** Add bug creation link per scenario
-** Create move to test from bug table
-*** Check redirect link
-** Fix unit test
-*** Fix current ones
-*** Add new for the feature
-
+*** Create move to test from bug table
+**** Check redirect link
+*** Fix unit test
+**** Fix current ones
+**** Add new for the feature
 @endwbs
