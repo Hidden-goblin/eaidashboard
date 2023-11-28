@@ -271,6 +271,7 @@ async def put_campaign_ticket_scenarios(project_name: str,
 
 
 # Retrieve scenario_internal_id for specific campaign and ticket
+# Todo update to retrieve all details of the scenario
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/"
             "tickets/{reference}/scenarios/{scenario_id}",
             tags=["Campaign"])
@@ -292,13 +293,13 @@ async def get_campaign_ticket_scenario(project_name: str,
 
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/"
-            "tickets/{reference}/scenarios/{scenario_id}/status",
+            "tickets/{reference}/scenarios/{scenario_internal_id}/status",
             tags=["Campaign"])
 async def update_campaign_ticket_scenario_status(project_name: str,
                                                  version: str,
                                                  occurrence: str,
                                                  reference: str,
-                                                 scenario_id: str,
+                                                 scenario_internal_id: str,
                                                  new_status: ScenarioStatusEnum,
                                                  user: UpdateUser = Security(
                                                      authorize_user,
@@ -308,7 +309,7 @@ async def update_campaign_ticket_scenario_status(project_name: str,
                                                             version,
                                                             occurrence,
                                                             reference,
-                                                            scenario_id,
+                                                            scenario_internal_id,
                                                             new_status)
     except Exception as exp:
         raise HTTPException(500, repr(exp))

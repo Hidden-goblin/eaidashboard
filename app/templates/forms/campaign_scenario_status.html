@@ -1,5 +1,6 @@
+<!-- TODO: Move to modal form
 <form>
-    <!-- Form: campain scenario_internal_id status -->
+
     Current status: {{scenario.status}}
     <select id="new_status" name="new_status">
         {% for status in statuses %}
@@ -12,7 +13,104 @@
             hx-headers='{"eaid-next":"{{next}}"}'
             hx-enc="application/json"
             hx-target="#campaignMessage">Update</button>
-    <button class="btn btn-primary"
-            hx-delete="/clear"
-            hx-trigger="click" hx-target="#campaignMessage" >Cancel</button>
+
 </form>
+-->
+{% if message %}  <!-- May just be the presence of message -->
+   <!-- This part is the error case -->
+   <div class="modal-dialog modal-dialog-centered">
+       <!-- Form: campain scenario_internal_id status -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update scenario status</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.scenario_internal_id}}"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "{{next}}"}' >
+
+                        <div class="mb-3" >
+                            <!-- Add the form here for each field -->
+                             Current status: {{scenario.status}}
+                            <select id="new_status" name="new_status">
+                                {% for status in statuses %}
+                                    <option value="{{status}}" {% if scenario.status == status %} selected {% endif%}>{{status}}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="text-danger" >
+                                      {{message}}  <!-- The error message you want to display -->
+                            </span>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+              <!-- The dismiss action -->
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+{% else %}
+<!-- Main form -->
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update scenario status</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <form hx-put="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.scenario_internal_id}}"
+                          hx-ext='json-enc'
+                          hx-headers='{"eaid-next": "{{next}}"}' >
+
+                        <div class="mb-3" >
+                            <!-- Add the form here for each field -->
+                             Current status: {{scenario.status}}
+                            <select id="new_status" name="new_status">
+                                {% for status in statuses %}
+                                    <option value="{{status}}" {% if scenario.status == status %} selected {% endif%}>{{status}}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="text-danger" >
+                                      {{message}}  <!-- The error message you want to display -->
+                            </span>
+                        </div>
+                        <div id="modalErrorMessage" class="container show"></div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-secondary">
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

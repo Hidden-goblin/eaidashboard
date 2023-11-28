@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from fastapi import Security, Form, APIRouter
-from psycopg.errors import UniqueViolation, CheckViolation
+from fastapi import APIRouter, Form, Security
+from psycopg.errors import CheckViolation, UniqueViolation
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
@@ -9,13 +9,13 @@ from app.app_exception import front_access_denied, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
-from app.database.postgre.pg_projects import get_project, create_project_version
-from app.database.postgre.pg_tickets import get_tickets, add_ticket
+from app.database.postgre.pg_projects import create_project_version, get_project
+from app.database.postgre.pg_tickets import add_ticket, get_tickets
 from app.database.postgre.pg_versions import get_version, update_version_data
 from app.database.utils.transitions import authorized_transition
 from app.schema.bugs_schema import UpdateVersion
-from app.schema.project_schema import RegisterVersionResponse, RegisterVersion
-from app.schema.status_enum import TicketType, StatusEnum
+from app.schema.project_schema import RegisterVersion, RegisterVersionResponse
+from app.schema.status_enum import StatusEnum, TicketType
 from app.schema.ticket_schema import ToBeTicket
 from app.schema.users import User, UserLight
 from app.utils.log_management import log_error, log_message

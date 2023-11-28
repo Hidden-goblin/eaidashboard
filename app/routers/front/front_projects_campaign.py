@@ -12,7 +12,12 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_access_denied, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_campaigns_management import create_campaign, retrieve_campaign, update_campaign_occurrence
+from app.database.postgre.pg_campaigns_management import (
+    campaign_failing_scenarios,
+    create_campaign,
+    retrieve_campaign,
+    update_campaign_occurrence,
+)
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
@@ -59,6 +64,7 @@ async def front_project_management(project_name: str,
                                    request: Request,
                                    limit: int = 10,
                                    skip: int = 0,
+                                   version: str = None,
                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
@@ -76,6 +82,14 @@ async def front_project_management(project_name: str,
                                                  request)
         if request.headers.get("eaid-request", "") == "form" and user.right(project_name) != "admin":
             return front_access_denied(templates, request)
+
+        if request.headers.get("eaid-request", "") == "failed-scenario":
+            sc = campaign_failing_scenarios(project_name, version)
+            return templates.TemplateResponse("selectors/failed_scenarios_selector.html",
+                                              {
+                                                  "request": request,
+                                                  "scenarios": sc
+                                              })
 
         return templates.TemplateResponse("campaign.html",
                                           {
@@ -159,6 +173,7 @@ async def front_scenarios_selector(project_name: str,
                                    request: Request,
                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
+    # Todo: Check route. Should be /{project_name}/campaigns/{version}/{occurrence}/scenarios
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -347,14 +362,14 @@ async def front_get_campaign_ticket(project_name: str,
 
 
 @router.put("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
-            "{ticket_reference}/scenarios/{scenario_id}",
+            "{ticket_reference}/scenarios/{scenario_internal_id}",
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                        version: str,
                                                        occurrence: str,
                                                        ticket_reference: str,
-                                                       scenario_id: str,
+                                                       scenario_internal_id: str,
                                                        updated_status: dict,
                                                        request: Request,
                                                        user: User = Security(front_authorize,
@@ -367,32 +382,34 @@ async def front_update_campaign_ticket_scenario_status(project_name: str,
                                                               version,
                                                               occurrence,
                                                               ticket_reference,
-                                                              scenario_id,
+                                                              scenario_internal_id,
                                                               updated_status["new_status"])
         log_message(result)
 
         return templates.TemplateResponse("void.html",
                                           {"request": request},
-                                          headers={
-                                              "hx-trigger": request.headers.get("eaid-next", "")})
+                                          headers={"HX-Trigger": json.dumps(
+                                              {"modalClear": "",
+                                               f"{request.headers.get('eaid-next', '')}": ""})}
+                                          )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
 @router.get("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
-            "{ticket_reference}/scenarios/{scenario_id}",
+            "{ticket_reference}/scenarios/{scenario_internal_id}",
             tags=["Front - Campaign"],
             include_in_schema=False)
 async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                             version: str,
                                                             occurrence: str,
                                                             ticket_reference: str,
-                                                            scenario_id: str,
+                                                            scenario_internal_id: str,
                                                             request: Request,
-                                                            user: User = Security(front_authorize,
-                                                                                  scopes=["admin", "user"])
-                                                            ) -> HTMLResponse:
+                                                            user: User = Security(
+                                                                front_authorize,
+                                                                scopes=["admin", "user"])) -> HTMLResponse:
     """Admin or user can update the scenario_internal_id status"""
     if not isinstance(user, (User, UserLight)):
         return user
@@ -401,25 +418,26 @@ async def front_update_campaign_ticket_scenario_update_form(project_name: str,
                                                          version,
                                                          occurrence,
                                                          ticket_reference,
-                                                         scenario_id)
+                                                         scenario_internal_id)
         return templates.TemplateResponse("forms/campaign_scenario_status.html",
                                           {"project_name": project_name,
                                            "project_name_alias": provide(project_name),
                                            "version": version,
                                            "occurrence": occurrence,
                                            "ticket_reference": ticket_reference,
-                                           "next": request.headers.get('eaid-next', ""),
                                            "scenario": scenario,
                                            "statuses": [status.value for status in
                                                         ScenarioStatusEnum],
-                                           "request": request})
+                                           "next": request.headers.get("eaid-next", ""),
+                                           "request": request},
+                                          headers={"hx-retarget": "#modals-here"})
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
 @router.delete("/{project_name}/campaigns/{version}/{occurrence}/tickets/"
-               "{ticket_reference}/scenarios/{scenario_id}",
+               "{ticket_reference}/scenarios/{scenario_internal_id}",
                tags=["Front - Campaign"],
 
                include_in_schema=False)
@@ -427,7 +445,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                 version: str,
                                                 occurrence: str,
                                                 ticket_reference: str,
-                                                scenario_id: str,
+                                                scenario_internal_id: str,
                                                 request: Request,
                                                 user: User = Security(front_authorize,
                                                                       scopes=["admin", "user"])
@@ -440,7 +458,7 @@ async def front_delete_campaign_ticket_scenario(project_name: str,
                                                  version,
                                                  occurrence,
                                                  ticket_reference,
-                                                 scenario_id)
+                                                 scenario_internal_id)
         return templates.TemplateResponse('void.html',
                                           {"request": request},
                                           headers={

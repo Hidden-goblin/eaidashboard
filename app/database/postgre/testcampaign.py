@@ -265,7 +265,7 @@ async def db_get_campaign_ticket_scenario(project_name: str,
                                           version: str,
                                           occurrence: str,
                                           reference: str,
-                                          scenario_id: str) -> dict:
+                                          scenario_internal_id: str) -> dict:
     """Todo Add schema to ticket_scenario"""
     if not await is_campaign_exist(project_name, version, occurrence):
         raise CampaignNotFound(f"Campaign occurrence {occurrence} "
@@ -277,12 +277,13 @@ async def db_get_campaign_ticket_scenario(project_name: str,
         result = connection.execute("select sc.scenario_id as scenario_id,"
                                     " sc.name as name,"
                                     " sc.steps as steps,"
-                                    " cts.status as status"
+                                    " cts.status as status,"
+                                    " cts.scenario_id as scenario_internal_id"
                                     " from campaign_ticket_scenarios as cts"
                                     " join scenarios as sc on sc.id = cts.scenario_id"
                                     " where cts.campaign_ticket_id = %s"
-                                    " and sc.scenario_id = %s;",
-                                    (campaign_ticket_id[0], scenario_id))
+                                    " and cts.scenario_id = %s;",
+                                    (campaign_ticket_id[0], scenario_internal_id))
         return result.fetchone()
 
 
@@ -340,7 +341,7 @@ async def db_set_campaign_ticket_scenario_status(project_name: str,
                                                  version: str,
                                                  occurrence: str,
                                                  reference: str,
-                                                 scenario_id: str,
+                                                 scenario_internal_id: str,
                                                  new_status: str) -> dict:
     campaign_ticket_id = await retrieve_campaign_ticket_id(project_name, version, occurrence,
                                                            reference)
@@ -350,12 +351,12 @@ async def db_set_campaign_ticket_scenario_status(project_name: str,
         return connection.execute(
             "update campaign_ticket_scenarios as cts "
             "set status = %s "
-            "from scenarios as sc "
+            # "from scenarios as sc "
             "where cts.campaign_ticket_id = %s "
-            " and sc.scenario_id = %s "
-            " and cts.scenario_id = sc.id "
-            "returning sc.scenario_id as scenario_id, cts.status as status;",
-            (new_status, campaign_ticket_id[0], scenario_id)).fetchone()
+            # " and sc.scenario_id = %s "
+            " and cts.scenario_id = %s "
+            "returning cts.status as status;",
+            (new_status, campaign_ticket_id[0], scenario_internal_id)).fetchone()
 
 
 def db_is_scenario_internal_id_exist(project_name: str,

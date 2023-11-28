@@ -6,7 +6,7 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.schema.campaign_schema import CampaignLight, CampaignPatch
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
@@ -186,3 +186,26 @@ async def update_campaign_occurrence(project_name: str,
         connection.commit()
 
     return rows
+
+
+def campaign_failing_scenarios(project_name: str, version: str) -> List[dict]:
+    """Retrieve failing scenarios for a campaign"""
+    query = ("select scenarios.name,"
+             " scenarios.scenario_id as scenario_id,"
+             " ct.ticket_reference,"
+             " campaigns.occurrence,"
+             " cts.scenario_id as scenario_tech_id"
+             " from campaign_ticket_scenarios as cts"
+             " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
+             " join campaigns on campaigns.id = ct.campaign_id"
+             " join scenarios on scenarios.id = cts.id"
+             " where campaigns.project_id = %s"
+             " and campaigns.version = %s"
+             " and cts.status = %s;")
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        rows = connection.execute(query,
+                                  (project_name,
+                                   version,
+                                   ScenarioStatusEnum.waiting_fix))
+        return rows.fetchall()

@@ -14,7 +14,8 @@ from app.database.authorization import front_authorize
 from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_versions import get_versions
-from app.schema.bugs_schema import BugTicket, UpdateBugTicket
+from app.schema.bugs_schema import BugTicket, CampaignTicketScenario, UpdateBugTicket
+from app.schema.error_code import ApplicationError
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
 from app.schema.users import User, UserLight
@@ -98,6 +99,9 @@ async def record_bug(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
+        #TODO update the body to match the schema
+        body["related_to"] = [CampaignTicketScenario(
+            **json.loads(elem)) for elem in body["related_to"]] if body["related_to"] else []
         body = BugTicket(**body)
         # complement_data = {"status": BugStatusEnum.open}
         res = await insert_bug(project_name, body)
@@ -176,6 +180,8 @@ async def front_update_bug(project_name: str,
         return user
     try:
         res = await db_update_bugs(project_name, internal_id, body)
+        if isinstance(res, ApplicationError):
+            raise Exception(res.message)
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,
@@ -220,6 +226,8 @@ async def front_update_bug_patch(project_name: str,
         return user
     try:
         res = await db_update_bugs(project_name, internal_id, UpdateBugTicket(**body))
+        if isinstance(res, ApplicationError):
+            raise Exception(res.message)
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,

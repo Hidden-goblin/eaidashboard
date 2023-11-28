@@ -29,7 +29,7 @@
                         hx-trigger="click"
                         hx-target="#campaignMessage"
                         hx-headers='{"eaid-next":"{{initiator}}"}'
-                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}">Update</button></td>
+                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.internal_id}}">Update</button></td>
         </tr>
     {% endfor %}
     </tbody>

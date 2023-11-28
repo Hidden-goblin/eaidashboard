@@ -8,7 +8,7 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_projects import get_project, register_project
+from app.database.postgre.pg_projects import register_project
 from app.database.postgre.testrepository import db_project_epics, db_project_features
 from app.schema.project_schema import RegisterProject
 from app.schema.users import User, UserLight

@@ -41,7 +41,7 @@ Rework pagination so that one-page app is real;
 **** Add bug creation link per scenario
 *** Create move to test from bug table
 **** Check redirect link
-*** Fix unit test
-**** Fix current ones
-**** Add new for the feature
+** Fix unit test
+*** Fix current ones
+*** Add new for the feature
 @endwbs

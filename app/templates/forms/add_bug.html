@@ -83,7 +83,15 @@
                         </div>
                         <div class="mb-3">
                             <label for="version" class="form-label">Seen in version:</label>
-                            <select class="form-select" aria-label="seen in version" id="version" name="version">
+                            <select class="form-select"
+                                    aria-label="seen in version"
+                                    id="version"
+                                    name="version"
+                                    hx-get="/front/v1/projects/{{project_name}}/campaigns"
+                                    hx-target="#failed-scenario"
+                                    hx-headers='{"eaid-request": "failed-scenario"}'
+                                    hx-trigger="change, load"
+                            >
                                 {%for version in versions%}
                                 <option value="{{version}}">{{version}}</option>
                                 {%endfor%}
@@ -106,6 +114,7 @@
                             <label for="description" class="form-label">Defect description:</label>
                             <textarea id="description" name="description" class="form-control"></textarea>
                         </div>
+                        <div id="failed-scenario"></div>
                         <button type="submit"
                                 class="btn btn-secondary">
                             Record bug

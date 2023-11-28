@@ -141,7 +141,47 @@
                         "get": "Repository tab"
                     },
                     "campaigns": {
-                        "get": "Campaigns tab"
+                        "get": "Campaigns tab",
+                        "get + req = TABLE": "Campaigns table",
+                        "get + req = FORM": "Add campaign form",
+                        "get + req = failed-scenarios": "Campaigns failed scenario selector",
+                        "post": "Create campaign action",
+                        "scenarios" : {
+                            "post": "Add scenario to campaign action"
+                        },
+                        "<version>": {
+                            "<occurrence>": {
+                                "get": "Campaign's occurrence board",
+                                "get + req = TABLE": "Campaign's occurrence table",
+                                "get + req = FORM": "Update campaign occurrence status form",
+                                "patch": "Update campaign occurrence status action",
+                                "tickets": {
+                                    "get + req = FORM": "Campaign's occurrence link ticket form",
+                                    "post": "Campaign's occurrence link ticket action",
+                                    "<ticket_reference>": {
+                                        "get": "Add scenarios to ticket form",
+                                        "put": "Add scenarios to ticket action",
+                                        "scenarios": {
+                                            "get + req = statistics": "Tickets scenarios status statistics",
+                                            "get": "Table of ticket's scenarios",
+                                            "<scenario_internal_id>": {
+                                                "get": "Update scenario status form",
+                                                "put": "Update scenario status action",
+                                                "delete": "Remove scenario from ticket action"
+                                            }
+                                        }
+                                    },
+                                    "results": {
+                                        "get": "Campaign's occurrence results graph",
+                                        "post": "Campaign's occurrence current status"
+                                    },
+                                    "deliverables": {
+                                        "get": "Campaign's occurrence documents Test Plan or Test evidence"
+                                    }
+                                }
+                            }
+                        }
+
                     }
                 }
             }

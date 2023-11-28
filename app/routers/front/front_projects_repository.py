@@ -10,7 +10,6 @@ from starlette.responses import HTMLResponse
 from app.app_exception import MalformedCsvFile, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
