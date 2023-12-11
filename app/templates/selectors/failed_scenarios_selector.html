@@ -3,7 +3,9 @@
         id="linked-scenario"
         multiple>
     {%for scenario in scenarios %}
-        <option value='{"occurrence":"{{scenario.occurrence}}","ticket_reference":"{{scenario.ticket_reference}}","scenario_tech_id":"{{scenario.scenario_tech_id}}"}'>{{scenario.ticket_reference}} - {{scenario.name}}({{scenario.scenario_id}})</option>
+        <option value='{"occurrence":"{{scenario.occurrence}}","ticket_reference":"{{scenario.ticket_reference}}","scenario_tech_id":"{{scenario.scenario_tech_id}}"}'
+                {{scenario.selection}}
+        >{{scenario.ticket_reference}} - {{scenario.name}}({{scenario.scenario_id}})</option>
     {%endfor%}
 
 </select>

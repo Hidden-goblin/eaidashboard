@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from logging import getLogger
 from typing import List, Optional, Tuple
 
 from psycopg.rows import dict_row, tuple_row
@@ -12,9 +13,10 @@ from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import BugStatusEnum
-from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
+
+logger = getLogger(__name__)
 
 
 async def get_bugs(project_name: str,
@@ -110,6 +112,18 @@ async def db_get_bug(project_name: str,
     )
 
 
+def db_bug_linked_scenario(bug_internal_id: int = None) -> List[CampaignTicketScenario | None]:
+    if bug_internal_id is None:
+        return []
+    query = ("select occurrence, ticket_reference, scenario_id as scenario_tech_id"
+             " from bugs_issues"
+             " where bug_id = %s;")
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        rows = connection.execute(query, (bug_internal_id,))
+        return [CampaignTicketScenario(**row) for row in rows]
+
+
 def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket) -> None:
     if (bug_ticket.status is not None
             or bug_ticket.criticality is not None):
@@ -133,7 +147,7 @@ def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket)
                 connection.row_factory = dict_row
                 up_version = connection.execute(update_query,
                                                 (current_bug["version_id"],))
-                log_message(up_version.statusmessage)
+                logger.info(up_version.statusmessage)
 
 
 async def db_update_bugs(project_name: str,
@@ -176,7 +190,7 @@ async def db_update_bugs(project_name: str,
                                  f" where id = %s"
                                  f" returning id;",
                                  values)
-        log_message(row.statusmessage)
+        logger.info(row.statusmessage)
     if bug_ticket.related_to:
         await make_link_to_scenario(project_name, version, bug_ticket.related_to, int(internal_id))
     # SPEC invalidate all files of the current version
@@ -201,7 +215,8 @@ async def make_link_to_scenario(project_name: str,
              " and ca.version = %(version)s"
              " and ca.occurrence = %(occurrence)s"
              " and ct.ticket_reference = %(ticket_reference)s::varchar"
-             " and sc.id = %(scenario_tech_id)s")
+             " and sc.id = %(scenario_tech_id)s"
+             " on conflict do nothing;")
     # Flatten list of related to
     data = [{"bug_id": bug_id,
              "project_name": project_name,
@@ -214,11 +229,12 @@ async def make_link_to_scenario(project_name: str,
             connection.row_factory = dict_row
             with connection.cursor() as cursor:
                 cursor.executemany(query, data)
-                log_message(f"linked {cursor.rowcount} scenarios to bug {bug_id}")
+                logger.info(f"linked {cursor.rowcount} scenarios to bug {bug_id}")
                 if len(data) != cursor.rowcount:
-                    raise Exception(f"linked {cursor.rowcount} scenarios to bug {bug_id} while expecting {len(data)}")
+                    raise Exception(f"linked {cursor.rowcount} scenarios to bug {bug_id} while expecting {len(data)}"
+                                    f"\n You may have duplicated existing links")
     except Exception as exception:
-        log_message(repr(exception))
+        logger.info(repr(exception))
         return 0
     return 1
 

@@ -65,6 +65,7 @@ async def front_project_management(project_name: str,
                                    limit: int = 10,
                                    skip: int = 0,
                                    version: str = None,
+                                   bug: int = None,
                                    user: User = Security(front_authorize, scopes=["admin", "user"])
                                    ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
@@ -84,7 +85,7 @@ async def front_project_management(project_name: str,
             return front_access_denied(templates, request)
 
         if request.headers.get("eaid-request", "") == "failed-scenario":
-            sc = campaign_failing_scenarios(project_name, version)
+            sc = campaign_failing_scenarios(project_name, version, bug_internal_id=bug)
             return templates.TemplateResponse("selectors/failed_scenarios_selector.html",
                                               {
                                                   "request": request,

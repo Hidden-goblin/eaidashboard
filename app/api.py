@@ -1,5 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from logging import getLogger
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
@@ -38,6 +40,8 @@ from app.utils.log_management import log_message
 from app.utils.openapi_tags import DESCRIPTION
 from app.utils.pgdb import pool
 
+logger = getLogger(__name__)
+
 init_postgres()
 update_postgres()
 
@@ -55,14 +59,20 @@ app = FastAPI(title="Eaidashboard",
               docs_url=None,
               swagger_ui_parameters={"swagger": "2.0"})
 
-app.add_middleware(SessionMiddleware, secret_key=config["SESSION_KEY"])
-app.add_middleware(CORSMiddleware, allow_origins=["*"],
+app.add_middleware(SessionMiddleware,
+                   secret_key=config["SESSION_KEY"])
+app.add_middleware(CORSMiddleware,
+                   allow_origins=["*"],
                    allow_credentials=True,
                    allow_methods=["*"],
                    allow_headers=["*"])
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/assets", StaticFiles(directory="app/assets"), name="assets")
+app.mount("/static",
+          StaticFiles(directory="app/static"),
+          name="static")
+app.mount("/assets",
+          StaticFiles(directory="app/assets"),
+          name="assets")
 
 app.include_router(projects.router)
 app.include_router(settings.router)
@@ -94,6 +104,7 @@ generate_keys()
 
 @app.on_event("startup")
 def db_start_connection() -> None:
+    logger.info("Startup process")
     pool.open()
     postgre_register()
 

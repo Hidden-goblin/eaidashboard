@@ -357,6 +357,14 @@ POSTGRE_UPDATES = [
         "request": """alter table bugs
         add constraint title_length check (length(title) > 1);""",
         "description": "Add constraint on title length for bugs table"
+    },
+    {
+        "request": """alter table bugs_issues
+        add constraint unique_bug_occurrence_ticket_scenario unique (bug_id,
+        occurrence,
+        ticket_reference,
+        scenario_id);""",
+        "description": "Add constraint on non-duplicate link"
     }
     # Alter table users to use the first scope in the array to a json
     # alter table users

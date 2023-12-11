@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import logging
+from logging import getLogger
 
 from fastapi import APIRouter, Security
 from starlette.background import BackgroundTasks
@@ -15,9 +15,9 @@ from app.database.postgre.pg_versions import refresh_version_stats
 from app.routers.front.utils import header_request
 from app.schema.ticket_schema import UpdatedTicket
 from app.schema.users import User, UserLight
-from app.utils.log_management import log_error
 from app.utils.project_alias import provide
 
+logger = getLogger(__name__)
 router = APIRouter(prefix="/front/v1/projects/{project_name}/versions/{version}/tickets")
 
 
@@ -42,7 +42,7 @@ async def get_tickets_for_project_version(project_name: str,
             },
         )
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -87,7 +87,7 @@ async def project_version_ticket_edit(request: Request,
             )
         raise Exception("Missing header content.")
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -108,7 +108,7 @@ async def project_version_update_ticket(request: Request, project_name: str, ver
                                   UpdatedTicket(description=body["description"],
                                                 status=body["status"]))
         if not res.acknowledged:
-            logging.getLogger().error("Not done")
+            logger.error("Not done")
         background_task.add_task(refresh_version_stats, project_name, version)
         return templates.TemplateResponse("ticket_row.html",
                                           {"request": request,
@@ -120,5 +120,5 @@ async def project_version_update_ticket(request: Request, project_name: str, ver
                                            "project_version": version},
                                           headers={"HX-Trigger": "update-dashboard"})
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)

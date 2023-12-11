@@ -14,11 +14,18 @@
 *** Update PUT request to add another link
 **[#green] .--Bug response schema--
 ***[#green] .--Update Pydantic model--
-***[#green]: .--Update db request--
+***: Update db request
 ----
 Link is now a soft link not using sql FK
 When inserting there is still check for
-consistency;
+consistency
+----
+BUG: Inconsistent update - add multiple
+ time the same data.
+ --1-add uniqueness on bug_id-occurrence-ticket_reference-scenario_id -> do nothing--
+  2-add a wait to remove link
+;
+
 ****[#green] .--Set data--
 ****[#green]: .--Get data--
 ----
@@ -28,11 +35,11 @@ Bug with no relation came with a list containing
 **: Front refactoring
 ----
 Rework pagination so that one-page app is real;
-*** Update front to show links
-**** In Bugs table show links
-**** In Bug creation form allow to select tests (failed tests)
-**** Query campaign and occurrence
-***** Query issues and scenarios
+***[#green] Update front to show links
+****[#green] In Bugs table show links
+****[#green] In Bug creation form allow to select tests (failed tests)
+****[#green] Query campaign and occurrence
+*****[#green] Query issues and scenarios
 *** In scenario allow to create bug when test fail
 ****[#green] .--Bug creation in dialog--
 *****[#green]: --Move bug creation form--

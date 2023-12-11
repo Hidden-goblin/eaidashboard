@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import json
+from logging import getLogger
 from typing import Optional
 
 from fastapi import APIRouter, Security
@@ -14,15 +15,15 @@ from app.database.authorization import front_authorize
 from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_versions import get_versions
-from app.schema.bugs_schema import BugTicket, CampaignTicketScenario, UpdateBugTicket
+from app.schema.bugs_schema import BugTicket, UpdateBugTicket
 from app.schema.error_code import ApplicationError
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
 from app.schema.users import User, UserLight
-from app.utils.log_management import log_error, log_message
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
+logger = getLogger(__name__)
 
 
 @router.get("/{project_name}/bugs",
@@ -84,7 +85,7 @@ async def front_project_bugs(project_name: str,
                                               },
                                               headers={"HX-Retarget": "#messageBox"})
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -92,20 +93,17 @@ async def front_project_bugs(project_name: str,
              tags=["Front - Project"],
              include_in_schema=False)
 async def record_bug(project_name: str,
-                     body: dict,
+                     body: BugTicket,
                      request: Request,
                      user: User = Security(front_authorize, scopes=["admin", "user"])
                      ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        #TODO update the body to match the schema
-        body["related_to"] = [CampaignTicketScenario(
-            **json.loads(elem)) for elem in body["related_to"]] if body["related_to"] else []
-        body = BugTicket(**body)
         # complement_data = {"status": BugStatusEnum.open}
+        body.serialize()
         res = await insert_bug(project_name, body)
-        log_message(repr(res))
+        logger.info(repr(res))
         return templates.TemplateResponse("void.html",
                                           {
                                               "request": request,
@@ -116,7 +114,7 @@ async def record_bug(project_name: str,
                                               "HX-Trigger": json.dumps({"modalClear": "", "form-refresh": ""})
                                           })
     except ValidationError as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         message = ""
         for mess in json.loads(exception.json()):
             message = f"{message}{mess['loc'][-1]}: {mess['msg']}. "
@@ -134,7 +132,7 @@ async def record_bug(project_name: str,
                                           headers={"HX-Retarget": "#modal",  # Retarget
                                                    "HX-Reswap": "beforeend"})
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -163,7 +161,7 @@ async def display_bug(project_name: str,
                                           },
                                           headers={"hx-retarget": "#modals-here"})
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)
 
 
@@ -179,6 +177,7 @@ async def front_update_bug(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
+        body.serialize()
         res = await db_update_bugs(project_name, internal_id, body)
         if isinstance(res, ApplicationError):
             raise Exception(res.message)
@@ -192,7 +191,7 @@ async def front_update_bug(project_name: str,
                                               "HX-Trigger": json.dumps({"modalClear": "", "form-refresh": ""})
                                           })
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         posted = await db_get_bug(project_name, internal_id)
         posted = {**posted.model_dump(), **body.model_dump()}
         versions = await get_versions(project_name)
@@ -238,5 +237,5 @@ async def front_update_bug_patch(project_name: str,
                                               "HX-Trigger": request.headers.get('eaid-next', "")
                                           })
     except Exception as exception:
-        log_error(repr(exception))
+        logger.exception(repr(exception))
         return front_error_message(templates, request, exception)

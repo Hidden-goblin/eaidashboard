@@ -95,10 +95,18 @@
                         </div>
                         <div class="mb-3">
                             <label for="version" class="form-label">Seen in version:</label>
-                            <select class="form-select" aria-label="seen in version" id="version" name="version">
+                            <select class="form-select"
+                                    aria-label="seen in version"
+                                    id="version"
+                                    name="version"
+                                    hx-get="/front/v1/projects/{{project_name}}/campaigns?bug={{bug.internal_id}}"
+                                    hx-target="#failed-scenario"
+                                    hx-headers='{"eaid-request": "failed-scenario"}'
+                                    hx-trigger="change, load">
                                 {%for version in versions%}
-                                <option value="{{version}}" {%if version==bug.version %}selected {%endif%}>{{version}}
-                                </option>
+                                    <option value="{{version}}"
+                                            {%if version==bug.version %} selected {%endif%}>{{version}}
+                                    </option>
                                 {%endfor%}
                             </select>
                         </div>
@@ -107,29 +115,40 @@
                             <input type="url" id="url" name="url" value="{{bug.url}}" class="form-control"/>
                         </div>
                         <div class="mb-3">
-                            <label for="criticality" class="form-label">Defect criticality:</label>
-                            <select class="form-select" aria-label="Defect criticality" id="criticality"
+                            <label for="criticality"
+                                   class="form-label">Defect criticality:</label>
+                            <select class="form-select"
+                                    aria-label="Defect criticality"
+                                    id="criticality"
                                     name="criticality">
                                 {% for crit in criticality %}
-                                <option value="{{crit}}" {%if crit== bug.criticality%} selected {%endif%}>{{crit}}
-                                </option>
+                                    <option value="{{crit}}" {%if crit== bug.criticality%} selected {%endif%}>{{crit}}
+                                    </option>
                                 {%endfor%}
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="description" class="form-label">Defect description:</label>
-                            <textarea type="text" id="description" name="description" class="form-control">{{bug.description}}</textarea>
+                            <textarea type="text"
+                                      id="description"
+                                      name="description"
+                                      class="form-control">{{bug.description}}</textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="created" class="form-label">Created on </label>
-                            <input id="created" value="{{bug.created.strftime('%Y-%m-%d %H:%M')}}" readonly
+                        <div id="failed-scenario"></div>
+<!--                             hx-get="/front/v1/projects/{{project_name}}/campaigns?bug={{bug.internal_id}}&version={{version}}"-->
+<!--                             hx-headers='{"eaid-request": "failed-scenario"}'-->
+<!--                             hx-trigger="load"></div>-->
+                        <div class="hstack gap-1">
+                            <div><b>Created on:</b> {{bug.created.strftime('%Y-%m-%d %H:%M')}}</div>
+                            <div><b>Last update:</b> {{bug.updated.strftime('%Y-%m-%d %H:%M')}}</div>
+ <!--                           <input id="created" value="{{bug.created.strftime('%Y-%m-%d %H:%M')}}" readonly
                                    class="form-control-plaintext"/>
                         </div>
                         <div class="mb-3">
                             <label for="updated" class="form-label">Last update </label>
                             <input id="updated" value="{{bug.updated.strftime('%Y-%m-%d %H:%M')}}" readonly
                                    class="form-control-plaintext"/>
-                        </div>
+-->                        </div>
                         <input type="hidden" name="status" value="{{bug.status}}"/>
 
                         <button type="submit"

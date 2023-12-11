@@ -1,5 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import copy
+from logging import getLogger
 from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
@@ -8,8 +10,9 @@ from app.schema.campaign_schema import CampaignLight, CampaignPatch
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
-from app.utils.log_management import log_message
 from app.utils.pgdb import pool
+
+logger = getLogger(__name__)
 
 
 async def create_campaign(project_name: str,
@@ -182,19 +185,34 @@ async def update_campaign_occurrence(project_name: str,
                       " where id = %s;")
         rows = connection.execute(query_full,
                                   values)
-        log_message(rows.statusmessage)
+        logger.info(rows.statusmessage)
         connection.commit()
 
     return rows
 
 
-def campaign_failing_scenarios(project_name: str, version: str) -> List[dict]:
-    """Retrieve failing scenarios for a campaign"""
+def merge_failing_scenario(general_result: list, already_linked: list) -> None:
+    for scenario in already_linked:
+        tmp = copy.deepcopy(scenario)
+        tmp["selection"] = ''
+        if tmp in general_result:
+            general_result[general_result.index(tmp)] = scenario
+        else:
+            general_result.append(scenario)
+
+
+def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id: int = None) -> List[dict]:
+    """Retrieve failing scenarios for a campaign
+    If bug_internal_id is set then add as 'selected' already scenarios attached to the bug
+    TODO add this mechanism /!\\ WARNING on future link (version might differ)
+    """
     query = ("select scenarios.name,"
              " scenarios.scenario_id as scenario_id,"
              " ct.ticket_reference,"
              " campaigns.occurrence,"
-             " cts.scenario_id as scenario_tech_id"
+             " campaigns.version,"
+             " cts.scenario_id as scenario_tech_id,"
+             " '' as selection"
              " from campaign_ticket_scenarios as cts"
              " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
              " join campaigns on campaigns.id = ct.campaign_id"
@@ -202,10 +220,26 @@ def campaign_failing_scenarios(project_name: str, version: str) -> List[dict]:
              " where campaigns.project_id = %s"
              " and campaigns.version = %s"
              " and cts.status = %s;")
+    query_linked = ("select scenarios.name,"
+                    " scenarios.scenario_id as scenario_id,"
+                    " ct.ticket_reference,"
+                    " campaigns.occurrence,"
+                    " campaigns.version,"
+                    " cts.scenario_id as scenario_tech_id,"
+                    " 'selected' as selection"
+                    " from campaign_ticket_scenarios as cts"
+                    " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
+                    " join campaigns on campaigns.id = ct.campaign_id"
+                    " join scenarios on scenarios.id = cts.id"
+                    " where cts.scenario_id= ANY(select scenario_id from bugs_issues where bug_id = %s);")
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(query,
                                   (project_name,
                                    version,
                                    ScenarioStatusEnum.waiting_fix))
-        return rows.fetchall()
+        result = rows.fetchall()
+        if bug_internal_id is not None:
+            rows = connection.execute(query_linked, (bug_internal_id,))
+            merge_failing_scenario(result, rows.fetchall())
+        return result

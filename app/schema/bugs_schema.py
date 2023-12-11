@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import json
 from datetime import datetime
 from typing import List, Optional
 
@@ -17,7 +18,7 @@ class Bugs(BaseModel):
     closed_major: Optional[int] = 0
     closed_minor: Optional[int] = 0
 
-    def __getitem__(self: "Bugs", index: str) -> int:
+    def __getitem__(self: "Bugs", index: str) -> None | int:
         return self.model_dump().get(index, None)
 
 
@@ -29,7 +30,7 @@ class BugsStatistics(BaseModel):
     closed_major: int = 0
     closed_minor: int = 0
 
-    def __getitem__(self: "BugsStatistics", index: str) -> int:
+    def __getitem__(self: "BugsStatistics", index: str) -> None | int:
         return self.model_dump().get(index, None)
 
 
@@ -37,6 +38,9 @@ class CampaignTicketScenario(BaseModel, extra='forbid'):
     ticket_reference: str = Field(min_length=1)
     scenario_tech_id: int
     occurrence: int
+
+    # def to_api(self: "CampaignTicketScenario") -> str:
+    #     return f"/{self.occurrence}/tickets/{self.ticket_reference}/scenarios/{self.scenario_tech_id}"
 
 
 class BugTicket(BaseModel, extra='forbid'):
@@ -51,12 +55,19 @@ class BugTicket(BaseModel, extra='forbid'):
     related_to: Optional[List[CampaignTicketScenario | str | int | None | dict]] = []
 
     def __getitem__(self: "BugTicket",
-                    index: str) -> str | datetime | BugStatusEnum | BugCriticalityEnum:
+                    index: str) -> None | str | datetime | BugStatusEnum | BugCriticalityEnum | List:
         return self.model_dump().get(index, None)
 
+    def serialize(self: "UpdateBugTicket") -> None:
+        if self.related_to:
+            self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
 
 class BugTicketFull(BugTicket):
     internal_id: int
+
+    # def to_api(self: "BugTicketFull"):
+    #     return {**self.model_dump(),
+    #             "related_to": [f"/campaign/{self.version}/{item.to_api()}" for item in self.related_to]}
 
 
 class UpdateBugTicket(BaseModel, extra='forbid'):
@@ -85,11 +96,15 @@ class UpdateBugTicket(BaseModel, extra='forbid'):
             temp["status"] = temp["status"].value
         return temp
 
+    def serialize(self: "UpdateBugTicket") -> None:
+        if self.related_to:
+            self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
+
 
 class UpdateVersion(BaseModel):
     started: Optional[str] = None
     end_forecast: Optional[str] = None
     status: Optional[str] = None
 
-    def __getitem__(self: "UpdateVersion", index: str) -> str:
+    def __getitem__(self: "UpdateVersion", index: str) -> None | str:
         return self.model_dump().get(index, None)

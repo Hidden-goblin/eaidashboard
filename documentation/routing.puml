@@ -39,7 +39,7 @@
                                         "put": "Add scenario linked to ticket",
                                         "scenarios": {
                                             "<scenario_id>": {
-                                                "get": "Retrieve current scenario",
+                                                "get": "Retrieve current scenario update form",
                                                 "status": {
                                                     "put": "Update scenario status"
                                                 }

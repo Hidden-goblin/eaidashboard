@@ -1,0 +1,5 @@
+{% for link in links %}
+    <button class="btn btn-link"
+            hx-get="/front/v1/projects/{{project_name}}/bugs/{{link.internal_id}}"
+            hx-target="#modal-here">{{link.title}}</button>
+{% endfor %}
