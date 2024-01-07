@@ -40,6 +40,8 @@ router = APIRouter(
 async def get_epics(project_name: str,
                     user: UpdateUser = Security(
                         authorize_user, scopes=["admin", "user"])) -> List[str]:
+    if project_name.casefold() not in await registered_projects():
+        raise HTTPException(404, detail=f"Project '{project_name}' not found")
     try:
         return await db_project_epics(project_name.casefold())
     except Exception as exp:
@@ -54,6 +56,8 @@ async def get_feature(project_name: str,
                       epic: str,
                       user: UpdateUser = Security(
                           authorize_user, scopes=["admin", "user"])) -> List[Feature]:
+    if project_name.casefold() not in await registered_projects():
+        raise HTTPException(404, detail=f"Project '{project_name}' not found")
     try:
         return await db_project_features(project_name, epic)
     except Exception as exp:
@@ -76,6 +80,8 @@ async def get_scenarios(project_name: str,
                         user: UpdateUser = Security(
                             authorize_user, scopes=["admin", "user"])) -> List[str] | List[Feature] |\
                                                                           List[Scenario] | JSONResponse:
+    if project_name.casefold() not in await registered_projects():
+        raise HTTPException(404, detail=f"Project '{project_name}' not found")
     try:
         if elements == RepositoryEnum.epics:
             return await db_project_epics(project_name, limit=limit, offset=offset)
@@ -99,7 +105,7 @@ async def get_scenarios(project_name: str,
         raise HTTPException(500, repr(exp))
 
 
-@router.post("/projects/{project_name}/repository",
+@router.post("/{project_name}/repository",
              status_code=204,
              description="Successful request, processing data."
                          " It might be import error during the process.",
@@ -116,9 +122,9 @@ async def upload_repository(project_name: str,  # noqa: ANN201
                             file: UploadFile = File(),
                             user: UpdateUser = Security(
                                 authorize_user, scopes=["admin", "user"])):
+    if project_name.casefold() not in await registered_projects():
+        raise HTTPException(404, detail=f"Project '{project_name}' not found")
     try:
-        if project_name.casefold() not in await registered_projects():
-            raise HTTPException(404, detail=f"Project '{project_name}' not found")
         contents = await file.read()
         decoded = contents.decode()
         buffer = StringIO(decoded)
@@ -134,6 +140,8 @@ async def upload_repository(project_name: str,  # noqa: ANN201
             return Response(status_code=204)
         else:
             raise HTTPException(400, detail="Missing or bad csv header")
+    except HTTPException as http_exception:
+        raise http_exception
     except Exception as exp:
         raise HTTPException(500, repr(exp))
 

@@ -201,10 +201,17 @@ class TestRestBug:
                                     headers=logged)
         assert response.status_code == 201
 
-    def test_get_bugs_from_version_populated(self, application, logged):
+    def test_get_bugs_from_project_multi_version(self, application, logged):
         response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs", headers=logged)
         assert response.status_code == 200
         assert len(response.json()) == 9
+
+    def test_get_bugs_from_specific_version(self, application, logged):
+        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs",
+                                   params={"version": TestRestBug.previous_version},
+                                   headers=logged)
+        assert response.status_code == 200
+        assert len(response.json()) == 3
 
     bugs_project_filter = [({"status": [BugStatusEnum.fix_ready.value,
                                         BugStatusEnum.closed.value]}, 0),
@@ -307,3 +314,42 @@ class TestRestBug:
         assert response.json()["title"] == "First updated"
         assert response.json()["url"] == ""
         assert response.json()["version"] == "1.0.0"
+
+    def test_update_bug_status(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   json={"status": "fix ready"},
+                                   headers=logged)
+        assert response.status_code == 200
+        assert response.json()["status"] == "fix ready"
+
+    def test_update_bug_status_error(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   json={"status": "fixe ready"},
+                                   headers=logged)
+        assert response.status_code == 422
+
+    def test_update_bug_status_transition(self, application, logged):
+        response = application.get(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   headers=logged)
+        assert response.status_code == 200
+        assert response.json()["status"] == "fix ready"
+        assert response.json()["criticality"] == "major"
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   json={"status": "open",
+                                         "criticality": "blocking"},
+                                   headers=logged)
+        assert response.status_code == 200
+        assert response.json()["status"] == "open"
+        assert response.json()["criticality"] == "blocking"
+
+    def test_update_bug_version_error_404(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   json={"version": "2.0.0"},
+                                   headers=logged)
+        assert response.status_code == 404
+
+    def test_update_bug_version(self, application, logged):
+        response = application.put(f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+                                   json={"version": TestRestBug.previous_version},
+                                   headers=logged)
+        assert response.status_code == 200

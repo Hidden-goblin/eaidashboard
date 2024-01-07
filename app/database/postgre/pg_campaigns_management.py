@@ -220,18 +220,7 @@ def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id:
              " where campaigns.project_id = %s"
              " and campaigns.version = %s"
              " and cts.status = %s;")
-    query_linked = ("select scenarios.name,"
-                    " scenarios.scenario_id as scenario_id,"
-                    " ct.ticket_reference,"
-                    " campaigns.occurrence,"
-                    " campaigns.version,"
-                    " cts.scenario_id as scenario_tech_id,"
-                    " 'selected' as selection"
-                    " from campaign_ticket_scenarios as cts"
-                    " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
-                    " join campaigns on campaigns.id = ct.campaign_id"
-                    " join scenarios on scenarios.id = cts.id"
-                    " where cts.scenario_id= ANY(select scenario_id from bugs_issues where bug_id = %s);")
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(query,
@@ -240,6 +229,31 @@ def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id:
                                    ScenarioStatusEnum.waiting_fix))
         result = rows.fetchall()
         if bug_internal_id is not None:
-            rows = connection.execute(query_linked, (bug_internal_id,))
-            merge_failing_scenario(result, rows.fetchall())
+            query_linked = ("select scenarios.name,"
+                            " scenarios.scenario_id as scenario_id,"
+                            " ct.ticket_reference,"
+                            " campaigns.occurrence,"
+                            " campaigns.version,"
+                            " cts.scenario_id as scenario_tech_id,"
+                            " 'selected' as selection"
+                            " from campaign_ticket_scenarios as cts"
+                            " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
+                            " join campaigns on campaigns.id = ct.campaign_id"
+                            " join scenarios on scenarios.id = cts.id"
+                            " where cts.scenario_id = %(scenario_id)s"
+                            " and ct.ticket_reference = %(ticket_reference)s;")
+            query_bug = ("select scenario_id, ticket_reference"
+                         " from bugs_issues"
+                         " where bug_id = %s;")
+            rows = connection.execute(query_bug, (bug_internal_id,))
+            issues_linked = list(rows.fetchall())
+            accumulator = []
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.executemany(query_linked, issues_linked, returning=True)
+                while True:
+                    accumulator.extend(cursor.fetchall())
+                    if not cursor.nextset():
+                        break
+
+            merge_failing_scenario(result, accumulator)
         return result

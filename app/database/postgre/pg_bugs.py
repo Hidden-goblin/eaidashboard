@@ -191,8 +191,12 @@ async def db_update_bugs(project_name: str,
                                  f" returning id;",
                                  values)
         logger.info(row.statusmessage)
+    # Link bug to scenario
     if bug_ticket.related_to:
         await make_link_to_scenario(project_name, version, bug_ticket.related_to, int(internal_id))
+    # Unlink bug to scenario
+    if bug_ticket.unlink_scenario:
+        await unlink_from_scenario(project_name, version, bug_ticket.unlink_scenario, int(internal_id))
     # SPEC invalidate all files of the current version
     await rs_invalidate_file(f"file:{project_name}:{current_bug.version}:*")
     return await db_get_bug(project_name, internal_id)
@@ -234,6 +238,38 @@ async def make_link_to_scenario(project_name: str,
                     raise Exception(f"linked {cursor.rowcount} scenarios to bug {bug_id} while expecting {len(data)}"
                                     f"\n You may have duplicated existing links")
     except Exception as exception:
+        logger.error(" ".join(exception.args))
+        return 0
+    return 1
+
+
+async def unlink_from_scenario(project_name: str,
+                               version: str,
+                               unlink_scenario: list[CampaignTicketScenario],
+                               bug_id: int) -> int:
+    query = ("delete from bugs_issues"
+             " where id in (select id from bugs_issues "
+             " where bug_id = %(bug_id)s"
+             " and occurrence = %(occurrence)s"
+             " and ticket_reference = %(ticket_reference)s::varchar"
+             " and scenario_id = %(scenario_tech_id)s);")
+    data = [{"bug_id": bug_id,
+             "project_name": project_name,
+             "version": version,
+             "occurrence": elem.occurrence,
+             "ticket_reference": str(elem.ticket_reference),
+             "scenario_tech_id": elem.scenario_tech_id} for elem in unlink_scenario]
+    try:
+        with pool.connection() as connection:
+            connection.row_factory = dict_row
+            with connection.cursor() as cursor:
+                cursor.executemany(query, data)
+                logger.info(f"unlinked {cursor.rowcount} scenarios from bug {bug_id}")
+                if len(data) != cursor.rowcount:
+                    raise Exception(
+                        f"unlinked {cursor.rowcount} scenarios from bug {bug_id} while expecting {len(data)}"
+                        f"\n You may have duplicated existing links")
+    except Exception as exception:
         logger.info(repr(exception))
         return 0
     return 1
@@ -267,6 +303,7 @@ async def insert_bug(project_name: str,
                         f" and pj.id = ve.project_id"
                         f" and ve.version = %s;")
         connection.execute(update_query, (provide(project_name), bug_ticket.version))
-    status = await make_link_to_scenario(project_name, bug_ticket.version, bug_ticket.related_to, row[0])
+    # TODO Check if a better way is possible
+    status_link = await make_link_to_scenario(project_name, bug_ticket.version, bug_ticket.related_to, row[0])
     await rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
-    return RegisterVersionResponse(inserted_id=row[0], message=None if status else "Linking fail")
+    return RegisterVersionResponse(inserted_id=row[0], message=None if status_link else "Linking fail")

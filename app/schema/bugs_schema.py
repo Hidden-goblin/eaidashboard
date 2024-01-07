@@ -58,9 +58,10 @@ class BugTicket(BaseModel, extra='forbid'):
                     index: str) -> None | str | datetime | BugStatusEnum | BugCriticalityEnum | List:
         return self.model_dump().get(index, None)
 
-    def serialize(self: "UpdateBugTicket") -> None:
+    def serialize(self: "BugTicket") -> None:
         if self.related_to:
             self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
+
 
 class BugTicketFull(BugTicket):
     internal_id: int
@@ -78,7 +79,8 @@ class UpdateBugTicket(BaseModel, extra='forbid'):
     url: Optional[str] = None
     status: Optional[BugStatusEnum] = None
     criticality: Optional[BugCriticalityEnum] = None
-    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict]] = []
+    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict] | str] = []
+    unlink_scenario: Optional[List[CampaignTicketScenario | str | int | None | dict]| str] = []
 
     def to_dict(self: "UpdateBugTicket") -> dict:
         temp = {"title": self.title,
@@ -98,7 +100,16 @@ class UpdateBugTicket(BaseModel, extra='forbid'):
 
     def serialize(self: "UpdateBugTicket") -> None:
         if self.related_to:
-            self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
+            if isinstance(self.related_to, str):
+                self.related_to = [CampaignTicketScenario(**json.loads(self.related_to))]
+            else:
+                self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
+        if self.unlink_scenario:
+            if isinstance(self.unlink_scenario, str):
+                self.unlink_scenario = [CampaignTicketScenario(**json.loads(self.unlink_scenario))]
+            else:
+                self.unlink_scenario = [CampaignTicketScenario(**json.loads(item)) for item in self.unlink_scenario]
+
 
 
 class UpdateVersion(BaseModel):

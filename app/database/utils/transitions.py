@@ -72,11 +72,23 @@ bug_authorized_transition = {
     BugStatusEnum.closed_not_a_defect: [BugStatusEnum.open]
 }
 
+
 def version_transition(current_status: str,
                        to_be_status: str,
                        element_enum: DashTypeEnum = StatusEnum,
                        transition_dict: dict = None) -> None:
-    """Raise an exception if the transition is not allowed"""
+    """Raise an exception if the transition is not allowed
+
+    Args:
+        current_status (str):
+        to_be_status (str):
+        element_enum (DashTypeEnum): The transition enum type
+        transition_dict (dict): The allowed transition schema
+    Returns:
+        None
+    Raises:
+        StatusTransitionForbidden exception
+    """
     if not element_enum.in_enum(to_be_status):
         raise UnknownStatusException(f"Status '{to_be_status}' is not accepted")
     if transition_dict is None:
