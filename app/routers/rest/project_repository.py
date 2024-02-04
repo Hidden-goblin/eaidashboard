@@ -163,6 +163,7 @@ async def process_upload(csv_content: str, project_name: str) -> dict:
                        "scenario_tags",
                        "scenario_description",
                        "scenario_steps")
+    # Should be validated in the calling method
     if any(header not in rows.fieldnames for header in expected_header):
         raise MalformedCsvFile(f"Missing header in the csv file\n\r "
                                f"Expecting: {','.join(expected_header)}\n\r"

@@ -52,15 +52,17 @@ class BugTicket(BaseModel, extra='forbid'):
     url: Optional[str] = ""
     status: BugStatusEnum = BugStatusEnum.open
     criticality: BugCriticalityEnum = BugCriticalityEnum.major
-    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict]] = []
+    related_to: Optional[List[CampaignTicketScenario | str | int | None | dict] | str ] = []
 
     def __getitem__(self: "BugTicket",
                     index: str) -> None | str | datetime | BugStatusEnum | BugCriticalityEnum | List:
         return self.model_dump().get(index, None)
 
     def serialize(self: "BugTicket") -> None:
-        if self.related_to:
+        if self.related_to and isinstance(self.related_to, list):
             self.related_to = [CampaignTicketScenario(**json.loads(item)) for item in self.related_to]
+        elif self.related_to and isinstance(self.related_to, str):
+            self.related_to = [CampaignTicketScenario(**json.loads(self.related_to))]
 
 
 class BugTicketFull(BugTicket):

@@ -248,12 +248,13 @@ def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id:
             rows = connection.execute(query_bug, (bug_internal_id,))
             issues_linked = list(rows.fetchall())
             accumulator = []
-            with connection.cursor(row_factory=dict_row) as cursor:
-                cursor.executemany(query_linked, issues_linked, returning=True)
-                while True:
-                    accumulator.extend(cursor.fetchall())
-                    if not cursor.nextset():
-                        break
+            if issues_linked:
+                with connection.cursor(row_factory=dict_row) as cursor:
+                    cursor.executemany(query_linked, issues_linked, returning=True)
+                    while True:
+                        accumulator.extend(cursor.fetchall())
+                        if not cursor.nextset():
+                            break
 
             merge_failing_scenario(result, accumulator)
         return result

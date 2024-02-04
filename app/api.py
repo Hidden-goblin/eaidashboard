@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from contextlib import asynccontextmanager
 from logging import getLogger
 
 from fastapi import FastAPI
@@ -48,6 +49,17 @@ update_postgres()
 description = """\
 Eaidashboard is a simple api and front to monitor test activities.
 """
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> None:
+    logger.info("Startup process")
+    pool.open()
+    postgre_register()
+    yield
+    pool.close()
+
+
 app = FastAPI(title="Eaidashboard",
               description=description,
               version=APP_VERSION,
@@ -57,7 +69,8 @@ app = FastAPI(title="Eaidashboard",
               },
               openapi_tags=DESCRIPTION,
               docs_url=None,
-              swagger_ui_parameters={"swagger": "2.0"})
+              swagger_ui_parameters={"swagger": "2.0"},
+              lifespan=lifespan)
 
 app.add_middleware(SessionMiddleware,
                    secret_key=config["SESSION_KEY"])
@@ -102,16 +115,16 @@ init_user()
 generate_keys()
 
 
-@app.on_event("startup")
-def db_start_connection() -> None:
-    logger.info("Startup process")
-    pool.open()
-    postgre_register()
-
-
-@app.on_event("shutdown")
-def db_close_connection() -> None:
-    pool.close()
+# @app.on_event("startup")
+# def db_start_connection() -> None:
+#     logger.info("Startup process")
+#     pool.open()
+#     postgre_register()
+#
+#
+# @app.on_event("shutdown")
+# def db_close_connection() -> None:
+#     pool.close()
 
 
 @app.get("/docs", include_in_schema=False)
