@@ -44,6 +44,8 @@ def if_error_raise_http(result_to_test: T,
             raise HTTPException(404, result_to_test.message)
         elif result_to_test.error.value < 200:
             raise HTTPException(400, result_to_test.message)
+        else:
+            raise HTTPException(500, result_to_test.message)
     if to_json:
         return JSONResponse(content=jsonable_encoder(result_to_test),
                             headers=headers)

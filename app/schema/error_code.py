@@ -26,6 +26,8 @@ class ApplicationErrorCode(Enum):
     transition_forbidden = 101
     unknown_status = 102
 
+    database_error = 200
+
 
 class ApplicationError(BaseModel):
     error: ApplicationErrorCode

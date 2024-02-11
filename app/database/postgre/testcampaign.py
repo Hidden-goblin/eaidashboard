@@ -33,9 +33,7 @@ from app.utils.project_alias import provide
 async def fill_campaign(project_name: str,
                         version: str,
                         occurrence: str,
-                        content: TicketScenarioCampaign) -> Tuple[int,
-list] | Tuple[ApplicationError,
-list]:
+                        content: TicketScenarioCampaign) -> Tuple[int, list] | Tuple[ApplicationError, list]:
     """Attach ticket to campaign
     Attach scenarios to campaign"""
     campaign_ticket_id = await add_ticket_to_campaign(project_name,
@@ -52,31 +50,33 @@ list]:
         return campaign_ticket_id, []
 
     errors = []
-    with pool.connection() as connection:
-        for scenario in scenarios:
-            # Retrieve scenario_internal_id id
-            scenario_id = await db_get_scenarios_id(project_name,
-                                                    scenario.epic,
-                                                    scenario.feature_name,
-                                                    scenario.scenario_id,
-                                                    scenario.feature_filename)
+    try:
+        with pool.connection() as connection:
+            for scenario in scenarios:
+                # Retrieve scenario_internal_id id
+                scenario_id = await db_get_scenarios_id(project_name,
+                                                        scenario.epic,
+                                                        scenario.feature_name,
+                                                        scenario.scenario_id,
+                                                        scenario.feature_filename)
 
-            if not scenario_id or len(scenario_id) > 1:
-                errors.append(f"Found {len(scenario_id)} scenarios while expecting one and"
-                              f" only one.\n"
-                              f"Search criteria was {scenario}")
-                break
+                if not scenario_id or len(scenario_id) > 1:
+                    errors.append(f"Found {len(scenario_id)} scenarios while expecting one and"
+                                  f" only one.\n"
+                                  f"Search criteria was {scenario}")
+                    break
 
-            result = connection.execute("insert into campaign_ticket_scenarios "
-                                        "(campaign_id, scenario_id,status) "
-                                        "values (%s, %s, %s) "
-                                        "on conflict (campaign_id, scenario_id) "
-                                        "do nothing;",
-                                        (campaign_ticket_id, scenario_id[0],
-                                         CampaignStatusEnum.recorded))
-            log_message(result)
-
-        # I must do something with it
+                result = connection.execute("insert into campaign_ticket_scenarios "
+                                            "(campaign_ticket_id, scenario_id,status) "
+                                            "values (%s, %s, %s) "
+                                            "on conflict (campaign_ticket_id, scenario_id) "
+                                            "do nothing;",
+                                            (campaign_ticket_id, scenario_id[0],
+                                             CampaignStatusEnum.recorded))
+                log_message(result)
+    except Exception as exception:
+        errors.append(exception.args)
+        return ApplicationError(error=ApplicationErrorCode.database_error, message=str(exception)), errors
     return campaign_ticket_id, errors
 
 
