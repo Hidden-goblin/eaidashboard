@@ -7,7 +7,7 @@ import psycopg.errors
 from psycopg.rows import dict_row, tuple_row
 from psycopg.types.json import Json
 
-from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered
+from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered
 from app.database.redis.token_management import revoke
 from app.database.utils.password_management import get_password_hash
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
@@ -228,3 +228,15 @@ def self_update_user(username: str, new_password: str) -> RegisterVersionRespons
     result = update_user_password(UpdateUser(username=username, password=new_password))
     revoke(username)
     return result
+
+
+def db_delete_user(username: str) -> None:
+    _admin_users = __list_of_users("*")
+    if len(_admin_users) == 1 and username in _admin_users:
+        raise InvalidDeletion("Does not match the user management rules")
+    with pool.connection() as conn:
+        conn.row_factory = tuple_row
+        rows = conn.execute("delete from users where username = %s", (username, ))
+        if not rows.rowcount:
+            raise InvalidDeletion("Invalid user")
+

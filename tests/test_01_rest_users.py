@@ -133,14 +133,14 @@ class TestRestUsers:
 
     def test_update_user_error_401(self, application):
         response = application.patch("/api/v1/users",
-                                    json={"username": "test@test.fr"})
+                                     json={"username": "test@test.fr"})
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
     def test_update_user_error_422(self, application, logged):
         response = application.patch("/api/v1/users",
-                                    json={"username": "test@test.fr"},
-                                    headers=logged)
+                                     json={"username": "test@test.fr"},
+                                     headers=logged)
         assert response.status_code == 422
         assert response.json()["detail"][0]['loc'] == ['body']
         assert response.json()["detail"][0]['msg'] == ("Value error, UpdateUser must have at least one"
@@ -167,15 +167,16 @@ class TestRestUsers:
     def test_update_user(self, application, logged):
         user = application.get("/api/v1/users/test@test.fr", headers=logged).json()
         response = application.patch("/api/v1/users",
-                                    json={"username": "test@test.fr",
-                                          "scopes": {**user["scopes"],
-                                                     TestRestUsers.project_name: "user"}},
-                                    headers=logged)
+                                     json={"username": "test@test.fr",
+                                           "scopes": {**user["scopes"],
+                                                      TestRestUsers.project_name: "user"}},
+                                     headers=logged)
         assert response.status_code == 200
         response = application.get("/api/v1/users/test@test.fr",
                                    headers=logged)
         assert response.status_code == 200
-        assert response.json() == {"username": "test@test.fr", "scopes": {"*": "user", TestRestUsers.project_name: "user"}}
+        assert response.json() == {"username": "test@test.fr",
+                                   "scopes": {"*": "user", TestRestUsers.project_name: "user"}}
 
     def test_user_scopes_200(self, application):
         # Token
@@ -228,3 +229,37 @@ class TestRestUsers:
                                     headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
         assert response.json()["detail"] == "Could not validate credentials"
+
+    def test_delete_user(self, application, logged):
+        _users = application.get("/api/v1/users",
+                                 headers=logged)
+        if "test@test.fr" not in [item["username"] for item in _users.json()]:
+            response = application.post("/api/v1/users",
+                                        json={"username": "test@test.fr",
+                                              "password": "test",
+                                              "scopes": {"*": "user"}},
+                                        headers=logged)
+            assert response.status_code == 200
+        _del_user = application.delete("/api/v1/users/test@test.fr",
+                                        headers=logged)
+        assert _del_user.status_code == 204
+
+    def test_delete_user_400_last_super_admin(self, application, logged):
+        # Set test so that only one super admin exist
+        _users = application.get("/api/v1/users",
+                                 headers=logged)
+        for user in _users.json():
+            if user["username"] != "admin@admin.fr":
+                application.delete(f"/api/v1/users/{user['username']}",
+                                   headers=logged)
+        # Test removing last super admin is not possible
+        _del_user = application.delete("/api/v1/users/admin@admin.fr",
+                                       headers=logged)
+        assert _del_user.status_code == 400
+        assert _del_user.json()["detail"] == "Does not match the user management rules"
+
+    def test_delete_user_400_unknown_user(self, application, logged):
+        _del_user = application.delete("/api/v1/users/fake@fake.lu",
+                                       headers=logged)
+        assert _del_user.status_code == 400
+        assert _del_user.json()["detail"] == "Invalid user"

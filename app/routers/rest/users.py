@@ -5,10 +5,17 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Security
 from starlette.responses import Response
 
-from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered, UserNotFoundException
+from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered, UserNotFoundException
 from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_users import create_user, get_user, get_users, self_update_user, update_user
+from app.database.postgre.pg_users import (
+    create_user,
+    db_delete_user,
+    get_user,
+    get_users,
+    self_update_user,
+    update_user,
+)
 from app.schema.error_code import ErrorMessage
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateMe, UpdateUser, User, UserLight
@@ -117,6 +124,28 @@ async def create_update(body: UpdateUser,
         raise HTTPException(400, ", ".join(ifr.args)) from ifr
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, ", ".join(pnr.args)) from pnr
+    except Exception as exp:
+        raise HTTPException(500, ", ".join(exp.args)) from exp
+
+
+@router.delete("/users/{username}",
+               status_code=204,
+               tags=["Users"],
+               description="""Update a user. Only admin can do so.""",
+               response_class=Response,
+               responses={
+                   401: {"model": ErrorMessage,
+                         "description": "Cannot authenticate the user"},
+                   400: {"model": ErrorMessage,
+                         "description": "One of the delete business rule is not met"}
+               })
+async def delete_user(username: str,
+                      user: User = Security(
+                          authorize_user, scopes=["admin"])) -> None:
+    try:
+        db_delete_user(username)
+    except InvalidDeletion as _id:
+        raise HTTPException(400, ', '.join(_id.args)) from _id
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
 

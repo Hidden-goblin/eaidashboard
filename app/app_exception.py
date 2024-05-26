@@ -107,6 +107,11 @@ class DuplicateTestResults(Exception):
     pass
 
 
+class InvalidDeletion(Exception):
+    """Deletion does not match the business rules"""
+    pass
+
+
 def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
                         request: Request,
                         exception: Exception,

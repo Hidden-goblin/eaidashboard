@@ -1,0 +1,10 @@
+{
+  "headers":{
+    "log": {"type": "id", "value": "log"},
+    "unlog": {"type": "id", "value":  "deco"},
+    "user_management": {"type": "id", "value": "users"},
+    "documentation": {"type": "id", "value":  "documentation"},
+    "back_to_main": {"type": "id", "value": "backToMain"}
+  }
+
+}

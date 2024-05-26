@@ -1,0 +1,46 @@
+{
+  "users": {
+    "Aaron Appleseed": {
+      "username": "admin@admin.fr",
+      "password": "admin",
+      "roles": {
+        "*": "admin"
+      }
+    },
+    "Paul Abbot": {
+      "username": "paul.abbot@test.fr",
+      "password": "padmin",
+      "roles": {
+        "*": "user",
+        "test": "admin",
+        "new way": "admin"
+      }
+    },
+    "Fileas Utter": {
+      "username": "fileas.utter@test.fr",
+      "password": "test",
+      "roles": {
+        "*": "user",
+        "test is the new way": "user"
+      }
+    },
+    "Sorcha Upbringer": {
+      "username": "sorcha.upbringer@test.fr",
+      "password": "test1",
+      "roles": {
+        "*": "user",
+        "test": "user",
+        "test is the new way": "user"
+      }
+    },
+    "Monica Upwarder": {
+      "username": "monica.upwarder@test.fr",
+      "password": "test2",
+      "roles": {
+        "*": "user",
+        "new way": "user",
+        "test is the new way": "admin"
+      }
+    }
+  }
+}

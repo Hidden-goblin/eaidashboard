@@ -1,0 +1,21 @@
+{
+  "forms": {
+    "authentication": {
+      "username": {"type": "id", "value": "username"},
+      "password": {"type": "id", "value": "password"},
+      "submit": {"type":  "tag_name", "value": "button", "text":  "Login"}
+    },
+    "create_user": {
+      "username": {},
+      "password": {},
+      "super_user_selector": {},
+      "admin_projects": {},
+      "user_projects": {},
+      "submit": {"type":  "tag_name", "value": "button", "text":  "Login"}
+    },
+    "register_project": {
+      "project_name": {"type": "id", "value": "project_name"},
+      "submit": {"type":  "tag_name", "value": "button", "text":  "Create"}
+    }
+  }
+}

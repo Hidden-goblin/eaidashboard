@@ -1,12 +1,14 @@
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "C90", "I", "W", "ANN"]
+
+[tool.ruff]
 line-length = 120
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 
 "app/routers/front" = ["ANN201"]
 
@@ -54,6 +56,11 @@ coverage = {extras = ["toml"], version = "*"}
 pytest-order = "*"
 httpx = "*"
 ruff = "*"
+behave = "*"
+behave-html-formatter = "*"
+eaibat = "*"
+eaiautomatontools = "*"
+requests = "*"
 
 [build-system]
 requires = ["poetry-core"]
