@@ -62,7 +62,7 @@ async def get_version(project_name: str, version: str) -> Version:
                        bugs=bugs)
 
 
-async def get_versions(project_name: str, exclude_archived: bool = False) -> list:
+async def get_versions(project_name: str, exclude_archived: bool = False) -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         if exclude_archived:

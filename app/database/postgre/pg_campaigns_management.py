@@ -216,7 +216,7 @@ def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id:
              " from campaign_ticket_scenarios as cts"
              " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
              " join campaigns on campaigns.id = ct.campaign_id"
-             " join scenarios on scenarios.id = cts.id"
+             " join scenarios on scenarios.id = cts.scenario_id"
              " where campaigns.project_id = %s"
              " and campaigns.version = %s"
              " and cts.status = %s;")
@@ -239,7 +239,7 @@ def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id:
                             " from campaign_ticket_scenarios as cts"
                             " join campaign_tickets as ct on cts.campaign_ticket_id = ct.id"
                             " join campaigns on campaigns.id = ct.campaign_id"
-                            " join scenarios on scenarios.id = cts.id"
+                            " join scenarios on scenarios.id = cts.scenario_id"
                             " where cts.scenario_id = %(scenario_id)s"
                             " and ct.ticket_reference = %(ticket_reference)s;")
             query_bug = ("select scenario_id, ticket_reference"

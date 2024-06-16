@@ -32,6 +32,10 @@ logger = getLogger(__name__)
 async def front_project_bugs(project_name: str,
                              request: Request,
                              display_all: Optional[str] = None,
+                             version: str = None,
+                             occurrence: int = None,
+                             ticket_id: int = None,
+                             scenario_id: int = None,
                              user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
@@ -51,6 +55,7 @@ async def front_project_bugs(project_name: str,
 
         elif requested_item.casefold() == "FORM".casefold():
             versions = await get_versions(project_name)
+            # Use query param to pre-populate the bug data
             return templates.TemplateResponse("forms/add_bug.html",
                                               {
                                                   "request": request,

@@ -18,6 +18,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y build-essential
 
 COPY --from=builder-dep /app/requirements.txt ./requirements.txt
+RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cleaning folders from dev elements
@@ -45,7 +46,8 @@ WORKDIR /usr/src/dashboard
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-COPY main.py ./
+COPY log_config.yaml ./ &&\
+     main.py ./
 
 COPY --from=builder /app/app app/
 COPY --from=plantuml-builder /app/diagrams app/assets/documentation

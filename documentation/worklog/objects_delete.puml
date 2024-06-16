@@ -1,0 +1,10 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+
+*: Objects delete action
+----
+All objects of the dashboard should
+be deletable.
+Depending on the objects hierarchy
+delete may cascade.;
+@endwbs

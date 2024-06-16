@@ -61,8 +61,10 @@ class DuplicateFutureVersion(Exception):
 class IncorrectTicketCount(Exception):
     pass
 
+
 class UserNotFoundException(Exception):
     pass
+
 
 class CampaignNotFound(Exception):
     pass
@@ -130,7 +132,7 @@ def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
     )
 
 
-def front_access_denied(templates: Jinja2Templates, # noqa: ANN201
+def front_access_denied(templates: Jinja2Templates,  # noqa: ANN201
                         request: Request):
     return templates.TemplateResponse(
         "error_message.html",
