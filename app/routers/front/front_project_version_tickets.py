@@ -94,7 +94,11 @@ async def project_version_ticket_edit(request: Request,
 @router.put("/{reference}",
             tags=["Front - Tickets"],
             include_in_schema=False)
-async def project_version_update_ticket(request: Request, project_name: str, version: str, reference: str, body: dict,
+async def project_version_update_ticket(request: Request,
+                                        project_name: str,
+                                        version: str,
+                                        reference: str,
+                                        body: dict,
                                         background_task: BackgroundTasks,
                                         user: User = Security(front_authorize,
                                                               scopes=["admin", "user"])) -> HTMLResponse:

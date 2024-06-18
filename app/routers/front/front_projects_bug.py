@@ -15,6 +15,7 @@ from app.database.authorization import front_authorize
 from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
 from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_versions import get_versions
+from app.database.postgre.testcampaign import db_set_campaign_ticket_scenario_status
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket
 from app.schema.error_code import ApplicationError
 from app.schema.mongo_enums import BugCriticalityEnum
@@ -26,6 +27,16 @@ router = APIRouter(prefix="/front/v1/projects")
 logger = getLogger(__name__)
 
 
+def __validate_from_scenario(version: str = None,
+                             occurrence: int = None,
+                             ticket_id: int = None,
+                             scenario_id: int = None) -> bool:
+    return (version is not None
+            and occurrence is not None
+            and ticket_id is not None
+            and scenario_id is not None)
+
+
 @router.get("/{project_name}/bugs",
             tags=["Front - Project"],
             include_in_schema=False)
@@ -33,9 +44,9 @@ async def front_project_bugs(project_name: str,
                              request: Request,
                              display_all: Optional[str] = None,
                              version: str = None,
-                             occurrence: int = None,
-                             ticket_id: int = None,
-                             scenario_id: int = None,
+                             occurrence: str = None,
+                             ticket_reference: str = None,
+                             scenario_internal_id: str = None,
                              user: User = Security(front_authorize, scopes=["admin", "user"])
                              ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
@@ -54,8 +65,22 @@ async def front_project_bugs(project_name: str,
                                               })
 
         elif requested_item.casefold() == "FORM".casefold():
-            versions = await get_versions(project_name)
             # Use query param to pre-populate the bug data
+            if __validate_from_scenario(version, occurrence, ticket_reference, scenario_internal_id):
+                # await scenario failure
+                result = await db_set_campaign_ticket_scenario_status(project_name,
+                                                                      version,
+                                                                      occurrence,
+                                                                      ticket_reference,
+                                                                      scenario_internal_id,
+                                                                      "waiting fix")
+                versions = [version, ]
+                test = {"occurrence": occurrence,
+                        "ticket_reference": ticket_reference,
+                        "scenario_internal_id": scenario_internal_id}
+            else:
+                versions = await get_versions(project_name)
+                test = None
             return templates.TemplateResponse("forms/add_bug.html",
                                               {
                                                   "request": request,
@@ -63,7 +88,8 @@ async def front_project_bugs(project_name: str,
                                                   "project_name": project_name,
                                                   "project_name_alias": provide(project_name),
                                                   "criticality": [f"{crit}" for crit in
-                                                                  BugCriticalityEnum]
+                                                                  BugCriticalityEnum],
+                                                  "test": test
                                               },
                                               headers={"hx-retarget": "#modals-here"})
 

@@ -31,6 +31,11 @@
                             hx-target="#campaignMessage"
                             hx-headers='{"eaid-next":"{{initiator}}"}'
                             hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.internal_id}}">Update</button>
+                    <button class="btn btn-primary"
+                            hx-trigger="click"
+                            hx-target="#campaignMessage"
+                            hx-headers='{"eaid-next":"{{initiator}}", "eaid-request": "FORM"}'
+                            hx-get="/front/v1/projects/{{project_name}}/bugs?version={{version}}&occurrence={{occurrence}}&ticket_reference={{ticket_reference}}&scenario_internal_id={{scenario.internal_id}}">Record bug</button>
                 </div>
             </td>
             <td>

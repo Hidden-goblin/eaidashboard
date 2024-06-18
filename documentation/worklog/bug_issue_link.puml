@@ -45,7 +45,12 @@ Rework pagination so that one-page app is real;
 *****[#green]: --Move bug creation form--
 --from placeholder in the page to dialog--;
 ****[#green] .--Bug update in dialog--
-****[#red] Add bug creation link per scenario
+****[#orange]: Add bug creation link per scenario
+----
+Invoke add bug form
+* --first update the scenario to fail--
+* --version is fixed--
+* link to this occurrence/ticket/scenario;
 ***[#red] Create move to test from bug table
 ****[#red] Check redirect link
 ** Fix unit test
