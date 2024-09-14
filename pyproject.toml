@@ -12,6 +12,9 @@ max-complexity = 10
 
 "app/routers/front" = ["ANN201"]
 
+[tool.ruff.format]
+skip-magic-trailing-comma = false
+
 [tool.coverage.run]
 command_line = "-m pytest"
 branch = "true"
@@ -32,7 +35,7 @@ license = "GNU GPL v3"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
@@ -59,8 +62,8 @@ ruff = "*"
 behave = "*"
 behave-html-formatter = "*"
 eaibat = "*"
-eaiautomatontools = "*"
 requests = "*"
+eaiautomatontools = {path = "eaiautomatontools-1.2.0-py3-none-any.whl"}
 
 [build-system]
 requires = ["poetry-core"]

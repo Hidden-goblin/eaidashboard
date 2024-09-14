@@ -96,28 +96,34 @@ class NotAuthorized(Exception):
 
 class IncorrectFieldsRequest(Exception):
     """To be raised when field is missing in the request"""
+
     pass
 
 
 class MalformedCsvFile(Exception):
     """To be raised when csv misses header or field header"""
+
     pass
 
 
 class DuplicateTestResults(Exception):
     """To be raised when an existing test campaign result is already in database"""
+
     pass
 
 
 class InvalidDeletion(Exception):
     """Deletion does not match the business rules"""
+
     pass
 
 
-def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
-                        request: Request,
-                        exception: Exception,
-                        retarget: str = "#messageBox"):
+def front_error_message(  # noqa: ANN201
+    templates: Jinja2Templates,
+    request: Request,
+    exception: Exception,
+    retarget: str = "#messageBox",
+):
     log_error(repr(exception))
     return templates.TemplateResponse(
         "error_message.html",
@@ -127,13 +133,14 @@ def front_error_message(templates: Jinja2Templates,  # noqa: ANN201
             "sequel": " to perform this action.",
             "advise": f"Try to reload the page. \n Error message is {','.join(exception.args)}",
         },
-        headers={"HX-Retarget": retarget,
-                 "HX-Reswap": "innerHTML"}
+        headers={"HX-Retarget": retarget, "HX-Reswap": "innerHTML"},
     )
 
 
-def front_access_denied(templates: Jinja2Templates,  # noqa: ANN201
-                        request: Request):
+def front_access_denied(  # noqa: ANN201
+    templates: Jinja2Templates,
+    request: Request,
+):
     return templates.TemplateResponse(
         "error_message.html",
         {

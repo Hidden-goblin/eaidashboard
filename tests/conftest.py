@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List
+from typing import List, Any, Generator
 
 import psycopg
 import pytest
@@ -9,11 +9,11 @@ from starlette.testclient import TestClient
 
 
 @fixture(autouse=True, scope='session')
-def application():
+def application() -> Generator[TestClient, Any, None]:
     # Override the environment variable
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("PG_DB", "test_db")
-        from app.conf import postgre_string, postgre_setting_string
+        from app.conf import postgre_setting_string, postgre_string
         print(postgre_string)
         # Import your FastAPI application
         from app.api import app
@@ -28,7 +28,7 @@ def application():
 
 
 @fixture(scope='function')
-def logged(application):
+def logged(application: Generator[TestClient, Any, None]) ->  Generator[dict[str, str], Any, None]:
     response = application.post("/api/v1/token", data={"username": "admin@admin.fr",
                                                        "password": "admin"})
     token = response.json()["access_token"]

@@ -52,7 +52,7 @@ async def front_project_bugs(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        requested_item = request.headers.get("eaid-request", None)
+        requested_item: str = request.headers.get("eaid-request", "")
         if requested_item is None:
             projects = await registered_projects()
             return templates.TemplateResponse("bugs.html",
@@ -68,7 +68,7 @@ async def front_project_bugs(project_name: str,
             # Use query param to pre-populate the bug data
             if __validate_from_scenario(version, occurrence, ticket_reference, scenario_internal_id):
                 # await scenario failure
-                result = await db_set_campaign_ticket_scenario_status(project_name,
+                await db_set_campaign_ticket_scenario_status(project_name,
                                                                       version,
                                                                       occurrence,
                                                                       ticket_reference,

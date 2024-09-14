@@ -24,7 +24,7 @@ async def get_bugs(project_name: str,
                    criticality: Optional[BugCriticalityEnum] = None,
                    version: str = None,
                    limit: int = 100,
-                   skip: int = 0) -> Tuple[List[BugTicketFull], int]:
+                   skip: int = 0,) -> Tuple[List[BugTicketFull], int]:
     query = ("select bg.id as internal_id,"
              " bg.title,"
              " bg.url,"
@@ -80,7 +80,7 @@ async def get_bugs(project_name: str,
 
 
 async def db_get_bug(project_name: str,
-                     internal_id: str) -> BugTicketFull | ApplicationError:
+                     internal_id: str,) -> BugTicketFull | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute("select bg.id as internal_id,"
@@ -124,7 +124,8 @@ def db_bug_linked_scenario(bug_internal_id: int = None) -> List[CampaignTicketSc
         return [CampaignTicketScenario(**row) for row in rows]
 
 
-def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket) -> None:
+def __update_bug_status(
+        current_bug: BugTicketFull, bug_ticket: UpdateBugTicket,) -> None:
     if (bug_ticket.status is not None
             or bug_ticket.criticality is not None):
         open_close_collapse = {BugStatusEnum.open: BugStatusEnum.open.value,
@@ -152,7 +153,7 @@ def __update_bug_status(current_bug: BugTicketFull, bug_ticket: UpdateBugTicket)
 
 async def db_update_bugs(project_name: str,
                          internal_id: str,
-                         bug_ticket: UpdateBugTicket) -> BugTicketFull | ApplicationError:
+                         bug_ticket: UpdateBugTicket,) -> BugTicketFull | ApplicationError:
     bug_ticket_dict = bug_ticket.to_dict()
     current_bug: BugTicketFull = await db_get_bug(project_name, internal_id)
     if isinstance(current_bug, ApplicationError):
@@ -205,7 +206,7 @@ async def db_update_bugs(project_name: str,
 async def make_link_to_scenario(project_name: str,
                                 version: str,
                                 related_to: List[CampaignTicketScenario],
-                                bug_id: int) -> int:
+                                bug_id: int,) -> int:
     # validate existence
 
     # Insert
@@ -246,7 +247,7 @@ async def make_link_to_scenario(project_name: str,
 async def unlink_from_scenario(project_name: str,
                                version: str,
                                unlink_scenario: list[CampaignTicketScenario],
-                               bug_id: int) -> int:
+                               bug_id: int,) -> int:
     query = ("delete from bugs_issues"
              " where id in (select id from bugs_issues "
              " where bug_id = %(bug_id)s"
@@ -276,7 +277,7 @@ async def unlink_from_scenario(project_name: str,
 
 
 async def insert_bug(project_name: str,
-                     bug_ticket: BugTicket) -> RegisterVersionResponse:
+                     bug_ticket: BugTicket,) -> RegisterVersionResponse:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(

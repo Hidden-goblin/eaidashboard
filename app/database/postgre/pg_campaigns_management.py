@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 async def create_campaign(project_name: str,
                           version: str,
-                          status: str = "recorded") -> CampaignLight:
+                          status: str = "recorded",) -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
     with pool.connection() as connection:
         connection.row_factory = dict_row
@@ -41,7 +41,7 @@ async def retrieve_campaign(project_name: str,
                             version: str = None,
                             status: str = None,
                             limit: int = 10,
-                            skip: int = 0) -> Tuple[List[CampaignLight], int]:
+                            skip: int = 0,) -> Tuple[List[CampaignLight], int]:
     """Get raw campaign with version, occurrence, description and status
     TODO: check if dict could be replace with a model
     """
@@ -99,7 +99,7 @@ async def retrieve_campaign(project_name: str,
 
 async def retrieve_campaign_id(project_name: str,
                                version: str,
-                               occurrence: str) -> Tuple[int, str] | ApplicationError:
+                               occurrence: str,) -> Tuple[int, str] | ApplicationError:
     """get campaign internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
@@ -116,7 +116,7 @@ async def retrieve_campaign_id(project_name: str,
 
 
 async def retrieve_all_campaign_id_for_version(project_name: str,
-                                               version: str) -> List[Tuple[int, str]]:
+                                               version: str,) -> List[Tuple[int, str]]:
     """Get campaigns internal id and status"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
@@ -129,7 +129,7 @@ async def retrieve_all_campaign_id_for_version(project_name: str,
 
 async def is_campaign_exist(project_name: str,
                             version: str,
-                            occurrence: str) -> bool:
+                            occurrence: str,) -> bool:
     """Check if campaign exist"""
     try:
         return bool(await retrieve_campaign_id(project_name, version, occurrence))
@@ -139,7 +139,7 @@ async def is_campaign_exist(project_name: str,
 
 async def enrich_tickets_with_campaigns(project_name: str,
                                         version: str,
-                                        tickets: List[Ticket]) -> List[EnrichedTicket]:
+                                        tickets: List[Ticket],) -> List[EnrichedTicket]:
     """Add to ticket campaigns data"""
     _tickets = []
     with pool.connection() as connection:
@@ -163,7 +163,7 @@ async def enrich_tickets_with_campaigns(project_name: str,
 async def update_campaign_occurrence(project_name: str,
                                      version: str,
                                      occurrence: str,
-                                     update_occurrence: CampaignPatch) -> List[
+                                     update_occurrence: CampaignPatch,) -> List[
                                                                               str] | \
                                                                           ApplicationError:
     campaign_id = await retrieve_campaign_id(project_name, version, occurrence)
@@ -201,7 +201,8 @@ def merge_failing_scenario(general_result: list, already_linked: list) -> None:
             general_result.append(scenario)
 
 
-def campaign_failing_scenarios(project_name: str, version: str, bug_internal_id: int = None) -> List[dict]:
+def campaign_failing_scenarios(
+        project_name: str, version: str, bug_internal_id: int = None,) -> List[dict]:
     """Retrieve failing scenarios for a campaign
     If bug_internal_id is set then add as 'selected' already scenarios attached to the bug
     TODO add this mechanism /!\\ WARNING on future link (version might differ)

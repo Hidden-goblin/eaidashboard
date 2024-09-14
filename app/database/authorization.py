@@ -19,9 +19,7 @@ from app.utils.log_management import log_error
 log = getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="api/v1/token",
-    scopes={"admin": "All operations granted",
-            "user": "Update"}
+    tokenUrl="api/v1/token", scopes={"admin": "All operations granted", "user": "Update"}
 )
 
 
@@ -35,15 +33,21 @@ def get_request(request: Request) -> Request:
     return request
 
 
-def authorize_user(security_scopes: SecurityScopes,
-                   token: str = Depends(oauth2_scheme),
-                   project_name: str = Depends(path_project)) -> User | HTTPException:
+def authorize_user(
+    security_scopes: SecurityScopes,
+    token: str = Depends(
+        oauth2_scheme,
+    ),
+    project_name: str = Depends(path_project),
+) -> User | HTTPException:
     return __generic_authorization(security_scopes, token, project_name)
 
 
-def __generic_authorization(security_scopes: SecurityScopes,
-                            token: str,
-                            project_name: str) -> User | HTTPException:
+def __generic_authorization(
+    security_scopes: SecurityScopes,
+    token: str,
+    project_name: str,
+) -> User | HTTPException:
     # Error message building
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
@@ -81,16 +85,20 @@ def __generic_authorization(security_scopes: SecurityScopes,
         log_error("\n".join(exception.args))
         raise credentials_exception from exception
     # Raise if the user has no matching scope
-    if ((token_scopes.right(project_name=project_name) is None
-         or token_scopes.right(project_name=project_name) not in security_scopes.scopes)
-            and security_scopes.scopes):
+    if (
+        token_scopes.right(project_name=project_name) is None
+        or token_scopes.right(project_name=project_name) not in security_scopes.scopes
+    ) and security_scopes.scopes:
         raise HTTPException(403, "You are not authorized to access this resource.")
     renew_token_date(user.username)
 
     return user
 
 
-def is_updatable(request: Request, rights: tuple) -> bool:
+def is_updatable(
+    request: Request,
+    rights: tuple,
+) -> bool:
     """Authorization method for front usage"""
     if "token" not in request.session:
         return False
@@ -102,13 +110,13 @@ def is_updatable(request: Request, rights: tuple) -> bool:
         return False
 
 
-def front_authorize(security_scopes: SecurityScopes,
-                    request: Request,
-                    project_name: str = Depends(path_project)) -> User:
+def front_authorize(
+    security_scopes: SecurityScopes,
+    request: Request,
+    project_name: str = Depends(path_project),
+) -> User:
     try:
-        return __generic_authorization(security_scopes,
-                                       request.session.get("token"),
-                                       project_name)
+        return __generic_authorization(security_scopes, request.session.get("token"), project_name)
     except Exception:
         return templates.TemplateResponse(
             "error_message.html",
