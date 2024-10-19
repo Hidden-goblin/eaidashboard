@@ -63,7 +63,7 @@ behave = "*"
 behave-html-formatter = "*"
 eaibat = "*"
 requests = "*"
-eaiautomatontools = {path = "eaiautomatontools-1.2.0-py3-none-any.whl"}
+eaiautomatontools = "*"
 
 [build-system]
 requires = ["poetry-core"]

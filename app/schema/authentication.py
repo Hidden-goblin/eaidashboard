@@ -9,14 +9,16 @@ class TokenData(BaseModel):
     scopes: dict = {"*": None}
 
     def to_dict(self: "TokenData") -> dict:
-        return {"sub": self.sub,
-                "scopes": self.scopes}
+        return {"sub": self.sub, "scopes": self.scopes}
 
 
 class Scopes(BaseModel):
     scopes: dict = {"*": None}
 
-    def right(self: "Scopes", project_name: str) -> str:
+    def right(
+        self: "Scopes",
+        project_name: str,
+    ) -> str:
         if self.scopes.get("*") == "admin":
             return "admin"
         else:

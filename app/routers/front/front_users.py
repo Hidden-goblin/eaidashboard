@@ -17,51 +17,58 @@ from app.utils.pages import page_numbering
 router = APIRouter(prefix="/front/v1/users")
 
 
-@router.get("/",
-            tags=["Front - Users"],
-            include_in_schema=False
-            )
-async def front_get_users(request: Request,
-                          limit: int = 10,
-                          skip: int = 0,
-                          user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.get(
+    "/",
+    tags=["Front - Users"],
+    include_in_schema=False,
+)
+async def front_get_users(
+    request: Request,
+    limit: int = 10,
+    skip: int = 0,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
         if request.headers.get("eaid-request", None) == "table":
             users, total = get_users(limit, skip)
             pages, current_page = page_numbering(total, limit, skip)
-            return templates.TemplateResponse("tables/users.html",
-                                              {
-                                                  "request": request,
-                                                  "users": users,
-                                                  "pages": pages,
-                                                  "current": current_page,
-                                                  "nav_bar": total >= limit
-                                              })
+            return templates.TemplateResponse(
+                "tables/users.html",
+                {
+                    "request": request,
+                    "users": users,
+                    "pages": pages,
+                    "current": current_page,
+                    "nav_bar": total >= limit,
+                },
+            )
         if request.headers.get("eaid-request", None) == "form":
             projects = await registered_projects()
-            return templates.TemplateResponse("forms/add_user.html",
-                                              {
-                                                  "request": request,
-                                                  "projects": projects
-                                              })
-        return templates.TemplateResponse("base_user.html",
-                                          {
-                                              "request": request
-                                          })
+            return templates.TemplateResponse(
+                "forms/add_user.html",
+                {"request": request, "projects": projects},
+            )
+        return templates.TemplateResponse(
+            "base_user.html",
+            {"request": request},
+        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
-@router.post("/",
-             tags=["Front - Users"],
-             include_in_schema=False
-             )
-async def front_post_users(body: dict,
-                           request: Request,
-                           user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.post(
+    "/",
+    tags=["Front - Users"],
+    include_in_schema=False,
+)
+async def front_post_users(
+    body: dict,
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -71,36 +78,51 @@ async def front_post_users(body: dict,
             **{key: "admin" for key in body["admin"]},
             "*": "admin" if "*" in body else "user",
         }
-        to_be_user = UpdateUser(username=body["username"], password=body["password"], scopes=scopes)
+        to_be_user = UpdateUser(
+            username=body["username"],
+            password=body["password"],
+            scopes=scopes,
+        )
         create_user(to_be_user)
-        return templates.TemplateResponse("void.html",
-                                          {"request": request},
-                                          headers={"HX-Trigger": "modalClear",  # For multiple trigger use
-                                                   # json.dumps({"triggerone":"", "triggertwo": ""})
-                                                   "HX-Trigger-After-Swap": "formDelete"})
+        return templates.TemplateResponse(
+            "void.html",
+            {"request": request},
+            headers={
+                "HX-Trigger": "modalClear",  # For multiple trigger use
+                # json.dumps({"triggerone":"", "triggertwo": ""})
+                "HX-Trigger-After-Swap": "formDelete",
+            },
+        )
     except psycopg.errors.UniqueViolation:
         projects = await registered_projects()
-        return templates.TemplateResponse("forms/add_user.html",
-                                          {
-                                              "request": request,
-                                              "projects": projects,
-                                              "posted": body,
-                                              "message": f"Username {body['username']} already exists."
-                                          },
-                                          headers={"HX-Retarget": "#modal",  # Retarget
-                                                   "HX-Reswap": "beforeend"})
+        return templates.TemplateResponse(
+            "forms/add_user.html",
+            {
+                "request": request,
+                "projects": projects,
+                "posted": body,
+                "message": f"Username {body['username']} already exists.",
+            },
+            headers={
+                "HX-Retarget": "#modal",  # Retarget
+                "HX-Reswap": "beforeend",
+            },
+        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
-@router.get("/{username}",
-            tags=["Front - Users"],
-            include_in_schema=False
-            )
-async def front_user(username: str,
-                     request: Request,
-                     user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.get(
+    "/{username}",
+    tags=["Front - Users"],
+    include_in_schema=False,
+)
+async def front_user(
+    username: str,
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -108,24 +130,30 @@ async def front_user(username: str,
             _user = get_user(username)
 
             projects = await registered_projects()
-            return templates.TemplateResponse("forms/update_user.html",
-                                              {"request": request,
-                                               "projects": projects,
-                                               "posted": _user.to_admin_user_list()}
-                                              )
+            return templates.TemplateResponse(
+                "forms/update_user.html",
+                {
+                    "request": request,
+                    "projects": projects,
+                    "posted": _user.to_admin_user_list(),
+                },
+            )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
-@router.patch("/{username}",
-              tags=["Front - Users"],
-              include_in_schema=False
-              )
-async def front_update_user(username: str,
-                            body: dict,
-                            request: Request,
-                            user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.patch(
+    "/{username}",
+    tags=["Front - Users"],
+    include_in_schema=False,
+)
+async def front_update_user(
+    username: str,
+    body: dict,
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
@@ -139,26 +167,36 @@ async def front_update_user(username: str,
             **{key: "admin" for key in body["admin"]},
             "*": "admin" if "*" in body else "user",
         }
-        to_be_user = UpdateUser(username=body["username"],
-                                password=body["password"] if body["password"] else None,
-                                scopes=scopes)
+        to_be_user = UpdateUser(
+            username=body["username"],
+            password=body["password"] if body["password"] else None,
+            scopes=scopes,
+        )
         update_user(to_be_user)
-        return templates.TemplateResponse("void.html",
-                                          {"request": request},
-                                          headers={"HX-Trigger": "modalClear",  # For multiple trigger use
-                                                   # json.dumps({"triggerone":"", "triggertwo": ""})
-                                                   "HX-Trigger-After-Swap": "formDelete"})
+        return templates.TemplateResponse(
+            "void.html",
+            {"request": request},
+            headers={
+                "HX-Trigger": "modalClear",  # For multiple trigger use
+                # json.dumps({"triggerone":"", "triggertwo": ""})
+                "HX-Trigger-After-Swap": "formDelete",
+            },
+        )
     except psycopg.errors.UniqueViolation:
         projects = await registered_projects()
-        return templates.TemplateResponse("forms/add_user.html",
-                                          {
-                                              "request": request,
-                                              "projects": projects,
-                                              "posted": body,
-                                              "message": f"Username {body['username']} already exists."
-                                          },
-                                          headers={"HX-Retarget": "#modal",  # Retarget
-                                                   "HX-Reswap": "beforeend"})
+        return templates.TemplateResponse(
+            "forms/add_user.html",
+            {
+                "request": request,
+                "projects": projects,
+                "posted": body,
+                "message": f"Username {body['username']} already exists.",
+            },
+            headers={
+                "HX-Retarget": "#modal",  # Retarget
+                "HX-Reswap": "beforeend",
+            },
+        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)

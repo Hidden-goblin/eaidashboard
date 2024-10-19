@@ -5,7 +5,7 @@ from typing import List
 
 
 class DashTypeEnum(Enum):
-    def __str__(self:"DashTypeEnum") -> str:
+    def __str__(self: "DashTypeEnum") -> str:
         return self.value
 
     @classmethod

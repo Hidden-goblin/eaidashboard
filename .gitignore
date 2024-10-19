@@ -51,6 +51,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 flake_report/
+evidence*
+cov_html/
 
 # Translations
 *.mo
@@ -128,3 +130,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm
+.idea

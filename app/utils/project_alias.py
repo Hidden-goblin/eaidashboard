@@ -6,16 +6,14 @@ PROJECT_ALIAS = {}
 
 
 def _compute_alias(project_name: str) -> str:
-    _alias = re.sub(r"[/\\\. \"\$\*\<\>\:\|\?]",
-                    "",
-                    project_name.casefold())
+    _alias = re.sub(r"[/\\. \"$*<>:|?]", "", project_name.casefold())
     if len(_alias) > 63:
         _alias = _alias[:62]
     return _alias
 
 
 def register(project_name: str, alias: str = None) -> None:
-    forbidden_char = ['/', '\\', '.', ' ', '"', '$', '*', '<', '>', ':', '|', '?']
+    forbidden_char = ["/", "\\", ".", " ", '"', "$", "*", "<", ">", ":", "|", "?"]
     has_forbidden_char = any(char in project_name for char in forbidden_char)
 
     if has_forbidden_char and alias is None:
@@ -35,5 +33,6 @@ def provide(project_name: str) -> str | None:
 
 
 def contains(project_name: str) -> bool:
-    return (project_name.casefold() in list(PROJECT_ALIAS.keys())
-            or _compute_alias(project_name) in list(PROJECT_ALIAS.keys()))
+    return project_name.casefold() in list(PROJECT_ALIAS.keys()) or _compute_alias(project_name) in list(
+        PROJECT_ALIAS.keys()
+    )

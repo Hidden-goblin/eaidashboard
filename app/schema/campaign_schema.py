@@ -9,10 +9,13 @@ from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import Ticket
 
 
-class ToBeCampaign(BaseModel, extra='forbid'):
+class ToBeCampaign(BaseModel, extra="forbid"):
     version: str
 
-    def __getitem__(self: "ToBeCampaign", index: str) -> str:
+    def __getitem__(
+        self: "ToBeCampaign",
+        index: str,
+    ) -> str | None:
         return self.model_dump().get(index, None)
 
 
@@ -22,7 +25,10 @@ class ScenarioCampaign(BaseModel):
     feature_name: str
     feature_filename: Optional[str] = None
 
-    def __getitem__(self: "ScenarioCampaign", index: str) -> str:
+    def __getitem__(
+        self: "ScenarioCampaign",
+        index: str,
+    ) -> str | None:
         return self.model_dump().get(index, None)
 
 
@@ -31,7 +37,10 @@ class Scenarios(BaseModel):
     feature_name: str
     scenario_ids: List[str]
 
-    def __getitem__(self: "Scenarios", index: str) -> str | List[str]:
+    def __getitem__(
+        self: "Scenarios",
+        index: str,
+    ) -> str | List[str] | None:
         return self.model_dump().get(index, None)
 
 
@@ -39,8 +48,10 @@ class TicketScenarioCampaign(BaseModel):
     ticket_reference: str
     scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]] = None
 
-    def __getitem__(self: "TicketScenarioCampaign", index: str) -> str | ScenarioCampaign | List[
-        ScenarioCampaign]:
+    def __getitem__(
+        self: "TicketScenarioCampaign",
+        index: str,
+    ) -> str | ScenarioCampaign | List[ScenarioCampaign] | None:
         return self.model_dump().get(index, None)
 
 
@@ -51,7 +62,10 @@ class CampaignLight(BaseModel):
     description: Optional[str] = ""
     status: CampaignStatusEnum
 
-    def __getitem__(self: "CampaignLight", index: str) -> str | int | CampaignStatusEnum:
+    def __getitem__(
+        self: "CampaignLight",
+        index: str,
+    ) -> str | int | CampaignStatusEnum | None:
         return self.model_dump().get(index, None)
 
 
@@ -63,14 +77,17 @@ class Scenario(BaseModel):
     steps: str
     status: ScenarioStatusEnum | TestResultStatusEnum
 
-    def __getitem__(self: "Scenario",
-                    index: str) -> str | ScenarioStatusEnum | TestResultStatusEnum:
+    def __getitem__(
+        self: "Scenario",
+        index: str,
+    ) -> str | ScenarioStatusEnum | TestResultStatusEnum | None:
         return self.model_dump().get(index, None)
 
-    def get(self: "Scenario",
-            index: str,
-            default: str | ScenarioStatusEnum | TestResultStatusEnum) -> str | ScenarioStatusEnum \
-                                                                         | TestResultStatusEnum:
+    def get(
+        self: "Scenario",
+        index: str,
+        default: str | ScenarioStatusEnum | TestResultStatusEnum,
+    ) -> str | ScenarioStatusEnum | TestResultStatusEnum:
         return self.model_dump().get(index, default)
 
 
@@ -84,8 +101,10 @@ class TicketScenario(BaseModel):
     status: Optional[TicketType] = TicketType.OPEN
     scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
 
-    def __getitem__(self: "TicketScenario",
-                    index: str) -> str | TicketType | List[Scenario | ScenarioInternal]:
+    def __getitem__(
+        self: "TicketScenario",
+        index: str,
+    ) -> str | TicketType | List[Scenario | ScenarioInternal] | None:
         return self.model_dump().get(index, None)
 
 

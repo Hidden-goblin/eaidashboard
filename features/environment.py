@@ -1,18 +1,17 @@
-import json
-import os
 import logging
+import os
 import re
 import sys
-import time
-import dotenv
 from logging import getLogger
 from pathlib import Path
-from shutil import rmtree, copytree
+from shutil import copytree, rmtree
+
+import dotenv
+from behave.model import Feature, Scenario, Step
 from behave.runner import Context
-from behave.model import Scenario, Feature, Step
 from eaiBat import folder_file_name_cleaning
 
-from helpers.conversion_utils import string_to_bool, status_to_string
+from helpers.conversion_utils import status_to_string, string_to_bool
 from helpers.database import data_holder
 from helpers.database.data_holder import retrieve_data
 from helpers.database.data_manager import build_dataset
@@ -21,7 +20,7 @@ from helpers.models.dashboard import Dashboard
 log = getLogger("environment")
 
 
-def set_logger(log_name: str, is_debug: bool = False):
+def set_logger(log_name: str, is_debug: bool = False) -> None:
     """Set the logger with a debug mode"""
     # Keeping the last execution log
     if os.path.exists(f"{log_name}_log.log"):
@@ -29,8 +28,7 @@ def set_logger(log_name: str, is_debug: bool = False):
             os.remove(f"{log_name}_log_back.log")
         os.rename(f"{log_name}_log.log", f"{log_name}_log_back.log")
     logging.basicConfig(level=logging.DEBUG)
-    formatter = logging.Formatter(
-        "%(asctime)s -- %(filename)s.%(funcName)s-- %(levelname)s -- %(message)s")
+    formatter = logging.Formatter("%(asctime)s -- %(filename)s.%(funcName)s-- %(levelname)s -- %(message)s")
     handler = logging.FileHandler(f"{log_name}_log.log", mode="w", encoding="utf-8")
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
@@ -68,7 +66,7 @@ def set_logger(log_name: str, is_debug: bool = False):
         logging.getLogger("builtins").setLevel(logging.WARNING)
 
 
-def make_evidence_rotation(max_keep: int):
+def make_evidence_rotation(max_keep: int) -> None:
     """
     Delete the oldest and make the rotation
     :param max_keep: the max number of evidence to keep i.e. 0 is no conservation , 1 is keep one
@@ -76,19 +74,21 @@ def make_evidence_rotation(max_keep: int):
     """
     try:
 
-        def increase_number(folder):
+        def increase_number(folder: str) -> str:
             folder_name, number = re.search("([a-zA-Z]*)([0-9]*)", folder).groups()
             return f"{folder_name}{int(number) + 1}"
 
         if max_keep != 0:
-            folders = [f for f in os.listdir(".")
-                       if os.path.isdir(os.path.join(".", f))
-                       and re.match(r"^evidence[0-9]+$", f)
-                       and int(re.search("evidence([0-9]+)", f).groups()[0]) <= max_keep]
+            folders = [
+                f
+                for f in os.listdir(".")
+                if os.path.isdir(os.path.join(".", f))
+                and re.match(r"^evidence[0-9]+$", f)
+                and int(re.search("evidence([0-9]+)", f).groups()[0]) <= max_keep
+            ]
             folders.reverse()
             # last = max([int(item.replace("evidence", "")) for item in folders if folders])
-            process = [(folder, increase_number(folder)) for folder in folders
-                       if folder != f"evidence{max_keep}"]
+            process = [(folder, increase_number(folder)) for folder in folders if folder != f"evidence{max_keep}"]
 
             for evidence in process:
                 rmtree(evidence[1], ignore_errors=True)
@@ -108,9 +108,8 @@ def make_evidence_rotation(max_keep: int):
         log.error(f"Passing the evidence rotation. Receive error message {exception.args[0]}")
 
 
-def before_all(context: Context):
+def before_all(context: Context) -> None:
     try:
-
         # Retrieve the execution mode from the command line input
         # NOTICE that the variable is 'modeDebug'
         set_logger("automaton", string_to_bool(context.config.userdata["modeDebug"]))
@@ -122,11 +121,10 @@ def before_all(context: Context):
         # Environment resource is a json file which primary key is the environment you want to run to
         log.debug(context.config.userdata)
         try:
-            env = {**dotenv.dotenv_values(context.config.userdata['environment']),
-                   **os.environ}
+            env = {**dotenv.dotenv_values(context.config.userdata["environment"]), **os.environ}
         except Exception as exception:
             log.error(exception)
-        context.environment = {key: value for key, value in env.items() if key in ("URL", )}
+        context.environment = {key: value for key, value in env.items() if key in ("URL",)}
 
         # Set here your model you want to access anytime in your steps
         # This model allows a history and reporting mechanism.
@@ -145,7 +143,7 @@ def before_all(context: Context):
         # Retrieve the browser name from the command line
         # NOTICE that the variable is 'browser'
         ## Uncomment next
-        context.model.browser.browser_name = context.config.userdata['browser']
+        context.model.browser.browser_name = context.config.userdata["browser"]
 
         # Managing dataset ######################################
         # Dataset is meant to be a single dictionary you can access anytime in your steps
@@ -161,11 +159,17 @@ def before_all(context: Context):
         raise Exception(exception)
 
 
-def before_feature(context: Context, feature: Feature):
+def before_feature(
+    context: Context,
+    feature: Feature,
+) -> None:
     log.info(f"==== Feature: {feature.name} ====")
 
 
-def before_scenario(context: Context, scenario: Scenario):
+def before_scenario(
+    context: Context,
+    scenario: Scenario,
+) -> None:
     try:
         log.info(f"++++ Scenario: {scenario.name} ++++")
         log.info(f"++++ Tags are {scenario.tags} ++++")
@@ -174,8 +178,10 @@ def before_scenario(context: Context, scenario: Scenario):
         # Set post_conditions dictionary in order to store complex data for future validation
         context.post_conditions = {}
         # Build the evidence folder location for the current scenario, create it and store the path in the model
-        evidence_folder = Path(f"evidence/{folder_file_name_cleaning(scenario.feature.name)}"
-                               f"/{folder_file_name_cleaning(scenario.name)}")
+        evidence_folder = Path(
+            f"evidence/{folder_file_name_cleaning(scenario.feature.name)}"
+            f"/{folder_file_name_cleaning(scenario.name)}"
+        )
         os.makedirs(evidence_folder.absolute(), exist_ok=True)
         context.model.evidence_location = evidence_folder.absolute()
         context.model.serve_and_access()
@@ -185,18 +191,18 @@ def before_scenario(context: Context, scenario: Scenario):
         log.exception(exception)
 
 
-def before_step(context: Context, step: Step):
+def before_step(context: Context, step: Step) -> None:
     log.debug(f"processing step: {step}")
     # Set the current step for the event historic
     context.model.step = step
 
 
-def after_scenario(context: Context, scenario: Scenario):
+def after_scenario(context: Context, scenario: Scenario) -> None:
     try:
         log.debug(f"{scenario.name} is {scenario.status}")
-        context.model.create_evidence(f"{folder_file_name_cleaning(scenario.name)}-"
-                                      f"{status_to_string(scenario.status)}.docx",
-                                      "word")
+        context.model.create_evidence(
+            f"{folder_file_name_cleaning(scenario.name)}-" f"{status_to_string(scenario.status)}.docx", "word"
+        )
         # For Web testing #######################################
         # Your model should have a method to close the current browser.
         # The aim is to isolate tests from each others
@@ -210,7 +216,7 @@ def after_scenario(context: Context, scenario: Scenario):
         log.error(exception)
 
 
-def after_all(context: Context):
+def after_all(context: Context) -> None:
     # For Web testing #######################################
     # Uncomment next if your method's name for closing a browser is 'close_browser'
     # context.model.close_browser()
