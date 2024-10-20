@@ -14,29 +14,40 @@ ACCESS_TOKEN_EXPIRE_MINUTES = timedelta(minutes=int(config["TIMEDELTA"]))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(
+    plain_password: str,
+    hashed_password: str,
+) -> bool:
+    return pwd_context.verify(
+        plain_password,
+        hashed_password,
+    )
 
 
-def get_password_hash(password: str) -> str:
+def get_password_hash(
+    password: str,
+) -> str:
     return pwd_context.hash(password)
 
 
 def generate_keys() -> None:
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
     )
-    private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM,
-                                            format=serialization.PrivateFormat.TraditionalOpenSSL,
-                                            encryption_algorithm=serialization.NoEncryption())
     public_pem = private_key.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
-    conf.SECRET_KEY = serialization.load_pem_private_key(private_pem,
-                                                         password=None,
-                                                         backend=default_backend())
-    conf.PUBLIC_KEY = serialization.load_pem_public_key(public_pem,
-                                                        backend=default_backend())
+    conf.SECRET_KEY = serialization.load_pem_private_key(
+        private_pem,
+        password=None,
+        backend=default_backend(),
+    )
+    conf.PUBLIC_KEY = serialization.load_pem_public_key(
+        public_pem,
+        backend=default_backend(),
+    )
     conf.ALGORITHM = "RS256"
