@@ -15,7 +15,7 @@ async def rs_record_file(
     # SPEC: record an entry file_key-filename in redis
     # SPEC: file_key should match file:project_alias:version:occurrence:type
     connection = redis_connection()
-    await connection.set(
+    connection.set(
         file_key,
         filename,
     )
@@ -28,7 +28,7 @@ async def rs_invalidate_file(
     # SPEC: remove file_key from storage
     # SPEC: remove real file if file exists
     connection = redis_connection()
-    keys = await connection.keys(file_key_pattern)
+    keys = connection.keys(file_key_pattern)
     for key in keys:
         filename = Path(f"{BASE_DIR}/static/{connection.get(key).decode()}")
         if filename.exists():
@@ -36,7 +36,7 @@ async def rs_invalidate_file(
         else:
             log_message(f"File {filename.name} does not exist anymore")
     if keys:
-        await connection.delete(*keys)
+        connection.delete(*keys)
 
 
 async def rs_retrieve_file(
@@ -45,7 +45,7 @@ async def rs_retrieve_file(
     # SPEC: return stored filename or None if not exists
     # SPEC: check real file exists invalidate and return None if not
     connection = redis_connection()
-    _filename = await connection.get(file_key)
+    _filename = connection.get(file_key)
     filename = _filename.decode() if _filename is not None else None
     if filename is not None:
         filepath = Path(f"{BASE_DIR}/static/{filename}")
