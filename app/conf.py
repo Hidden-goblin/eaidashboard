@@ -30,4 +30,4 @@ redis_dict = {"host": config["REDIS_URL"], "port": config["REDIS_PORT"]}
 SECRET_KEY = None
 PUBLIC_KEY = None
 ALGORITHM = None
-APP_VERSION = "3.8"
+APP_VERSION = "3.9"
