@@ -13,7 +13,7 @@ log = getLogger(__name__)
 
 
 @given('"{user}" is logged in')
-def user_logged_in(context: MockContext, user: str):
+def user_logged_in(context: MockContext, user: str) -> None:
     try:
         log.info(f"{user} log in")
         _user = UserModel(**context.retrieve_data(f"users/{user}"))
@@ -26,7 +26,7 @@ def user_logged_in(context: MockContext, user: str):
 
 
 @when('"{user}" creates "{new_user}"')
-def create_user(context: MockContext, user: str, new_user: str):
+def create_user(context: MockContext, user: str, new_user: str) -> None:
     try:
         _user = dpath.get(context.pre_requisites, "user", default=None)
         if _user is None:
@@ -41,5 +41,5 @@ def create_user(context: MockContext, user: str, new_user: str):
 
 
 @when('"{user}" adds "{user_to_add}" to "{project_name}" as "{right}"')
-def add_user_to_project(context, user: str, user_to_add: str, project_name: str, right: str):
+def add_user_to_project(context: MockContext, user: str, user_to_add: str, project_name: str, right: str) -> None:
     pass

@@ -171,7 +171,7 @@ class TestRestRepository:
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
-        response = application.get(f"/api/v1/projects/unknown/repository", headers=logged)
+        response = application.get("/api/v1/projects/unknown/repository", headers=logged)
         assert response.status_code == 404
 
     def test_retrieve_repository_error_401(

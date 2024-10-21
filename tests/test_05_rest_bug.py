@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Generator, Any, List
+from typing import Any, Generator, List
 from unittest.mock import patch
 
 import pytest

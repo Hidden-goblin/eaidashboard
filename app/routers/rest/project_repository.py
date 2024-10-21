@@ -136,8 +136,8 @@ async def get_scenarios(
     },
     tags=["Repository"],
 )
-async def upload_repository(
-    project_name: str,  # noqa: ANN201
+async def upload_repository( # noqa: ANN201
+    project_name: str,
     background_task: BackgroundTasks,
     file: UploadFile = File(),
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),

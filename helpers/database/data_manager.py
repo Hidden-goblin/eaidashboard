@@ -1,13 +1,14 @@
 from json import load
-from pathlib import Path
-from dpath import merge
 from logging import getLogger
+from pathlib import Path
+
+from dpath import merge
 
 log = getLogger(__name__)
 
 
 # Update the default value in order to match your needs
-def build_dataset(base_path: str = "resources/pages"):
+def build_dataset(base_path: str = "resources/pages") -> dict:
     """Build a single dictionary from a collection of json files"""
     try:
         path = Path(base_path)
