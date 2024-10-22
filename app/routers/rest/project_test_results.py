@@ -81,9 +81,9 @@ async def rest_import_test_results(
         )
         # Invalidate current result files and remove them
         if campaign_occurrence is None:
-            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
+            rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
         else:
-            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
+            rs_invalidate_file(f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
         return res
     except IncorrectFieldsRequest as ifr:
         raise HTTPException(400, detail="".join(ifr.args)) from ifr
@@ -139,7 +139,7 @@ async def rest_export_results(  # noqa:ANN201
         if isinstance(result, dict):
             return JSONResponse(content=jsonable_encoder(result))
 
-        await rs_record_file(file_key, result)
+        rs_record_file(file_key, result)
         return f"{request.base_url}static/{result}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf

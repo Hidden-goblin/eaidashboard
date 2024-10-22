@@ -68,7 +68,7 @@ async def insert_result(
         )
     campaign_id = campaign_id[0]
     # SPEC: Record an entry into mongo testResults and return entry uuid while importing data
-    test_result_uuid = await mg_insert_test_result(
+    test_result_uuid = mg_insert_test_result(
         project_name,
         version,
         campaign_id,
@@ -102,7 +102,7 @@ async def register_manual_campaign_result(
         campaign_occurrence,
     )
     campaign_id = campaign_id[0]
-    test_result_uuid = await mg_insert_test_result(
+    test_result_uuid = mg_insert_test_result(
         project_name,
         version,
         campaign_id,

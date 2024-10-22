@@ -70,6 +70,7 @@ class CampaignLight(BaseModel):
 
 
 class Scenario(BaseModel):
+    # TODO: Fix serialized warning
     epic_id: str
     feature_id: str
     scenario_id: str

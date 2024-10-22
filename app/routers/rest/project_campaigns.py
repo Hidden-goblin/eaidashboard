@@ -442,7 +442,7 @@ async def retrieve_campaign_occurrence_deliverables(
             key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" f"{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
-        filename = await rs_retrieve_file(key)
+        filename = rs_retrieve_file(key)
         if filename is None:
             filename = await campaign_deliverable(
                 project_name,
@@ -451,7 +451,7 @@ async def retrieve_campaign_occurrence_deliverables(
                 deliverable_type,
                 ticket_ref,
             )
-            await rs_record_file(
+            rs_record_file(
                 key,
                 filename,
             )

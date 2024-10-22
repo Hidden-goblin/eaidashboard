@@ -217,7 +217,7 @@ async def db_update_bugs(
             return version_id
         values.append(version_id)
         # SPEC: Invalidate all files of the future version
-        await rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
+        rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
         # ToDo: update statuses from past version to current version
 
     values.append(internal_id)
@@ -245,7 +245,7 @@ async def db_update_bugs(
             int(internal_id),
         )
     # SPEC invalidate all files of the current version
-    await rs_invalidate_file(f"file:{project_name}:{current_bug.version}:*")
+    rs_invalidate_file(f"file:{project_name}:{current_bug.version}:*")
     return await db_get_bug(
         project_name,
         internal_id,
@@ -399,5 +399,5 @@ async def insert_bug(
         bug_ticket.related_to,
         row[0],
     )
-    await rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
+    rs_invalidate_file(f"file:{project_name}:{bug_ticket.version}:*")
     return RegisterVersionResponse(inserted_id=row[0], message=None if status_link else "Linking fail")

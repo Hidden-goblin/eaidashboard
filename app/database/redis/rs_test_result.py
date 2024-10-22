@@ -10,7 +10,7 @@ from app.utils.project_alias import provide
 from app.utils.redis import redis_connection
 
 
-async def mg_insert_test_result(
+def mg_insert_test_result(
     project_name: str,
     version: str,
     campaign_id: int,
@@ -24,7 +24,7 @@ async def mg_insert_test_result(
     )
     connection = redis_connection()
     key = f"{provide(project_name)}:{version}:{campaign_id}:{uuid.uuid4()}:result"
-    await connection.set(
+    connection.set(
         key,
         json.dumps(
             jsonable_encoder(data),
@@ -33,7 +33,7 @@ async def mg_insert_test_result(
     return key
 
 
-async def mg_insert_test_result_done(
+def mg_insert_test_result_done(
     project_name: str,
     key_uuid: str,
     message: str = None,
@@ -42,10 +42,10 @@ async def mg_insert_test_result_done(
     data = connection.get(key_uuid)
     dict_data = RdTestResult(**json.loads(data))
     dict_data.status = "done"
-    await connection.set(key_uuid, json.dumps(jsonable_encoder(dict_data)))
+    connection.set(key_uuid, json.dumps(jsonable_encoder(dict_data)))
 
 
-async def test_result_status(
+def test_result_status(
     key_uuid: str,
 ) -> dict:
     connection = redis_connection()

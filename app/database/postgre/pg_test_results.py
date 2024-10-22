@@ -201,7 +201,7 @@ async def insert_result(
         results,
     )
     if not results:
-        return await mg_insert_test_result_done(
+        return mg_insert_test_result_done(
             project_name,
             mg_result_uuid,
         )
@@ -291,7 +291,7 @@ async def insert_result(
         ) as copy:
             for epic in epics:
                 copy.write_row(epic)
-    await mg_insert_test_result_done(
+    mg_insert_test_result_done(
         project_name,
         mg_result_uuid,
     )

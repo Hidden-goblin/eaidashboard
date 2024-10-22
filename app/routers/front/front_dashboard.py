@@ -207,13 +207,11 @@ async def get_dashboard(
     request: Request,
 ) -> HTMLResponse:
     try:
-        if (
-            request.headers.get(
-                "eaid-request",
-                None,
-            )
-            is None
-        ):
+        _request = request.headers.get(
+            "eaid-request",
+            None,
+        )
+        if _request is None:
             return templates.TemplateResponse(
                 "dashboard.html",
                 {
@@ -221,13 +219,7 @@ async def get_dashboard(
                 },
             )
 
-        if (
-            request.headers.get(
-                "eaid-request",
-                None,
-            )
-            == "table"
-        ):
+        if _request == "table":
             projects, count = await db_dash()
             return templates.TemplateResponse(
                 "tables/dashboard_table.html",

@@ -73,7 +73,7 @@ async def add_ticket_to_campaign(
                 ticket_reference,
             ),
         ).fetchone()
-        await rs_invalidate_file(f"file:{project_name}:{version}:{occurrence}:*")
+        rs_invalidate_file(f"file:{project_name}:{version}:{occurrence}:*")
         return result[0]
 
 

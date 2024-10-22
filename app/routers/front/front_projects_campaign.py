@@ -727,9 +727,7 @@ async def front_campaign_occurrence_status(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        result = await rs_retrieve_file(
-            f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html"
-        )
+        result = rs_retrieve_file(f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html")
         if result is None:
             test_results = TestResults(
                 REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][RestTestResultRenderingEnum.MAP],
@@ -740,7 +738,7 @@ async def front_campaign_occurrence_status(
                 version,
                 occurrence,
             )
-            await rs_record_file(
+            rs_record_file(
                 f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html",
                 result,
             )
@@ -827,7 +825,7 @@ async def front_campaign_occurrence_deliverables(
             key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" f"{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
-        filename = await rs_retrieve_file(key)
+        filename = rs_retrieve_file(key)
         if filename is None:
             filename = await campaign_deliverable(
                 project_name,
@@ -836,7 +834,7 @@ async def front_campaign_occurrence_deliverables(
                 deliverable_type,
                 ticket_ref,
             )
-            await rs_record_file(key, filename)
+            rs_record_file(key, filename)
 
         return templates.TemplateResponse(
             "download_link.html",

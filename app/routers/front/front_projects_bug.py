@@ -54,7 +54,7 @@ async def front_project_bugs(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        requested_item: str = request.headers.get("eaid-request", "")
+        requested_item: str | None = request.headers.get("eaid-request", None)
         if requested_item is None:
             projects = await registered_projects()
             return templates.TemplateResponse(

@@ -447,7 +447,7 @@ async def db_put_campaign_ticket_scenarios(
                 scenarios_id,
             ),
         )
-        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
+        rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
 
 
 async def db_delete_campaign_ticket_scenario(
@@ -478,7 +478,7 @@ async def db_delete_campaign_ticket_scenario(
                 scenario_internal_id,
             ),
         )
-        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
+        rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
 
 
 async def db_set_campaign_ticket_scenario_status(
@@ -497,7 +497,7 @@ async def db_set_campaign_ticket_scenario_status(
     )
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        await rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
+        rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
         return connection.execute(
             "update campaign_ticket_scenarios as cts "
             "set status = %s "

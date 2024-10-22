@@ -3,7 +3,7 @@ from typing import Any
 import behave.model
 
 
-def string_to_bool(element: Any) -> bool: #noqa: ANN401
+def string_to_bool(element: Any) -> bool:  # noqa: ANN401
     if isinstance(element, int):
         return bool(element)
     if isinstance(element, str):
