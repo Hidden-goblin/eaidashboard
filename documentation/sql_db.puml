@@ -238,6 +238,22 @@ FK project_id: projects.id
 unique(project_id, version_id, reference)
 }
 
+entity bugs_issues {
+id: int autoincrement
+---
+bug_id: int FK
+occurrence: int
+ticket_reference: str
+scenario_id: int
+---
+FK bug_id: bugs.id
+' Managing as light relationship
+'FK campaign_ticket_scenario_id: campaign_ticket_scenarios.id
+}
+
+' one bug to many issues, one issue to many bugs
+bugs ||--|| bugs_issues
+
 projects ||--o{ versions
 versions ||--o{ tickets
 tickets ||--|| campaign_tickets

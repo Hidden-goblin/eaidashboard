@@ -1,0 +1,35 @@
+<fieldset class="form-group">
+    <div class="row">
+    <legend>Link scenario</legend>
+
+    {%for scenario in scenarios %}
+        {%if scenario.selection != 'selected'%}
+        <div class="form-check">
+            <input type="checkbox"
+                   name="related_to"
+                   value='{"occurrence":"{{scenario.occurrence}}","ticket_reference":"{{scenario.ticket_reference}}","scenario_tech_id":"{{scenario.scenario_tech_id}}"}'
+                   id="link-cb-{{loop.index}}"
+            >
+            <label for="link-cb-{{loop.index}}">{{scenario.ticket_reference}} - {{scenario.name}}({{scenario.scenario_id}})</label>
+        </div>
+        {%endif%}
+    {%endfor%}
+    </div>
+</fieldset>
+<fieldset class="form-group">
+    <div class="row">
+    <legend>Remove current link</legend>
+    {%for scenario in scenarios %}
+        {%if scenario.selection == 'selected'%}
+        <div class="form-check">
+            <input type="checkbox"
+                   name="unlink_scenario"
+                   value='{"occurrence":"{{scenario.occurrence}}","ticket_reference":"{{scenario.ticket_reference}}","scenario_tech_id":"{{scenario.scenario_tech_id}}"}'
+                   id="unlink-cb-{{loop.index}}"
+            >
+            <label for="unlink-cb-{{loop.index}}">{{scenario.ticket_reference}} - {{scenario.name}}({{scenario.scenario_id}})</label>
+        </div>
+        {%endif%}
+    {%endfor%}
+    </div>
+</fieldset>

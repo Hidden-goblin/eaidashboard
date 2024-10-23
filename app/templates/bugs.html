@@ -1,13 +1,9 @@
-{% extends "base_project.html" %}
-<!-- Project data. -->
-{% block project %}
-  <h1>Project: {{project_name}} Campaigns</h1>
   <!-- bugs -->
   <div id="dialog"></div>
   <div class="col-auto">
     <button class="btn btn-primary"
             hx-get="/front/v1/projects/{{project_name}}/bugs"
-            hx-target="#dialog"
+            hx-target="#modals-here"
             hx-headers='{"eaid-request":"FORM"}'
     >Record a new defect</button>
   <div class="form-check form-switch">
@@ -29,4 +25,3 @@
 
   </div>
 
-{% endblock %}

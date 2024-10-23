@@ -6,8 +6,8 @@ Feature: Register project
 
     Scenario Outline: Register project right
       Given "<user>" is logged in
-      When he registers "new project"
-      Then he "<result>"
+      When "<user>" registers "new project"
+      Then "<user>" "<result>"
 
       Examples:
         | user            | result   |

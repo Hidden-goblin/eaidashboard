@@ -47,9 +47,12 @@ After the migration is done, restart the application to be sure not to use the m
 
 # Version history
 
-## Current: 3.8
+## Current: 3.9
 
 ## History
+- 3.9
+  - Add link between bug and test
+  - Update to python 3.12
 - 3.8
   - Add role management
   - Remap some front routes

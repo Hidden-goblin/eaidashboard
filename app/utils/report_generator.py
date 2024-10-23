@@ -17,9 +17,10 @@ from app.utils.project_alias import provide
 async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Plan", 0)
-    document.add_paragraph(f"Campaign for {campaign.project_name} "
-                           f"in version {campaign.version}",
-                           style="Subtitle")
+    document.add_paragraph(
+        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        style="Subtitle",
+    )
     document.add_page_break()
     document.add_heading("Test scope")
     # Create table of tickets with a default column for acceptance criteria
@@ -39,7 +40,11 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test scope impediments and non-testable items")
     # Create table of ticket with two column for testability and reason
-    table = document.add_table(rows=1, cols=4, style="TableGrid")
+    table = document.add_table(
+        rows=1,
+        cols=4,
+        style="TableGrid",
+    )
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -52,7 +57,11 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Test scope estimation")
     # Add table of ticket with one column for estimation
-    table = document.add_table(rows=1, cols=3, style="TableGrid")
+    table = document.add_table(
+        rows=1,
+        cols=3,
+        style="TableGrid",
+    )
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -64,15 +73,24 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     # Add total estimation
     document.add_paragraph("The total test execution estimation is <your estimation>md.")
     # Add start and end forecast
-    document.add_paragraph("We plan a test execution start at <start date> "
-                           "and with the current estimation expect an end forecast date "
-                           "on <end date>.")
+    document.add_paragraph(
+        "We plan a test execution start at <start date> "
+        "and with the current estimation expect an end forecast date "
+        "on <end date>."
+    )
 
     document.add_heading("Campaign scenario")
     # Create subsection for each tickets with table of scenario
     for ticket in campaign.tickets:
-        document.add_heading(f"Scenarios for {ticket.reference}", 2)
-        table = document.add_table(rows=1, cols=5, style="TableGrid")
+        document.add_heading(
+            f"Scenarios for {ticket.reference}",
+            2,
+        )
+        table = document.add_table(
+            rows=1,
+            cols=5,
+            style="TableGrid",
+        )
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = "Scenario id"
         hdr_cells[1].text = "Scenario name"
@@ -87,8 +105,9 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
             row_cells[3].text = scenario.epic_id
             row_cells[4].text = scenario.steps
 
-    filename = BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_" \
-                                     f"{campaign.version}_{uuid.uuid4()}.docx"  # pragma:noqa
+    filename = (
+        BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_" f"{campaign.version}_{uuid.uuid4()}.docx"
+    )  # pragma:noqa
 
     document.save(filename)
 
@@ -97,11 +116,12 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
 
 def _compute_status(scenarios: list[Scenario | ScenarioInternal] | None) -> TestResultStatusEnum:
     status = [scenario.status for scenario in scenarios]
-    if (ScenarioStatusEnum.waiting_fix in status
-            or ScenarioStatusEnum.waiting_answer in status):
+    if ScenarioStatusEnum.waiting_fix in status or ScenarioStatusEnum.waiting_answer in status:
         return TestResultStatusEnum.failed
-    if all(ScenarioStatusEnum(stat) in [ScenarioStatusEnum.done, ScenarioStatusEnum.cancelled]
-           for stat in status) and status:
+    if (
+        all(ScenarioStatusEnum(stat) in [ScenarioStatusEnum.done, ScenarioStatusEnum.cancelled] for stat in status)
+        and status
+    ):
         return TestResultStatusEnum.passed
     return TestResultStatusEnum.skipped
 
@@ -109,15 +129,21 @@ def _compute_status(scenarios: list[Scenario | ScenarioInternal] | None) -> Test
 async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Exit Report", 0)
-    document.add_paragraph(f"Campaign for {campaign.project_name} "
-                           f"in version {campaign.version}", style="Subtitle")
+    document.add_paragraph(
+        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        style="Subtitle",
+    )
     document.add_page_break()
     document.add_heading("Test campaign overview")
     # Add go/no go sentence
 
     document.add_heading("Test scope")
     # Create table of ticket
-    table = document.add_table(rows=1, cols=2, style="TableGrid")
+    table = document.add_table(
+        rows=1,
+        cols=2,
+        style="TableGrid",
+    )
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -127,24 +153,57 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
         row_cells[1].text = ticket.summary
 
     document.add_heading("Test campaign indicators")
-    document.add_heading("Environment", 2)
+    document.add_heading(
+        "Environment",
+        2,
+    )
     # Add template for test environment
-    document.add_paragraph("Operating system: ", style='List Bullet')
-    document.add_paragraph("Browser (version): ", style='List Bullet')
-    document.add_paragraph("Application environment: ", style='List Bullet')
+    document.add_paragraph(
+        "Operating system: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "Browser (version): ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "Application environment: ",
+        style="List Bullet",
+    )
 
-    document.add_heading("Schedule", 2)
+    document.add_heading(
+        "Schedule",
+        2,
+    )
     # Add test campaign start/end dates or leave it blank
-    document.add_paragraph("Start date: ", style='List Bullet')
-    document.add_paragraph("End date: ", style='List Bullet')
-    document.add_paragraph("End reason: ", style='List Bullet')
+    document.add_paragraph(
+        "Start date: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "End date: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "End reason: ",
+        style="List Bullet",
+    )
 
-    document.add_heading("Impediment", 2)
+    document.add_heading(
+        "Impediment",
+        2,
+    )
     # Add template for impediment section
 
-    document.add_heading("Test result summary")
+    document.add_heading(
+        "Test result summary",
+    )
     # Create table of ticket with computed status based on scenarios status
-    table = document.add_table(rows=1, cols=4, style="TableGrid")
+    table = document.add_table(
+        rows=1,
+        cols=4,
+        style="TableGrid",
+    )
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Reference"
     hdr_cells[1].text = "Summary"
@@ -158,9 +217,15 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
 
     document.add_heading("Defect status")
     # Create table of defect within the version
-    bugs, _ = await get_bugs(project_name=campaign.project_name,
-                          version=campaign.version)
-    table = document.add_table(rows=1, cols=3, style="TableGrid")
+    bugs, _ = await get_bugs(
+        project_name=campaign.project_name,
+        version=campaign.version,
+    )
+    table = document.add_table(
+        rows=1,
+        cols=3,
+        style="TableGrid",
+    )
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Title"
     hdr_cells[1].text = "Criticality"
@@ -171,9 +236,11 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
         row_cells[1].text = bug["criticality"]
         row_cells[2].text = bug.status.value
 
-    filename = BASE_DIR / "static" / (f"TER_{provide(campaign.project_name)}"
-                                      f"_{campaign.version}_"
-                                      f"{campaign.occurrence}{uuid.uuid4()}.docx")  # pragma:noqa
+    filename = (
+        BASE_DIR
+        / "static"
+        / (f"TER_{provide(campaign.project_name)}" f"_{campaign.version}_" f"{campaign.occurrence}{uuid.uuid4()}.docx")
+    )  # pragma:noqa
 
     document.save(filename)
 
@@ -182,10 +249,15 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
 
 async def evidence_from_ticket(ticket: TicketScenario) -> str:
     document = Document()
-    document.add_heading("Test Evidence", 0)
+    document.add_heading(
+        "Test Evidence",
+        0,
+    )
 
-    document.add_paragraph(f"Ticket {ticket.reference} test execution evidence",
-                           style="Subtitle")
+    document.add_paragraph(
+        f"Ticket {ticket.reference} test execution evidence",
+        style="Subtitle",
+    )
 
     document.add_page_break()
     document.add_heading("Scenarios")
@@ -195,11 +267,26 @@ async def evidence_from_ticket(ticket: TicketScenario) -> str:
         document.add_paragraph(scenario.steps)
 
     document.add_heading("Test conditions")
-    document.add_paragraph("Operating system: ", style='List Bullet')
-    document.add_paragraph("Browser (version): ", style='List Bullet')
-    document.add_paragraph("Application environment: ", style='List Bullet')
-    document.add_paragraph("Start date: ", style='List Bullet')
-    document.add_paragraph("End date: ", style='List Bullet')
+    document.add_paragraph(
+        "Operating system: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "Browser (version): ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "Application environment: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "Start date: ",
+        style="List Bullet",
+    )
+    document.add_paragraph(
+        "End date: ",
+        style="List Bullet",
+    )
 
     document.add_heading("Prerequisites")
 
@@ -218,11 +305,9 @@ async def evidence_from_ticket(ticket: TicketScenario) -> str:
     return filename.name
 
 
-async def campaign_deliverable(project_name: str,
-                               version: str,
-                               occurrence: str,
-                               deliverable_type: DeliverableTypeEnum,
-                               ticket_ref: str = None) -> str:
+async def campaign_deliverable(
+    project_name: str, version: str, occurrence: str, deliverable_type: DeliverableTypeEnum, ticket_ref: str = None
+) -> str:
     # TODO register file
     # file:project_alias:version:occurrence:type
     if deliverable_type == DeliverableTypeEnum.TEST_PLAN:
@@ -232,10 +317,7 @@ async def campaign_deliverable(project_name: str,
         campaign = await get_campaign_content(project_name, version, occurrence)
         filename = await test_exit_report_from_campaign(campaign)
     elif deliverable_type == DeliverableTypeEnum.EVIDENCE:
-        ticket = await get_ticket_with_scenarios(project_name,
-                                                 version,
-                                                 occurrence,
-                                                 ticket_ref)
+        ticket = await get_ticket_with_scenarios(project_name, version, occurrence, ticket_ref)
         filename = await evidence_from_ticket(ticket)
     else:
         return "This value is not implemented yet."

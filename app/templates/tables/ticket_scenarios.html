@@ -19,17 +19,30 @@
             <td>{{scenario.scenario_id}}</td>
             <td>{{scenario.name}}</td>
             <td>{{scenario.status.value}}</td>
-            <td><button class="btn btn-danger"
-                        hx-trigger="click"
-                        hx-target="#campaignMessage"
-                        hx-headers='{"eaid-next":"{{initiator}}"}'
-                        hx-delete="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.internal_id}}">Delete</button>
+            <td>
+                <div class="hstack gap-0">
+                    <button class="btn btn-danger"
+                            hx-trigger="click"
+                            hx-target="#campaignMessage"
+                            hx-headers='{"eaid-next":"{{initiator}}"}'
+                            hx-delete="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.internal_id}}">Delete</button>
+                    <button class="btn btn-primary"
+                            hx-trigger="click"
+                            hx-target="#campaignMessage"
+                            hx-headers='{"eaid-next":"{{initiator}}"}'
+                            hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.internal_id}}">Update</button>
+                    <button class="btn btn-primary"
+                            hx-trigger="click"
+                            hx-target="#campaignMessage"
+                            hx-headers='{"eaid-next":"{{initiator}}", "eaid-request": "FORM"}'
+                            hx-get="/front/v1/projects/{{project_name}}/bugs?version={{version}}&occurrence={{occurrence}}&ticket_reference={{ticket_reference}}&scenario_internal_id={{scenario.internal_id}}">Record bug</button>
+                </div>
             </td>
-            <td><button class="btn btn-primary"
-                        hx-trigger="click"
-                        hx-target="#campaignMessage"
-                        hx-headers='{"eaid-next":"{{initiator}}"}'
-                        hx-get="/front/v1/projects/{{project_name}}/campaigns/{{version}}/{{occurrence}}/tickets/{{ticket_reference}}/scenarios/{{scenario.scenario_id}}">Update</button></td>
+            <td>
+                <div class="vstack gap-0">
+
+                </div>
+            </td>
         </tr>
     {% endfor %}
     </tbody>

@@ -2,19 +2,109 @@
 {
 "/": {"get": "base dashboard",
       "api": {
-        "v1": {}
+        "v1": {
+            "settings" : {
+                "projects": {
+                    "get": "List of registered projects",
+                    "post": "Register a new project"
+                    }
+                },
+            "dashboard": {
+                "get": "Synthetic view on projects"
+            },
+            "projects": {
+                "get": "list of projects",
+                "<project_name>": {
+                    "get": "Retrieve a project",
+                    "versions": {
+                        "post": "Add version to project",
+                        "<version>": {
+                            "get": "Version details",
+                            "put": "Update version"
+                        }
+                    },
+                    "campaigns": {
+                        "get": "Retrieve campaigns in project",
+                        "post": "Create a new occurrence for the campaigns (first one if none)",
+                        "<version>": {
+                            "<occurrence>": {
+                                "get": "Retrieve the campaign-occurrence",
+                                "put": "Fill occurrence with ticket and scenario",
+                                "patch": "Update status of occurrence",
+                                "post": "<&warning> Generate result for occurrence",
+                                "tickets": {
+                                    "get": "Retrieve tickets within the campaign-occurrence",
+                                    "<ticket_reference>": {
+                                        "get": "Retrieve ticket in the campaign-occurrence",
+                                        "put": "Add scenario linked to ticket",
+                                        "scenarios": {
+                                            "<scenario_id>": {
+                                                "get": "Retrieve current scenario update form",
+                                                "status": {
+                                                    "put": "Update scenario status"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "deliverables": {
+                                    "get": "Retrieve campaign deliverables"
+                                }
+                            }
+                        }
+                    },
+                    "epics": {
+                        "get": "Retrieve project's epics",
+                        "<epic_ref>": {
+                            "features": {
+                                "get": "Retrieve epic's features"
+                            }
+                        }
+                    },
+                    "repository":{
+                        "get": "Retrieve items from the test repository",
+                        "post": "Create update repository"
+                    },
+                    "bugs": {
+                        "get": "Retrieve bugs within the project",
+                        "post": "Create new bug",
+                        "<internal_id>": {
+                            "get":"Retrieve specific bug",
+                            "put": "Update bug",
+                            "relatedTo": {
+                                "delete": "Remove a link"
+                            }
+                        }
+                    }
+                }
+            },
+            "users": {
+                "get": "Retrieve all users",
+                "patch": "Update an user",
+                "post": "Create an user",
+                "<username>": {
+                    "get": "Retrieve one user"
+                },
+                "me": {
+                    "put": "Update me"
+                }
+            }
+        }
       },
       "front": {
         "v1": {
             "navigation": {
                 "get": "provide the navigation bar"
             },
+            "dashboard": {
+                "get": "provide main dashboard",
+                "get + req = TABLE": "Dashboard table"
+            },
             "projects": {
                 "get + req = FORM": "Create project form",
                 "post": "Create project action",
                 "<project_name>":{
-                    "get + req = REDIRECT": "Redirect to the project page",
-                    "get": "Project page (multi tab)",
+                    "get": "Project page (multi tab) + tab param",
                     "versions": {
                         "get": "Project's versions",
                         "get + req = FORM": "Add version form",
@@ -46,6 +136,52 @@
                             "put": "Update bug action (via form)",
                             "patch": "Update bug action (via button)"
                         }
+                    },
+                    "repository": {
+                        "get": "Repository tab"
+                    },
+                    "campaigns": {
+                        "get": "Campaigns tab",
+                        "get + req = TABLE": "Campaigns table",
+                        "get + req = FORM": "Add campaign form",
+                        "get + req = failed-scenarios": "Campaigns failed scenario selector",
+                        "post": "Create campaign action",
+                        "scenarios" : {
+                            "post": "Add scenario to campaign action"
+                        },
+                        "<version>": {
+                            "<occurrence>": {
+                                "get": "Campaign's occurrence board",
+                                "get + req = TABLE": "Campaign's occurrence table",
+                                "get + req = FORM": "Update campaign occurrence status form",
+                                "patch": "Update campaign occurrence status action",
+                                "tickets": {
+                                    "get + req = FORM": "Campaign's occurrence link ticket form",
+                                    "post": "Campaign's occurrence link ticket action",
+                                    "<ticket_reference>": {
+                                        "get": "Add scenarios to ticket form",
+                                        "put": "Add scenarios to ticket action",
+                                        "scenarios": {
+                                            "get + req = statistics": "Tickets scenarios status statistics",
+                                            "get": "Table of ticket's scenarios",
+                                            "<scenario_internal_id>": {
+                                                "get": "Update scenario status form",
+                                                "put": "Update scenario status action",
+                                                "delete": "Remove scenario from ticket action"
+                                            }
+                                        }
+                                    },
+                                    "results": {
+                                        "get": "Campaign's occurrence results graph",
+                                        "post": "Campaign's occurrence current status"
+                                    },
+                                    "deliverables": {
+                                        "get": "Campaign's occurrence documents Test Plan or Test evidence"
+                                    }
+                                }
+                            }
+                        }
+
                     }
                 }
             }

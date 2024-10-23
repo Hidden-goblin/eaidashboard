@@ -1,7 +1,9 @@
-{% extends "base.html" %}
-{% block contenu %}
-<div id="tickets" class="container" hx-target="closest div" hx-swap="outerHTML">
+<div id="tickets"
+     class="container"
+     hx-target="closest div"
+     hx-swap="outerHTML">
 </div>
+
 <div class="container collapse show"
      id="dashboard-table"
      hx-trigger="load, update-dashboard from:body"
@@ -10,6 +12,3 @@
      hx-target="this">
 
 </div>
-
-
-{% endblock %}

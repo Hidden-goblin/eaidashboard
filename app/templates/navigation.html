@@ -1,63 +1,67 @@
 <div class="container-fluid">
         <ul class="navbar-nav mr-auto">
             {%if not request.session["token"]%}
-            <li id="log">
-                <button hx-get="/login"
-                        hx-target="#modals-here"
-                        hx-trigger="click"
-                        class="btn btn-primary"
-                       _="on htmx:afterOnLoad wait 10ms then add .show to #modal">
+                <li id="log">
+                    <button hx-get="/login"
+                            hx-target="#modals-here"
+                            hx-trigger="click"
+                            class="btn btn-primary"
+                           _="on htmx:afterOnLoad wait 10ms then add .show to #modal">
 
-                    Log
-                </button>
-            </li>
+                        Log
+                    </button>
+                </li>
             {%else%}
-            <li id="deco">
-                <button hx-delete="/login"
-                        hx-trigger="click"
-                        class="btn btn-primary">
+                <li id="deco">
+                    <button hx-delete="/login"
+                            hx-trigger="click"
+                            class="btn btn-primary">
 
-                    Logout
-                </button>
-            </li>
-            <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Projects
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              {% for project in projects %}
-                <li><a class="dropdown-item"
-                       hx-trigger="click"
-                       hx-get="/front/v1/projects/{{project}}"
-                       hx-headers='{"eaid-request":"REDIRECT"}'>{{project}}</a></li>
-              {% endfor %}
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item"
-                     hx-trigger="click"
-                     hx-get="/front/v1/projects"
-                     hx-headers='{"eaid-request":"FORM"}'
-                     hx-target="#modals-here">New project</a></li>
-          </ul>
-        </li>
-            {%if is_admin %}
-            <li>
-                <button class="btn btn-secondary"
-                        id="users"
-                        hx-get="/front/v1/users"
-                        hx-trigger="click"
-                        hx-headers='{"eaid-request":"REDIRECT"}'
-                        >User Management</button>
-            </li>
-            {%endif%}
+                        Logout
+                    </button>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle"
+                       href="#"
+                       id="navbarDropdown"
+                       role="button"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false">Projects</a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        {% for project in projects %}
+                            <li><a class="dropdown-item"
+                                   hx-trigger="click"
+                                   hx-get="/front/v1/projects/{{project}}">{{project}}</a></li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item"
+                                 hx-trigger="click"
+                                 hx-get="/front/v1/projects"
+                                 hx-headers='{"eaid-request":"FORM"}'
+                                 hx-target="#modals-here">New project</a></li>
+                    </ul>
+                </li>
+                {%if is_admin %}
+                    <li>
+                        <button class="btn btn-secondary"
+                                id="users"
+                                hx-get="/front/v1/users"
+                                hx-trigger="click"
+                                hx-target="#content-block">User Management</button>
+                    </li>
+                {%endif%}
             {%endif%}
 <!--            <li>-->
 <!--                <a href="/testResults"  class="btn btn-primary" role="button">Test results</a>-->
 <!--            </li>-->
         </ul>
     </div>
-            <a role="button" class="btn btn-secondary"
-                    href="/documentation"
-                    target="_blank">?</a>
+            <a role="button"
+               class="btn btn-secondary"
+               id="documentation"
+               hx-get="/documentation"
+               hx-target="#content-block" >?</a>
             <button class="btn btn-secondary ms-auto text-nowrap"
+                    id="backToMain"
                     _="on click go to url /">
                 Back to main</button>

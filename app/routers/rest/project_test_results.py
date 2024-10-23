@@ -22,60 +22,68 @@ from app.schema.rest_enum import RestTestResultCategoryEnum, RestTestResultHeade
 from app.schema.users import UpdateUser
 from app.utils.project_alias import provide
 
-router = APIRouter(
-    prefix="/api/v1/projects"
+router = APIRouter(prefix="/api/v1/projects")
+
+
+@router.post(
+    "/{project_name}/testResults",
+    status_code=200,
+    description="Successful request, processing data."
+    " It might be import error during the process.\n"
+    "'campaign_occurrence' is mandatory for partial results",
+    responses={
+        # 204: {"description": "Processing data"},
+        400: {
+            "model": ErrorMessage,
+            "description": "CSV file with no headers or bad headers.\n "
+            "Test results with same date for project/version.\n"
+            "Missing field.",
+        },
+        404: {"model": ErrorMessage, "description": "project/version not found"},
+    },
+    tags=["Test Results"],
 )
-
-
-@router.post("/{project_name}/testResults",
-             status_code=200,
-             description="Successful request, processing data."
-                         " It might be import error during the process.\n"
-                         "'campaign_occurrence' is mandatory for partial results",
-             responses={
-                 # 204: {"description": "Processing data"},
-                 400: {"model": ErrorMessage,
-                       "description": "CSV file with no headers or bad headers.\n "
-                                      "Test results with same date for project/version.\n"
-                                      "Missing field."},
-                 404: {"model": ErrorMessage,
-                       "description": "project/version not found"}
-             },
-             tags=["Test Results"]
-             )
-async def rest_import_test_results(project_name: str,
-                                   background_task: BackgroundTasks,
-                                   file: UploadFile = File(),
-                                   version: str = Form(),
-                                   result_date: datetime = Form(),
-                                   is_partial: bool = Form(default=False),
-                                   campaign_occurrence: str = Form(default=None),
-                                   user: UpdateUser = Security(
-                                       authorize_user, scopes=["admin", "user"])) -> str:
+async def rest_import_test_results(
+    project_name: str,
+    background_task: BackgroundTasks,
+    file: UploadFile = File(),
+    version: str = Form(),
+    result_date: datetime = Form(),
+    is_partial: bool = Form(default=False),
+    campaign_occurrence: str = Form(default=None),
+    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
+) -> str:
     try:
-        if not version_exists(project_name, version):
+        if not version_exists(
+            project_name,
+            version,
+        ):
             raise VersionNotFound(f"Project '{project_name}' in version '{version}' not found")
         contents = await file.read()
         decoded = contents.decode()
-        res, campaign_id, rows = await insert_result(project_name,
-                                                     version,
-                                                     result_date,
-                                                     is_partial,
-                                                     decoded,
-                                                     part_of_campaign_occurrence=campaign_occurrence)
-        background_task.add_task(pg_insert_result,
-                                 result_date,
-                                 project_name,
-                                 version,
-                                 campaign_id,
-                                 is_partial, res,
-                                 rows)
+        res, campaign_id, rows = await insert_result(
+            project_name,
+            version,
+            result_date,
+            is_partial,
+            decoded,
+            part_of_campaign_occurrence=campaign_occurrence,
+        )
+        background_task.add_task(
+            pg_insert_result,
+            result_date,
+            project_name,
+            version,
+            campaign_id,
+            is_partial,
+            res,
+            rows,
+        )
         # Invalidate current result files and remove them
         if campaign_occurrence is None:
-            await rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
+            rs_invalidate_file(f"file:{provide(project_name)}:{version}:*")
         else:
-            await rs_invalidate_file(
-                f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
+            rs_invalidate_file(f"file:{provide(project_name)}:{version}:{campaign_occurrence}:*")
         return res
     except IncorrectFieldsRequest as ifr:
         raise HTTPException(400, detail="".join(ifr.args)) from ifr
@@ -89,8 +97,9 @@ async def rest_import_test_results(project_name: str,
         raise HTTPException(500, repr(exp))
 
 
-@router.get("/{project_name}/testResults",
-            description="""Provide test results for a project.
+@router.get(
+    "/{project_name}/testResults",
+    description="""Provide test results for a project.
 
             **Partial test repository result** can be retrieved when providing a campaign
             execution (version and occurrence).
@@ -99,32 +108,38 @@ async def rest_import_test_results(project_name: str,
 
             Please note that partial results are not counted in the application results.
             """,
-            tags=["Test Results"])
-async def rest_export_results(project_name: str,   # noqa:ANN201
-                              category: RestTestResultCategoryEnum,
-                              rendering: RestTestResultRenderingEnum,
-                              request: Request,
-                              version: str = None,
-                              campaign_occurrence: str = None,
-                              accept: RestTestResultHeaderEnum = Header(),
-                              user: UpdateUser = Security(
-                                  authorize_user, scopes=["admin", "user"])
-                              ):
+    tags=["Test Results"],
+)
+async def rest_export_results(  # noqa:ANN201
+    project_name: str,
+    category: RestTestResultCategoryEnum,
+    rendering: RestTestResultRenderingEnum,
+    request: Request,
+    version: str = None,
+    campaign_occurrence: str = None,
+    accept: RestTestResultHeaderEnum = Header(),
+    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
+):
     try:
-        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:" \
-                   f"{rendering}:{accept}"
+        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:" f"{rendering}:{accept}"
         if accept != "application/json":
             filename = rs_retrieve_file(file_key)
             if filename is not None:
                 return f"{request.base_url}static/{filename}"
-        test_results = TestResults(REGISTERED_STRATEGY[category][rendering],
-                                   REGISTERED_OUTPUT[rendering][accept])
-        result = await test_results.render(project_name, version, campaign_occurrence)
+        test_results = TestResults(
+            REGISTERED_STRATEGY[category][rendering],
+            REGISTERED_OUTPUT[rendering][accept],
+        )
+        result = await test_results.render(
+            project_name,
+            version,
+            campaign_occurrence,
+        )
 
         if isinstance(result, dict):
             return JSONResponse(content=jsonable_encoder(result))
 
-        await rs_record_file(file_key, result)
+        rs_record_file(file_key, result)
         return f"{request.base_url}static/{result}"
     except VersionNotFound as vnf:
         raise HTTPException(404, detail=" ".join(vnf.args)) from vnf

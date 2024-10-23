@@ -24,13 +24,22 @@ async def register_project(project_name: str) -> str:
     if project_name == "*":
         raise ProjectNameInvalid("Project name must be different from '*' special project")
     if contains(project_name):
-        raise DuplicateProject(f"Project name '{project_name}' "
-                               f"already exists. Please update the name "
-                               f"so that project can be registered.")
+        raise DuplicateProject(
+            f"Project name '{project_name}' "
+            f"already exists. Please update the name "
+            f"so that project can be registered."
+        )
     register(project_name)
     with pool.connection() as connection:
-        connection.execute("insert into projects (name, alias) values (%s, %s);",
-                           (project_name.casefold(), provide(project_name)))
+        connection.execute(
+            "insert into projects (name, alias) values (%s, %s);",
+            (
+                project_name.casefold(),
+                provide(
+                    project_name,
+                ),
+            ),
+        )
 
     return project_name
 
@@ -41,7 +50,10 @@ async def registered_projects() -> List[str]:
         return [item[0] for item in connection.execute("select name from projects;").fetchall()]
 
 
-async def get_projects(skip: int = 0, limit: int = 10) -> Tuple[List[Project], int]:
+async def get_projects(
+    skip: int = 0,
+    limit: int = 10,
+) -> Tuple[List[Project], int]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # The query returns null instead of 0 value.
@@ -66,47 +78,76 @@ async def get_projects(skip: int = 0, limit: int = 10) -> Tuple[List[Project], i
             " group by v3.project_id),0) as current"
             " from projects as pj"
             " order by pj.name "
-            " limit %s offset %s;", (limit, skip))
+            " limit %s offset %s;",
+            (
+                limit,
+                skip,
+            ),
+        )
         count = connection.execute("select count(distinct id) as total from projects;")
-        return list(rows.fetchall()), int(count.fetchone()['total'])
+        return list(rows.fetchall()), int(count.fetchone()["total"])
 
 
-async def create_project_version(project_name: str,
-                                 project: RegisterVersion) -> RegisterVersionResponse | \
-                                                              ApplicationError:
+async def create_project_version(
+    project_name: str,
+    project: RegisterVersion,
+) -> RegisterVersionResponse | ApplicationError:
     try:
         with pool.connection() as connection:
             connection.row_factory = dict_row
-            row = connection.execute("insert into versions (project_id, version) "
-                                     " select id, %s from projects where alias = %s"
-                                     " returning id;",
-                                     (project.version, provide(project_name))).fetchone()
+            row = connection.execute(
+                "insert into versions (project_id, version) "
+                " select id, %s from projects where alias = %s"
+                " returning id;",
+                (
+                    project.version,
+                    provide(
+                        project_name,
+                    ),
+                ),
+            ).fetchone()
 
-            result = RegisterVersionResponse(inserted_id=row["id"])
+            result = RegisterVersionResponse(
+                inserted_id=row["id"],
+            )
     except IntegrityError as ie:
-        result = ApplicationError(error=ApplicationErrorCode.duplicate_element,
-                                  message=', '.join(ie.args))
+        result = ApplicationError(
+            error=ApplicationErrorCode.duplicate_element,
+            message=", ".join(ie.args),
+        )
     except DatabaseError as de:
-        result = ApplicationError(error=ApplicationErrorCode.duplicate_element,
-                                  message=', '.join(de.args))
+        result = ApplicationError(
+            error=ApplicationErrorCode.duplicate_element,
+            message=", ".join(de.args),
+        )
 
     return result
 
 
-async def get_project(project_name: str,
-                      sections: Optional[List[str]]) -> TicketProject:
+async def get_project(
+    project_name: str,
+    sections: Optional[List[str]],
+) -> TicketProject:
     result = {"name": project_name.casefold()}
     with pool.connection() as connection:
         connection.row_factory = dict_row
         _sections = [sec.casefold() for sec in sections] if sections is not None else []
-        result = {"name": project_name}
+        result = {
+            "name": project_name,
+        }
         if DashCollection.CURRENT.value in _sections or not _sections:
             current = connection.execute(
                 "select ve.version, ve.created, ve.updated, ve.started, ve.end_forecast, ve.status"
                 " from versions as ve"
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status not in ('recorded', 'archived')"
-                " and pj.alias = %s;", (provide(project_name),))
+                " and pj.alias = %s;",
+                (
+                    provide(
+                        project_name,
+                    ),
+                ),
+            )
             result[DashCollection.CURRENT.value] = [TicketVersion(**cur) for cur in current.fetchall()]
         if DashCollection.FUTURE.value in _sections or not _sections:
             future = connection.execute(
@@ -114,7 +155,13 @@ async def get_project(project_name: str,
                 " from versions as ve"
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status = 'recorded'"
-                " and pj.alias = %s;", (provide(project_name),))
+                " and pj.alias = %s;",
+                (
+                    provide(
+                        project_name,
+                    ),
+                ),
+            )
             result[DashCollection.FUTURE.value] = [TicketVersion(**fut) for fut in future.fetchall()]
         if DashCollection.ARCHIVED.value in _sections or not _sections:
             archived = connection.execute(
@@ -122,6 +169,12 @@ async def get_project(project_name: str,
                 " from versions as ve"
                 " join projects as pj on pj.id = ve.project_id"
                 " where ve.status = 'archived'"
-                " and pj.alias = %s;", (provide(project_name),))
+                " and pj.alias = %s;",
+                (
+                    provide(
+                        project_name,
+                    ),
+                ),
+            )
             result[DashCollection.ARCHIVED.value] = [TicketVersion(**arch) for arch in archived.fetchall()]
     return TicketProject(**result)

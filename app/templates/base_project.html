@@ -1,32 +1,56 @@
-{% extends "base.html" %}
-{% block titre %}  {% endblock %}
-
-{% block contenu %}
 <div id="project_{{project_name_alias}}" class="container">
-  <ul class="nav nav-tabs">
-  <li class="nav-item">
-    <a class={% if versions %} "nav-link  active" aria-current="page" {%else%} "nav-link"{% endif %}
-       hx-get="/front/v1/projects/{{project_name}}"
-       hx-headers='{"eaid-request":"REDIRECT"}'>Versions</a>
-  </li>
-  <li class="nav-item">
-    <a class={% if campaigns %}"nav-link  active" aria-current="page"{%else %} "nav-link" {% endif %}
-       hx-get="/front/v1/projects/{{project_name}}/campaigns"
-       hx-headers='{"eaid-request":"REDIRECT"}'>Campaigns</a>
-  </li>
-  <li class="nav-item">
-    <a class={% if repository %}"nav-link active" aria-current="page"{%else%} "nav-link" {% endif %}
-        hx-get="/front/v1/projects/{{project_name}}/repository"
-        hx-headers='{"eaid-request":"REDIRECT"}'>Repository</a>
-  </li>
-    <li class="nav-item">
-    <a class={% if bugs %} "nav-link active" aria-current="page"{%else%} "nav-link" {% endif %}
-      hx-get="/front/v1/projects/{{project_name}}/bugs"
-      hx-headers='{"eaid-request":"REDIRECT"}'>Bugs</a>
-  </li>
-</ul>
-{% block project %}
-    Project data
-{% endblock %}
+    <h1>Project: {{project_name}}</h1>
+    <!-- Project tabs content -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            {% if tab == "versions" %}
+                <a class="nav-link  active"
+                   aria-current="page"
+                   hx-get="/front/v1/projects/{{project_name}}/versions"
+                   hx-target="#project-tab"
+                   hx-trigger="load">
+            {%else%}
+                <a class="nav-link"
+                   hx-get="/front/v1/projects/{{project_name}}?tab=versions">
+            {% endif %}
+                    Versions</a>
+        </li>
+        <li class="nav-item">
+                {% if tab == "campaigns" %}
+                <a class="nav-link  active"
+                   aria-current="page"
+                   hx-get="/front/v1/projects/{{project_name}}/campaigns"
+                   hx-target="#project-tab"
+                   hx-trigger="load">
+            {%else%}
+                <a class="nav-link"
+                   hx-get="/front/v1/projects/{{project_name}}?tab=campaigns">
+            {% endif %}Campaigns</a>
+        </li>
+        <li class="nav-item">
+                {% if tab == "repository" %}
+                <a class="nav-link  active"
+                   aria-current="page"
+                   hx-get="/front/v1/projects/{{project_name}}/repository"
+                   hx-target="#project-tab"
+                   hx-trigger="load">
+            {%else%}
+                <a class="nav-link"
+                   hx-get="/front/v1/projects/{{project_name}}?tab=repository">
+            {% endif %}Repository</a>
+        </li>
+        <li class="nav-item">
+                {% if tab == "bugs" %}
+                <a class="nav-link  active"
+                   aria-current="page"
+                   hx-get="/front/v1/projects/{{project_name}}/bugs"
+                   hx-target="#project-tab"
+                   hx-trigger="load">
+            {%else%}
+                <a class="nav-link"
+                   hx-get="/front/v1/projects/{{project_name}}?tab=bugs">
+            {% endif %}Bugs</a>
+        </li>
+    </ul>
+    <div id="project-tab" class="container"></div>
 </div>
-{% endblock %}

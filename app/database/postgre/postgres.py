@@ -10,40 +10,57 @@ from app.utils.project_alias import register
 
 
 def init_postgres() -> None:
-    conn = psycopg.connect(postgre_setting_string, autocommit=True)
+    conn = psycopg.connect(
+        postgre_setting_string,
+        autocommit=True,
+    )
     cur = conn.cursor()
-    cur.execute("select * from pg_database where datname =  %s", (config['PG_DB'],))
+    cur.execute(
+        "select * from pg_database where datname =  %s",
+        (config["PG_DB"],),
+    )
     if not cur.fetchall():
         cur.execute(f"create database {config['PG_DB']}")
 
 
 def update_postgres() -> None:
-    connexion = psycopg.connect(postgre_string)
-    create_schema(connexion)
+    connexion = psycopg.connect(
+        postgre_string,
+    )
+    create_schema(
+        connexion,
+    )
     cursor = connexion.cursor()
-    cursor.execute("select op_order from operations "
-                   "where type = 'database' "
-                   "order by op_order desc "
-                   "limit 1;")
+    cursor.execute("select op_order from operations " "where type = 'database' " "order by op_order desc " "limit 1;")
     last_update = cursor.fetchone()[0]
     for index, update in enumerate(POSTGRE_UPDATES):
         if index + 1 > last_update:
             try:
                 cursor.execute(update["request"])
                 connexion.commit()
-                cursor.execute("""insert into operations (type, op_user, op_order, content)
+                cursor.execute(
+                    """insert into operations (type, op_user, op_order, content)
                         values ('database', 'application', %s, %s)
                         on conflict (type, op_order) do nothing; """,
-                               (index + 1, update["description"]))
+                    (
+                        index + 1,
+                        update["description"],
+                    ),
+                )
                 connexion.commit()
             except Exception as exc:
                 connexion = psycopg.connect(postgre_string)
                 cursor = connexion.cursor()
                 log_error(repr(exc))
-                cursor.execute("""insert into operations (type, op_user, op_order, content)
+                cursor.execute(
+                    """insert into operations (type, op_user, op_order, content)
                                         values ('database', 'application', %s, %s)
                                         on conflict (type, op_order) do nothing; """,
-                               (index + 1, f'{update["description"]} - error {repr(exc)}'))
+                    (
+                        index + 1,
+                        f'{update["description"]} - error {repr(exc)}',
+                    ),
+                )
                 connexion.commit()
 
 
@@ -99,7 +116,10 @@ def create_schema(connexion: Connection) -> None:
 
 
 def postgre_register() -> None:
-    conn = psycopg.connect(postgre_string, autocommit=True)
+    conn = psycopg.connect(
+        postgre_string,
+        autocommit=True,
+    )
     cur = conn.cursor()
     rows = cur.execute("select name, alias from projects;").fetchall()
     for row in rows:

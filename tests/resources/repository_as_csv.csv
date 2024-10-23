@@ -1,0 +1,18 @@
+"epic","feature_filename","feature_name","feature_tags","feature_description","scenario_id","scenario_name","scenario_tags","scenario_description","scenario_is_outline","scenario_steps"
+"second_epic","","","","","","","","","",""
+"first_epic","","","","","","","","","",""
+"first_epic","\new_test.feature","New Test feature","TF-01, test, epic=first_epic","['As An End User', 'I want to test the reporter', ""So that I will know if it's working"", '!!Workflow: ../workflows/test1.puml', '| A tabular | to test |', '| --------- | ------- |', '| one| two|']","","","","","",""
+"first_epic","\test.feature","Test feature","epic=first_epic","['As An End User', 'I want to test the reporter', ""So that I will know if it's working"", '!!Workflow: ../workflows/test.puml']","","","","","",""
+"second_epic","\test_empty.feature","Test feature","epic=second_epic","['As An End User', 'I want to test the reporter', ""So that I will know if it's working""]","","","","","",""
+"second_epic","\test_table.feature","Test feature","epic=second_epic","['As An End User', 'I want to test the reporter', ""So that I will know if it's working"", '!!Workflow: ../workflows/test.puml', '* One rule', '* another one', '* a rule followed by a table', '| A tabular | to test |', '| --------- | ------- |', '| one| two|', 'Free text in the feature description', '$ Title', '* text', '| A tabular | to test |', '| --------- | ------- |', '| one| two|', '$$ Sub title', '| A tabular | to test |', '| --------- | ------- |', '| one| two|', '| A tabular | to test |', '| one| two|', '$$ Sub title', '1. test one', '1. test two', '| A tabular | to test |', '| --------- | ------- |', '| one| two|']","","","","","",""
+"","\new_test.feature","","","","test_1","Generate report","event, id=test_1","[]","False","Given I write a workflow reference
+When I generate the report
+Then The workflow picture is added"
+"","\test.feature","","","","test_1","Report with background","id=test_1","[]","False","Given This background is beautiful
+And I want to include it at the right level
+Given I write a workflow reference
+When I generate the report
+Then The workflow picture is added"
+"","\test_table.feature","","","","t_test_1","Duplicate","id=t_test_1","[]","False","Given I write a workflow reference
+When I generate the report
+Then The workflow picture is added"

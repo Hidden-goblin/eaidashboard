@@ -17,7 +17,7 @@ class Statistics(BaseModel):
     in_progress: int
     done: int
 
-    def __getitem__(self: "Statistics", index: str) -> int:
+    def __getitem__(self: "Statistics", index: str) -> int | None:
         return self.model_dump().get(index, None)
 
 
@@ -27,7 +27,7 @@ class Project(BaseModel):
     current: Optional[int] = 0
     archived: Optional[int] = 0
 
-    def __getitem__(self: "Project", index: str) -> str | int:
+    def __getitem__(self: "Project", index: str) -> str | int | None:
         return self.model_dump().get(index, None)
 
 
@@ -50,22 +50,24 @@ class TicketProject(BaseModel):
     current: Optional[List[TicketVersion]] = None
     archived: Optional[List[TicketVersion]] = None
 
-    def __getitem__(self: "TicketProject", index: str) -> str | List[TicketVersion]:
+    def __getitem__(self: "TicketProject", index: str) -> str | List[TicketVersion] | None:
         return self.model_dump().get(index, None)
 
 
 class RegisterVersion(BaseModel):
     version: str
 
-    def __getitem__(self: "RegisterVersion", index: str) -> str:
+    def __getitem__(self: "RegisterVersion", index: str) -> str | None:
         return self.model_dump().get(index, None)
 
 
 class RegisterVersionResponse(BaseModel):
     """Attributes:
-        inserted_id (str)
-        acknowledged (bool)
+    inserted_id (str)
+    acknowledged (bool)
+    message (str) = None
     """
+
     inserted_id: str | int
     acknowledged: bool = True
     message: Optional[str] = None
@@ -74,5 +76,5 @@ class RegisterVersionResponse(BaseModel):
 class RegisterProject(BaseModel):
     name: str
 
-    def __getitem__(self: "RegisterProject", index: str) -> str:
+    def __getitem__(self: "RegisterProject", index: str) -> str | None:
         return self.model_dump().get(index, None)

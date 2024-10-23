@@ -79,5 +79,7 @@ alt="Use the record a new defect button" width="800"/>
 On the displayed form, fill the defect title, select the version to record in and the defect criticality. You can 
 optionally add a defect link and a description.
 
+You can also create link to failing scenarios within the _version_ campaigns.
+
 <img src="/assets/howto/create_bugs_HT-form.png" title="Create a new bug -- Form" 
 alt="Form to create bug" width="800"/>

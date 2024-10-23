@@ -8,15 +8,23 @@ from app.utils.log_management import log_message
 from app.utils.redis import redis_connection
 
 
-async def rs_record_file(file_key: str, filename: str) -> str:
+def rs_record_file(
+    file_key: str,
+    filename: str,
+) -> str:
     # SPEC: record an entry file_key-filename in redis
     # SPEC: file_key should match file:project_alias:version:occurrence:type
     connection = redis_connection()
-    connection.set(file_key, filename)
+    connection.set(
+        file_key,
+        filename,
+    )
     return str(connection.get(file_key))
 
 
-async def rs_invalidate_file(file_key_pattern: str) -> None:
+def rs_invalidate_file(
+    file_key_pattern: str,
+) -> None:
     # SPEC: remove file_key from storage
     # SPEC: remove real file if file exists
     connection = redis_connection()
@@ -31,7 +39,9 @@ async def rs_invalidate_file(file_key_pattern: str) -> None:
         connection.delete(*keys)
 
 
-async def rs_retrieve_file(file_key: str) -> str | None:
+def rs_retrieve_file(
+    file_key: str,
+) -> str | None:
     # SPEC: return stored filename or None if not exists
     # SPEC: check real file exists invalidate and return None if not
     connection = redis_connection()
@@ -42,5 +52,5 @@ async def rs_retrieve_file(file_key: str) -> str | None:
         if filepath.exists():
             return filename
         else:
-            await rs_invalidate_file(file_key)
+            rs_invalidate_file(file_key)
     return None

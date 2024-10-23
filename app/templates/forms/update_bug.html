@@ -1,51 +1,174 @@
-<form hx-put="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
-      hx-headers='{"eaid-next": "form-refresh"}'
-      hx-ext='json-enc'>
-    <!-- forms update bug -->
-    <div class="mb-3">
-        <label for="title" class="form-label">Title:</label>
-        <input type="text" id="title" name="title" value="{{bug.title}}" class="form-control"/>
+{% if message %}  <!-- May just be the presence of message -->
+<!-- This part is the error case -->
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Update bug {{bug.title}}</h5>
+        </div>
+        <div class="modal-body">
+            <div class="container">
+                <form hx-put="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
+                      hx-headers='{"eaid-next": "form-refresh"}'
+                      hx-ext='json-enc'>
+                    <!-- forms update bug -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title:</label>
+                        <input type="text" id="title" name="title" value="{{bug.title}}" class="form-control"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="version" class="form-label">Seen in version:</label>
+                        <select class="form-select" aria-label="seen in version" id="version" name="version">
+                            {%for version in versions%}
+                            <option value="{{version}}" {%if version==bug.version %}selected {%endif%}>{{version}}
+                            </option>
+                            {%endfor%}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Defect link:</label>
+                        <input type="url" id="url" name="url" value="{{bug.url}}" class="form-control"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="criticality" class="form-label">Defect criticality:</label>
+                        <select class="form-select" aria-label="Defect criticality" id="criticality" name="criticality">
+                            {% for crit in criticality %}
+                            <option value="{{crit}}" {%if crit== bug.criticality%} selected {%endif%}>{{crit}}</option>
+                            {%endfor%}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Defect description:</label>
+                        <textarea type="text" id="description" name="description" class="form-control">{{bug.description}}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="created" class="form-label">Created on </label>
+                        <input id="created" value="{{bug.created.strftime('%Y-%m-%d %H:%M')}}" readonly
+                               class="form-control-plaintext"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updated" class="form-label">Last update </label>
+                        <input id="updated" value="{{bug.updated.strftime('%Y-%m-%d %H:%M')}}" readonly
+                               class="form-control-plaintext"/>
+                    </div>
+                    <input type="hidden" name="status" value="{{bug.status}}"/>
+                    <div id="modalErrorMessage" class="container show">{{message}}</div>
+                    <button type="submit"
+                            class="btn btn-secondary">
+                        Update bug
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <!-- The dismiss action -->
+            <button type="button"
+                    class="btn btn-secondary"
+                    hx-delete="/clear"
+                    hx-trigger="click, modalClear from:body"
+                    hx-target="#modals-here"
+            >Dismiss
+            </button>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="version" class="form-label">Seen in version:</label>
-        <select class="form-select" aria-label="seen in version" id="version" name="version">
-            {%for version in versions%}
-                <option value="{{version}}" {%if version==bug.version %}selected {%endif%}>{{version}}</option>
-            {%endfor%}
-        </select>
+</div>
+{% else %}
+<!-- Main form -->
+<div id="modal-backdrop" class="modal-backdrop fade show" style="display:block;"></div>
+<div id="modal" class="modal fade show" style="display:block;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update bug {{bug.title}}</h5>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+
+                    <form hx-put="/front/v1/projects/{{project_name}}/bugs/{{bug.internal_id}}"
+                          hx-headers='{"eaid-next": "form-refresh"}'
+                          hx-ext='json-enc'>
+                        <!-- forms update bug -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title:</label>
+                            <input type="text" id="title" name="title" value="{{bug.title}}" class="form-control"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="version" class="form-label">Seen in version:</label>
+                            <select class="form-select"
+                                    aria-label="seen in version"
+                                    id="version"
+                                    name="version"
+                                    hx-get="/front/v1/projects/{{project_name}}/campaigns?bug={{bug.internal_id}}"
+                                    hx-target="#failed-scenario"
+                                    hx-headers='{"eaid-request": "failed-scenario"}'
+                                    hx-trigger="change, load">
+                                {%for version in versions%}
+                                    <option value="{{version}}"
+                                            {%if version==bug.version %} selected {%endif%}>{{version}}
+                                    </option>
+                                {%endfor%}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="url" class="form-label">Defect link:</label>
+                            <input type="url" id="url" name="url" value="{{bug.url}}" class="form-control"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="criticality"
+                                   class="form-label">Defect criticality:</label>
+                            <select class="form-select"
+                                    aria-label="Defect criticality"
+                                    id="criticality"
+                                    name="criticality">
+                                {% for crit in criticality %}
+                                    <option value="{{crit}}" {%if crit== bug.criticality%} selected {%endif%}>{{crit}}
+                                    </option>
+                                {%endfor%}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Defect description:</label>
+                            <textarea type="text"
+                                      id="description"
+                                      name="description"
+                                      class="form-control">{{bug.description}}</textarea>
+                        </div>
+                        <div id="failed-scenario"></div>
+<!--                             hx-get="/front/v1/projects/{{project_name}}/campaigns?bug={{bug.internal_id}}&version={{version}}"-->
+<!--                             hx-headers='{"eaid-request": "failed-scenario"}'-->
+<!--                             hx-trigger="load"></div>-->
+                        <div class="hstack gap-1">
+                            <div><b>Created on:</b> {{bug.created.strftime('%Y-%m-%d %H:%M')}}</div>
+                            <div><b>Last update:</b> {{bug.updated.strftime('%Y-%m-%d %H:%M')}}</div>
+ <!--                           <input id="created" value="{{bug.created.strftime('%Y-%m-%d %H:%M')}}" readonly
+                                   class="form-control-plaintext"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="updated" class="form-label">Last update </label>
+                            <input id="updated" value="{{bug.updated.strftime('%Y-%m-%d %H:%M')}}" readonly
+                                   class="form-control-plaintext"/>
+-->                        </div>
+                        <input type="hidden" name="status" value="{{bug.status}}"/>
+
+                        <button type="submit"
+                                class="btn btn-secondary">
+                            Update bug
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        hx-delete="/clear"
+                        hx-trigger="click, modalClear from:body"
+                        hx-target="#modals-here"
+                >Dismiss
+                </button>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="url" class="form-label">Defect link:</label>
-        <input type="url" id="url" name="url" value="{{bug.url}}" class="form-control"/>
-    </div>
-    <div class="mb-3">
-        <label for="criticality" class="form-label">Defect criticality:</label>
-        <select class="form-select" aria-label="Defect criticality" id="criticality" name="criticality">
-            {% for crit in criticality %}
-                <option value="{{crit}}" {%if crit == bug.criticality%} selected {%endif%}>{{crit}}</option>
-            {%endfor%}
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="description" class="form-label">Defect description:</label>
-        <textarea type="text" id="description" name="description" class="form-control">{{bug.description}}</textarea>
-    </div>
-    <div class="mb-3">
-        <label for="created" class="form-label">Created on </label>
-        <input id="created" value="{{bug.created.strftime('%Y-%m-%d %H:%M')}}" readonly class="form-control-plaintext"/>
-    </div>
-    <div class="mb-3">
-        <label for="updated" class="form-label">Last update </label>
-        <input id="updated" value="{{bug.updated.strftime('%Y-%m-%d %H:%M')}}" readonly class="form-control-plaintext"/>
-    </div>
-    <input type="hidden" name="status" value="{{bug.status}}"/>
-    <button type="submit"
-            class="btn btn-secondary">
-            Update bug
-    </button>
-    <button class="btn btn-secondary"
-                hx-delete="/clear"
-                hx-target="#dialog"
-                hx-headers='{"eaid-next": "form-refresh"}'
-                hx-trigger="click">Close</button>
-</form>
+</div>
+{% endif %}

@@ -1,36 +1,32 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 
-from fastapi import APIRouter, Form, Security
-from psycopg.errors import CheckViolation, UniqueViolation
+from fastapi import APIRouter, Security
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
-from app.app_exception import front_access_denied, front_error_message
+from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_campaigns_management import enrich_tickets_with_campaigns
-from app.database.postgre.pg_projects import create_project_version, get_project, register_project, registered_projects
-from app.database.postgre.pg_tickets import add_ticket, get_tickets
-from app.database.postgre.pg_versions import get_version, update_version_data
+from app.database.postgre.pg_projects import register_project
 from app.database.postgre.testrepository import db_project_epics, db_project_features
-from app.database.utils.transitions import authorized_transition
-from app.schema.bugs_schema import UpdateVersion
-from app.schema.project_schema import RegisterProject, RegisterVersion, RegisterVersionResponse
-from app.schema.status_enum import StatusEnum, TicketType
-from app.schema.ticket_schema import ToBeTicket
+from app.schema.project_schema import RegisterProject
 from app.schema.users import User, UserLight
-from app.utils.log_management import log_error, log_message
+from app.utils.log_management import log_error
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/front/v1/projects")
 
 
-@router.get("",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def front_project(request: Request,
-                        user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.get(
+    "",
+    tags=["Front - Project"],
+    include_in_schema=False,
+)
+async def front_project(
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     """Retrieve the create project form
 
     SPEC: Only application admin can create a new project
@@ -39,22 +35,30 @@ async def front_project(request: Request,
         return user
     try:
         if request.headers.get("eaid-request") == "FORM":
-            return templates.TemplateResponse("forms/create_project.html",
-                                              {"request": request,
-                                               "name": None,
-                                               "error_message": ""})
+            return templates.TemplateResponse(
+                "forms/create_project.html",
+                {
+                    "request": request,
+                    "name": None,
+                    "error_message": "",
+                },
+            )
 
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
-@router.post("",
-             tags=["Front - Project"],
-             include_in_schema=False)
-async def front_create_project(body: RegisterProject,
-                               request: Request,
-                               user: User = Security(front_authorize, scopes=["admin"])) -> HTMLResponse:
+@router.post(
+    "",
+    tags=["Front - Project"],
+    include_in_schema=False,
+)
+async def front_create_project(
+    body: RegisterProject,
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin"]),
+) -> HTMLResponse:
     """Process create project
 
     SPEC: Only application admin can create project
@@ -63,28 +67,37 @@ async def front_create_project(body: RegisterProject,
         return user
     try:
         await register_project(body.name)
-        return templates.TemplateResponse("void.html",
-                                          {"request": request},
-                                          headers={"HX-Trigger": "modalClear",
-                                                   "HX-Trigger-After-Swap": "navRefresh"})
+        return templates.TemplateResponse(
+            "void.html",
+            {"request": request},
+            headers={
+                "HX-Trigger": "modalClear",
+                "HX-Trigger-After-Swap": "navRefresh",
+            },
+        )
     except Exception as exception:
         log_error("\n".join(exception.args))
-        return templates.TemplateResponse("forms/create_project.html",
-                                          {
-                                              "request": request,
-                                              "name": body.name,
-                                              "message": "\n".join(exception.args)
-                                          },
-                                          headers={"HX-Retarget": "#modal",
-                                                   "HX-Reswap": "beforeend"})
+        return templates.TemplateResponse(
+            "forms/create_project.html",
+            {"request": request, "name": body.name, "message": "\n".join(exception.args)},
+            headers={
+                "HX-Retarget": "#modal",
+                "HX-Reswap": "beforeend",
+            },
+        )
 
 
-@router.get("/{project_name}",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def front_project_management(project_name: str,
-                                   request: Request,
-                                   user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
+@router.get(
+    "/{project_name}",
+    tags=["Front - Project"],
+    include_in_schema=False,
+)
+async def front_project_management(
+    project_name: str,
+    request: Request,
+    tab: str = "versions",
+    user: User = Security(front_authorize, scopes=["admin", "user"]),
+) -> HTMLResponse:
     """Retrieve the project
 
     SPEC: Only authenticated user for the project can access
@@ -92,291 +105,54 @@ async def front_project_management(project_name: str,
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        if request.headers.get("eaid-request", "") == "REDIRECT":
-            return templates.TemplateResponse("void.html",
-                                              {
-                                                  "request": request
-                                              },
-                                              headers={
-                                                  "HX-Redirect": f"/front/v1/projects/"
-                                                                 f"{project_name}"})
-        _versions = await get_project(project_name, None)
-        versions = [{"value": item["version"], "status": item["status"]} for item in
-                    _versions["future"]]
-        versions.extend(
-            [{"value": item["version"], "status": item["status"]} for item in _versions["current"]])
-        versions.extend(
-            [{"value": item["version"], "status": item["status"]} for item in
-             _versions["archived"]])
-        projects = await registered_projects()
-        return templates.TemplateResponse("project.html",
-                                          {
-                                              "request": request,
-                                              "versions": versions,
-                                              "projects": projects,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name)
-                                          })
+        return templates.TemplateResponse(
+            "base_project.html",
+            {"request": request, "tab": tab, "project_name": project_name, "project_name_alias": provide(project_name)},
+            headers={
+                "hx-retarget": "#content-block",
+            },
+        )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
 
 
-@router.get("/{project_name}/versions",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def project_versions(project_name: str,
-                           request: Request,
-                           user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    """Retrieve the project's version
-
-    SPEC: Only authenticated user can access project's version"""
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) != "admin":
-            return front_access_denied(templates, request)
-
-        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) == "admin":
-            return templates.TemplateResponse("forms/add_version.html",
-                                              {
-                                                  "request": request,
-                                                  "project_name": project_name,
-                                                  "project_name_alias": provide(project_name)
-                                              })
-
-        _versions = await get_project(project_name, None)
-        versions = [{"value": item["version"], "status": item["status"]} for item in
-                    _versions["future"]]
-        versions.extend(
-            [{"value": item["version"], "status": item["status"]} for item in _versions["current"]])
-        versions.extend(
-            [{"value": item["version"], "status": item["status"]} for item in
-             _versions["archived"]])
-        return templates.TemplateResponse("tables/project_version.html",
-                                          {
-                                              "request": request,
-                                              "versions": versions,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name)
-                                          })
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.get("/{project_name}/versions/{version}",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def project_version_tickets(project_name: str,
-                                  version: str,
-                                  request: Request,
-                                  user: User = Security(front_authorize, scopes=["admin", "user"])) -> HTMLResponse:
-    """Retrieve """
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) != "admin":
-            return front_access_denied(templates, request)
-
-        if request.headers.get("eaid-request", "") == "FORM" and user.right(project_name) == "admin":
-            return templates.TemplateResponse("forms/add_ticket.html",
-                                              {
-                                                  "request": request,
-                                                  "project_name": project_name,
-                                                  "project_name_alias": provide(project_name),
-                                                  "version": version,
-                                                  "status": [status.value for status in TicketType]
-                                              })
-
-        if request.headers.get("eaid-request", "") == "versionUpdate":
-            version = await get_version(project_name, version)
-            log_message(repr(version))
-            return templates.TemplateResponse("forms/update_version_modal.html",
-                                              {
-                                                  "request": request,
-                                                  "project_name": project_name,
-                                                  "version": version,
-                                                  "transitions": authorized_transition[StatusEnum(
-                                                      version.status)]
-                                              })
-        tickets = await get_tickets(project_name, version)
-        tickets = await enrich_tickets_with_campaigns(project_name, version, tickets)
-        return templates.TemplateResponse("tables/version_tickets.html",
-                                          {
-                                              "request": request,
-                                              "version": version,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name),
-                                              "tickets": tickets
-                                          })
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.post("/{project_name}/versions/{version}",
-             tags=["Front - Project"],
-
-             include_in_schema=False)
-async def add_ticket_to_version(project_name: str,
-                                version: str,
-                                request: Request,
-                                body: dict,
-                                user: User = Security(front_authorize,
-                                                      scopes=["admin"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        result = await add_ticket(project_name, version, ToBeTicket(**body))
-        if not isinstance(result,
-                          RegisterVersionResponse):
-            raise Exception(result.message)
-
-        return templates.TemplateResponse("void.html",
-                                          {
-                                              "request": request,
-                                          },
-                                          headers={"HX-Trigger": f"reload-{version}"})
-    except UniqueViolation as uv:
-        log_error(','.join(uv.args))
-        return templates.TemplateResponse("error_message.html",
-                                          {
-                                              "request": request,
-                                              "highlight": f"Ticket with {body.get('reference')} "
-                                                           f"reference already exist in "
-                                                           f"{project_name} ",
-                                              "sequel": " so you cannot record it.",
-                                              "advise": "Check the reference or the version."
-                                          },
-                                          headers={"HX-Retarget": "#messageBox"})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-@router.put("/{project_name}/versions/{version}",
-            tags=["Front - Project"],
-            include_in_schema=False)
-async def project_version_update(project_name: str,
-                                 version: str,
-                                 body: dict,
-                                 request: Request,
-                                 user: User = Security(front_authorize,
-                                                       scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    version = await get_version(project_name, version)
-    try:
-        cleaned_body = {key: value for key, value in body.items() if value}
-        await update_version_data(project_name, version.version, UpdateVersion(**cleaned_body))
-
-        return templates.TemplateResponse("void.html",
-                                          {
-                                              "request": request
-                                          },
-                                          headers={"HX-Trigger": "modalClear",
-                                                   "HX-Trigger-After-Swap": "update-dashboard"}
-                                          )
-    except CheckViolation as chk_violation:
-        log_error(repr(chk_violation))
-        return templates.TemplateResponse("forms/update_version_modal.html",
-                                          {
-                                              "request": request,
-                                              "project_name": project_name,
-                                              "version": version,
-                                              "transitions": authorized_transition[StatusEnum(
-                                                  version.status)],
-                                              "message": "Started date could not be "
-                                                         "after end forecast date"
-                                          },
-                                          headers={"HX-Retarget": "#modal",
-                                                   "HX-Reswap": "beforeend"})
-    except Exception as exception:
-        log_error(repr(exception))
-        return templates.TemplateResponse("forms/update_version_modal.html",
-                                          {
-                                              "request": request,
-                                              "project_name": project_name,
-                                              "version": version,
-                                              "transitions": authorized_transition[StatusEnum(
-                                                  version.status)],
-                                              "message": ", ".join(exception.args)
-                                          },
-                                          headers={"HX-Retarget": "#modal",
-                                                   "HX-Reswap": "beforeend"})
-
-
-@router.post("/{project_name}/versions",
-             tags=["Front - Project"],
-             include_in_schema=False)
-async def add_version(project_name: str,
-                      request: Request,
-                      version: str = Form(...),
-                      user: User = Security(front_authorize, scopes=["admin"])
-                      ) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        await create_project_version(project_name, RegisterVersion(version=version))
-        return templates.TemplateResponse("void.html",
-                                          {
-                                              "request": request
-                                          },
-                                          headers={"HX-Trigger": "update-version-table"})
-    except Exception as exception:
-        log_error(repr(exception))
-        return front_error_message(templates, request, exception)
-
-
-async def repository_dropdowns(project_name: str,
-                               request: Request,
-                               epic: str,
-                               feature: str) -> HTMLResponse:
+async def repository_dropdowns(
+    project_name: str,
+    request: Request,
+    epic: str,
+    feature: str,
+) -> HTMLResponse:
     if epic is None and feature is None:
         epics = await db_project_epics(project_name)
         if epics:
-            features = {feature["name"] for feature in await db_project_features(project_name,
-                                                                                 epics[0])}
+            features = {
+                feature["name"]
+                for feature in await db_project_features(
+                    project_name,
+                    epics[0],
+                )
+            }
         else:
             features = set()
-        return templates.TemplateResponse("selectors/epic_label_selectors.html",
-                                          {
-                                              "request": request,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name),
-                                              "epics": epics,
-                                              "features": features
-                                          })
+        return templates.TemplateResponse(
+            "selectors/epic_label_selectors.html",
+            {
+                "request": request,
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "epics": epics,
+                "features": features,
+            },
+        )
     if epic is not None and feature is None:
         features = {feature["name"] for feature in await db_project_features(project_name, epic)}
-        return templates.TemplateResponse("selectors/feature_label_selectors.html",
-                                          {
-                                              "request": request,
-                                              "project_name": project_name,
-                                              "project_name_alias": provide(project_name),
-                                              "features": features
-                                          })
-
-
-@router.get("front/v1/projects/{project}/versions/{version}",
-            tags=["Front - Campaign"],
-            include_in_schema=False
-            )
-async def get_project_version(project: str,
-                              version: str,
-                              request: Request,
-                              user: User = Security(front_authorize,
-                                                    scopes=["admin", "user"])) -> HTMLResponse:
-    if not isinstance(user, (User, UserLight)):
-        return user
-    try:
-        version = get_version(project, version)
-        log_message(repr(version))
-        return templates.TemplateResponse("forms/update_version_modal.html",
-                                          {
-                                              "request": request,
-                                              "version": repr(version)
-                                          })
-    except Exception as exception:
-        return front_error_message(templates, request, exception)
+        return templates.TemplateResponse(
+            "selectors/feature_label_selectors.html",
+            {
+                "request": request,
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "features": features,
+            },
+        )

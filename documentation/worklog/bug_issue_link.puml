@@ -1,0 +1,59 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+
+'https://github.com/Hidden-goblin/eaidashboard/issues/67
+
+* Bugs are linked to failing tests and could move to specific tests
+**[#orange] Create link bug to test
+***[#green] .--Update database model--
+***[#orange] Update GET request to get links
+****[#green] .--GET /bugs or /bugs/bug_id -> in the field 'related_to'--
+****[#red] Update json response to include links
+***[#green]: --Update POST request to add link--
+ --Add location header to response--;
+***[#green] Update PUT request to add another link
+**[#green] .--Bug response schema--
+***[#green] .--Update Pydantic model--
+***[#green]: Update db request
+----
+Link is now a soft link not using sql FK
+When inserting there is still check for
+consistency
+----
+BUG: Inconsistent update - add multiple
+ time the same data.
+ --1-add uniqueness on bug_id-occurrence-ticket_reference-scenario_id -> do nothing--
+  --2-add a way to remove link--
+;
+
+****[#green] .--Set data--
+****[#green]: .--Get data--
+----
+Bug with no relation came with a list containing
+ with empty objet;
+****[#green] .--Update data--
+**[#orange]: Front refactoring
+----
+Rework pagination so that one-page app is real;
+***[#green] Update front to show links
+****[#green] In Bugs table show links
+****[#green] In Bug creation form allow to select tests (failed tests)
+****[#green] Query campaign and occurrence
+*****[#green] Query issues and scenarios
+***[#orange] In scenario allow to create bug when test fail
+****[#green] .--Bug creation in dialog--
+*****[#green]: --Move bug creation form--
+--from placeholder in the page to dialog--;
+****[#green] .--Bug update in dialog--
+****[#orange]: Add bug creation link per scenario
+----
+Invoke add bug form
+* --first update the scenario to fail--
+* --version is fixed--
+* link to this occurrence/ticket/scenario;
+***[#red] Create move to test from bug table
+****[#red] Check redirect link
+** Fix unit test
+*** Fix current ones
+*** Add new for the feature
+@endwbs

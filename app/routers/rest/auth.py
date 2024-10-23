@@ -12,27 +12,36 @@ from app.schema.authentication import TokenData
 from app.schema.users import User
 from app.utils.log_management import log_error
 
-router = APIRouter(
-    prefix="/api/v1"
+router = APIRouter(prefix="/api/v1")
+
+
+@router.post(
+    "/token",
+    tags=["Users"],
 )
-
-
-@router.post("/token",
-             tags=["Users"])
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(
+        form_data.username,
+        form_data.password,
+    )
     if user is None:
         raise HTTPException(401, detail="Unrecognized credentials")
     access_token = create_access_token(
-        data=TokenData(sub=user.username,
-                       scopes=user.scopes))
+        data=TokenData(
+            sub=user.username,
+            scopes=user.scopes,
+        ),
+    )
     return {"access_token": access_token, "token_type": "Bearer"}
 
 
-@router.delete("/token",
-               tags=["Users"])
+@router.delete(
+    "/token",
+    tags=["Users"],
+)
 async def expire_access_token(
-        user: User = Security(authorize_user, scopes=[])) -> dict:
+    user: User = Security(authorize_user, scopes=[]),
+) -> dict:
     try:
         revoke(user.username)
         return {}

@@ -1,14 +1,19 @@
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "C90", "I", "W", "ANN"]
+
+[tool.ruff]
 line-length = 120
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 
 "app/routers/front" = ["ANN201"]
+
+[tool.ruff.format]
+skip-magic-trailing-comma = false
 
 [tool.coverage.run]
 command_line = "-m pytest"
@@ -30,7 +35,7 @@ license = "GNU GPL v3"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
@@ -54,6 +59,11 @@ coverage = {extras = ["toml"], version = "*"}
 pytest-order = "*"
 httpx = "*"
 ruff = "*"
+behave = "*"
+behave-html-formatter = "*"
+eaibat = "*"
+requests = "*"
+eaiautomatontools = "*"
 
 [build-system]
 requires = ["poetry-core"]

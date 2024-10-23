@@ -7,7 +7,7 @@ import psycopg.errors
 from psycopg.rows import dict_row, tuple_row
 from psycopg.types.json import Json
 
-from app.app_exception import IncorrectFieldsRequest, ProjectNotRegistered
+from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered
 from app.database.redis.token_management import revoke
 from app.database.utils.password_management import get_password_hash
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
@@ -26,10 +26,17 @@ def init_user() -> None:
         log_message(f"{row}")
         if row is None:
             create_user(
-                UpdateUser(username="admin@admin.fr", password="admin", scopes={"*": "admin"}))
+                UpdateUser(
+                    username="admin@admin.fr",
+                    password="admin",
+                    scopes={"*": "admin"},
+                ),
+            )
 
 
-def create_user(user: UpdateUser) -> RegisterVersionResponse:
+def create_user(
+    user: UpdateUser,
+) -> RegisterVersionResponse:
     """
     SPEC Cannot create a user without a password and a username
     SPEC Cannot create a user which scopes contain non-existing project
@@ -48,12 +55,17 @@ def create_user(user: UpdateUser) -> RegisterVersionResponse:
         with pool.connection() as conn:
             log_message(f"Create user {user.username} with {user.scopes}")
             conn.row_factory = tuple_row
-            row = conn.execute("insert into users (username, password, scopes) "
-                               " values (%s, %s, %s)"
-                               " returning id;",
-                               (user.username, get_password_hash(user.password),
-                                json.dumps(user.scopes)))
-            return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]))
+            row = conn.execute(
+                "insert into users (username, password, scopes) " " values (%s, %s, %s)" " returning id;",
+                (
+                    user.username,
+                    get_password_hash(user.password),
+                    json.dumps(user.scopes),
+                ),
+            )
+            return RegisterVersionResponse(
+                inserted_id=str(row.fetchone()[0]),
+            )
     except psycopg.errors.UniqueViolation as uve:
         log_error("\n".join(uve.args))
         raise
@@ -68,39 +80,60 @@ def create_user(user: UpdateUser) -> RegisterVersionResponse:
         raise
 
 
-def _check_scopes(scopes: dict) -> None:
+def _check_scopes(
+    scopes: dict,
+) -> None:
     """Check scope content so that cannot assign to a user rights on non-existing project"""
-    zipped_project_oracle = list(zip([contains(project) or project == "*" for project in scopes],
-                                     scopes.keys()))
+    zipped_project_oracle = list(zip([contains(project) or project == "*" for project in scopes], scopes.keys()))
     if not all(project[0] for project in zipped_project_oracle):
         raise ProjectNotRegistered(
             f"The projects '"
             f"{', '.join(project[1] for project in zipped_project_oracle if not project[0])}"
-            f"' are not registered.")
+            f"' are not registered."
+        )
 
 
-def get_user(username: str,
-             is_light: bool = True) -> User | UserLight | None:
+def get_user(
+    username: str,
+    is_light: bool = True,
+) -> User | UserLight | None:
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        rows = connection.execute("""select username, password, scopes
+        rows = connection.execute(
+            """select username, password, scopes
         from users
         where username = %s;
-        """, (username,))
+        """,
+            (username,),
+        )
         temp = rows.fetchone()
         if is_light:
-            return UserLight(username=temp["username"],
-                             scopes=temp["scopes"]) if temp is not None else None
-        return User(username=temp["username"],
-                    password=temp["password"],
-                    scopes=temp["scopes"]) if temp is not None else None
+            return (
+                UserLight(
+                    username=temp["username"],
+                    scopes=temp["scopes"],
+                )
+                if temp is not None
+                else None
+            )
+        return (
+            User(
+                username=temp["username"],
+                password=temp["password"],
+                scopes=temp["scopes"],
+            )
+            if temp is not None
+            else None
+        )
 
 
-def get_users(limit: int = 10,
-              skip: int = 0,
-              is_list: bool = False,
-              project_name: str = None,
-              included: bool = True) -> Tuple[List[UserLight], int] | List[str]:
+def get_users(
+    limit: int = 10,
+    skip: int = 0,
+    is_list: bool = False,
+    project_name: str = None,
+    included: bool = True,
+) -> Tuple[List[UserLight], int] | List[str]:
     """
 
     :param limit: default 10 (only for list of UserLight)
@@ -111,102 +144,152 @@ def get_users(limit: int = 10,
     :return:
     """
     if is_list:
-        expected_list = {False: __list_of_user_not_in_project,
-                         True: __list_of_users}
-        return expected_list[included](project_name=project_name)
+        expected_list = {
+            False: __list_of_user_not_in_project,
+            True: __list_of_users,
+        }
+        return expected_list[included](
+            project_name=project_name,
+        )
 
     if project_name is None or project_name == "*":
         return __all_users(limit, skip)
-    return __users_in_project(project_name, limit, skip)
+    return __users_in_project(
+        project_name,
+        limit,
+        skip,
+    )
 
 
-def __all_users(limit: int = 10,
-                skip: int = 0) -> Tuple[List[UserLight], int]:
+def __all_users(
+    limit: int = 10,
+    skip: int = 0,
+) -> Tuple[List[UserLight], int]:
     with pool.connection() as connection1:
         connection1.row_factory = None
         connection1.row_factory = dict_row
-        rows = connection1.execute("select username, scopes"
-                                   " from users"
-                                   " order by username"
-                                   " limit %s"
-                                   " offset %s;", (limit, skip))
+        rows = connection1.execute(
+            "select username, scopes" " from users" " order by username" " limit %s" " offset %s;",
+            (
+                limit,
+                skip,
+            ),
+        )
         count = connection1.execute("select count(distinct username) as count from users;")
         return [UserLight(**row) for row in rows.fetchall()], int(count.fetchone()["count"])
 
 
-def __users_in_project(project_name: str,
-                       limit: int = 10,
-                       skip: int = 0) -> Tuple[List[UserLight], int]:
+def __users_in_project(
+    project_name: str,
+    limit: int = 10,
+    skip: int = 0,
+) -> Tuple[List[UserLight], int]:
     with pool.connection() as connection1:
         connection1.row_factory = None
         connection1.row_factory = dict_row
-        rows = connection1.execute("select username, scopes"
-                                   " from users"
-                                   " where scopes::jsonb ?| %s"
-                                   " or scopes ->> '*' = 'admin'"
-                                   " order by username"
-                                   " limit %s"
-                                   " offset %s;", (f'{{{project_name}}}', limit, skip))
-        count = connection1.execute("select count(distinct username) as count from users where scopes::jsonb ?| %s"
-                                    " or scopes ->> '*' = 'admin';", (f'{{{project_name}}}',))
+        rows = connection1.execute(
+            "select username, scopes"
+            " from users"
+            " where scopes::jsonb ?| %s"
+            " or scopes ->> '*' = 'admin'"
+            " order by username"
+            " limit %s"
+            " offset %s;",
+            (
+                f"{{{project_name}}}",
+                limit,
+                skip,
+            ),
+        )
+        count = connection1.execute(
+            "select count(distinct username) as count from users where scopes::jsonb ?| %s"
+            " or scopes ->> '*' = 'admin';",
+            (f"{{{project_name}}}",),
+        )
         return [UserLight(**row) for row in rows.fetchall()], int(count.fetchone()["count"])
 
 
-def __list_of_users(project_name: str = "*") -> List[str]:
+def __list_of_users(
+    project_name: str = "*",
+) -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        rows = connection.execute("select username"
-                                  " from users"
-                                  " where scopes::jsonb ?| %s"
-                                  " or scopes ->> '*' = 'admin'"
-                                  " order by username;", (f'{{{project_name}}}',))
+        rows = connection.execute(
+            "select username"
+            " from users"
+            " where scopes::jsonb ?| %s"
+            " or scopes ->> '*' = 'admin'"
+            " order by username;",
+            (f"{{{project_name}}}",),
+        )
         return [row[0] for row in rows.fetchall()]
 
 
-def __list_of_user_not_in_project(project_name: str) -> List[str]:
+def __list_of_user_not_in_project(
+    project_name: str,
+) -> List[str]:
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        rows = connection.execute("select username"
-                                  " from users"
-                                  " where not (scopes::jsonb ?| %s)"
-                                  " and scopes ->> '*' != 'admin'"
-                                  " order by username;", (f'{{{project_name}}}',))
+        rows = connection.execute(
+            "select username"
+            " from users"
+            " where not (scopes::jsonb ?| %s)"
+            " and scopes ->> '*' != 'admin'"
+            " order by username;",
+            (f"{{{project_name}}}",),
+        )
         return [row[0] for row in rows.fetchall()]
 
 
-def update_user_password(user: UpdateUser) -> RegisterVersionResponse:
+def update_user_password(
+    user: UpdateUser,
+) -> RegisterVersionResponse:
     with pool.connection() as conn:
         conn.row_factory = tuple_row
-        row = conn.execute("update users "
-                           " set password = %s "
-                           " where username = %s "
-                           " returning id;",
-                           (get_password_hash(user.password), user.username))
+        row = conn.execute(
+            "update users " " set password = %s " " where username = %s " " returning id;",
+            (
+                get_password_hash(user.password),
+                user.username,
+            ),
+        )
         log_message(f"Update user '{user.username}' password")
-        return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]), message="Password updated.")
+        return RegisterVersionResponse(
+            inserted_id=str(row.fetchone()[0]),
+            message="Password updated.",
+        )
 
 
-def update_user_scopes(user: UpdateUser) -> RegisterVersionResponse:
+def update_user_scopes(
+    user: UpdateUser,
+) -> RegisterVersionResponse:
     """Update scopes to the provided scopes regardless the existing scopes"""
     _user = get_user(user.username)
     with pool.connection() as conn:
         conn.row_factory = tuple_row
         # Check project: include special project "*"
         _check_scopes(user.scopes)
-        row = conn.execute("update users "
-                           " set scopes = %s "
-                           " where username = %s "
-                           " returning id;",
-                           (Json(user.scopes), user.username))
+        row = conn.execute(
+            "update users " " set scopes = %s " " where username = %s " " returning id;",
+            (
+                Json(user.scopes),
+                user.username,
+            ),
+        )
         log_message(f"Update user '{user.username}' scopes to {user.scopes}")
-        return RegisterVersionResponse(inserted_id=str(row.fetchone()[0]), message="Scopes updated")
+        return RegisterVersionResponse(
+            inserted_id=str(row.fetchone()[0]),
+            message="Scopes updated",
+        )
 
 
 def update_user(user: UpdateUser) -> ApplicationError | RegisterVersionResponse:
     _user = get_user(user.username)
     if _user is None:
-        return ApplicationError(error=ApplicationErrorCode.user_not_found,
-                                message=f"Check '{user.username}' user please.")
+        return ApplicationError(
+            error=ApplicationErrorCode.user_not_found,
+            message=f"Check '{user.username}' user please.",
+        )
 
     current_response: RegisterVersionResponse = None
 
@@ -224,7 +307,31 @@ def update_user(user: UpdateUser) -> ApplicationError | RegisterVersionResponse:
     return current_response
 
 
-def self_update_user(username: str, new_password: str) -> RegisterVersionResponse:
-    result = update_user_password(UpdateUser(username=username, password=new_password))
+def self_update_user(
+    username: str,
+    new_password: str,
+) -> RegisterVersionResponse:
+    result = update_user_password(
+        UpdateUser(
+            username=username,
+            password=new_password,
+        ),
+    )
     revoke(username)
     return result
+
+
+def db_delete_user(
+    username: str,
+) -> None:
+    _admin_users = __list_of_users()
+    if len(_admin_users) == 1 and username in _admin_users:
+        raise InvalidDeletion("Does not match the user management rules")
+    with pool.connection() as conn:
+        conn.row_factory = tuple_row
+        rows = conn.execute(
+            "delete from users where username = %s",
+            (username,),
+        )
+        if not rows.rowcount:
+            raise InvalidDeletion("Invalid user")
