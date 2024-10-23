@@ -25,7 +25,7 @@ installation or help someone to install.
 **Please note**: This how to is based on my personal usage. You might know different way to achieve the same purpose 
 using another python virtual environment.
 
-First make sure you have python 3.11 installed on your pc. Add the `pipenv` package as you will need to run the 
+First make sure you have python 3.12 installed on your pc. Add the `pipenv` package as you will need to run the 
 application within this environment.
 
 Secondly, clone the repository onto your disk. 
@@ -69,8 +69,6 @@ First make sure you have docker running for your platform.
 Then create the docker-compose file with the following content
 
 ```dockerfile
-version: '3.1'
-
 services:
   db:
     container_name: dash_postgres
