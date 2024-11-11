@@ -58,7 +58,7 @@ async def add_ticket_to_campaign(
             " and tk.reference = %s"
             " on conflict (campaign_id, ticket_reference) do nothing;",
             (
-                campaign_id.result()[0],
+                campaign_id.result().campaign_id,
                 ticket_reference,
                 provide(project_name),
                 version,
@@ -69,7 +69,7 @@ async def add_ticket_to_campaign(
         result = connection.execute(
             "select id from campaign_tickets " "where campaign_id = %s " "and ticket_reference = %s;",
             (
-                campaign_id.result()[0],
+                campaign_id.result().campaign_id,
                 ticket_reference,
             ),
         ).fetchone()

@@ -125,7 +125,10 @@ async def db_get_bug(
     return (
         BugTicketFull(**row)
         if row
-        else ApplicationError(error=ApplicationErrorCode.bug_not_found, message=f"Bug '{internal_id}' is not found.")
+        else ApplicationError(
+            error=ApplicationErrorCode.bug_not_found,
+            message=f"Bug '{internal_id}' is not found.",
+        )
     )
 
 
@@ -135,7 +138,11 @@ def db_bug_linked_scenario(
     if bug_internal_id is None:
         return []
     query = (
-        "select occurrence, ticket_reference, scenario_id as scenario_tech_id" " from bugs_issues" " where bug_id = %s;"
+        "select occurrence,"
+        " ticket_reference,"
+        " scenario_id as scenario_tech_id"
+        " from bugs_issues"
+        " where bug_id = %s;"
     )
     with pool.connection() as connection:
         connection.row_factory = dict_row

@@ -29,10 +29,6 @@ def path_project(request: Request) -> str:
     return res["project_name"] if res is not None else None
 
 
-def get_request(request: Request) -> Request:
-    return request
-
-
 def authorize_user(
     security_scopes: SecurityScopes,
     token: str = Depends(
@@ -93,21 +89,6 @@ def __generic_authorization(
     renew_token_date(user.username)
 
     return user
-
-
-def is_updatable(
-    request: Request,
-    rights: tuple,
-) -> bool:
-    """Authorization method for front usage"""
-    if "token" not in request.session:
-        return False
-    try:
-        authorize_user(SecurityScopes(list(rights)), request.session["token"])
-        return True
-    except Exception as ex:
-        log.error("".join(ex.args))
-        return False
 
 
 def front_authorize(

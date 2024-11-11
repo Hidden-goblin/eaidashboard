@@ -78,22 +78,6 @@ class ScenarioNotFound(Exception):
     pass
 
 
-class NonUniqueError(Exception):
-    pass
-
-
-class UserNotFound(Exception):
-    pass
-
-
-class NotConnected(Exception):
-    pass
-
-
-class NotAuthorized(Exception):
-    pass
-
-
 class IncorrectFieldsRequest(Exception):
     """To be raised when field is missing in the request"""
 

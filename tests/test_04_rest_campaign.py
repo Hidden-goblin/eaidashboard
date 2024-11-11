@@ -6,12 +6,19 @@ from unittest.mock import patch
 import pytest
 from starlette.testclient import TestClient
 
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from tests.conftest import error_message_extraction
+from tests.utils.project_setting import set_project, set_project_tickets, set_project_versions
 
 
+# noinspection PyUnresolvedReferences
 class TestRestCampaign:
     project_name = "test_campaign"
     current_version = "1.0.0"
+    project_version_ticket = [
+        {"version": current_version, "reference": "ref-001", "description": "Description 1"},
+        {"version": current_version, "reference": "ref-002", "description": "Description 2"},
+    ]
 
     def test_setup(
         self: "TestRestCampaign",
@@ -21,37 +28,35 @@ class TestRestCampaign:
         """setup any state specific to the execution of the given class (which
         usually contains tests).
         """
-        response = application.post(
-            "/api/v1/settings/projects",
-            json={"name": TestRestCampaign.project_name},
-            headers=logged,
+        set_project(
+            TestRestCampaign.project_name,
+            application,
+            logged,
         )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/versions",
-            json={"version": TestRestCampaign.current_version},
-            headers=logged,
+        set_project_versions(
+            TestRestCampaign.project_name,
+            [
+                TestRestCampaign.current_version,
+            ],
+            application,
+            logged,
         )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/versions/" f"{TestRestCampaign.current_version}/tickets",
-            json={"reference": "ref-001", "description": "Description 1"},
-            headers=logged,
+        set_project_tickets(
+            TestRestCampaign.project_name,
+            TestRestCampaign.project_version_ticket,
+            application,
+            logged,
         )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/versions/" f"{TestRestCampaign.current_version}/tickets",
-            json={"reference": "ref-002", "description": "Description 2"},
-            headers=logged,
-        )
-        assert response.status_code == 200
 
     def test_get_campaigns(
         self: "TestRestCampaign",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
-        response = application.get(f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns", headers=logged)
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            headers=logged,
+        )
         assert response.status_code == 200
         assert response.json() == []
 
@@ -164,7 +169,9 @@ class TestRestCampaign:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.post(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns", json={"version": "1.1.1"}, headers=logged
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            json={"version": "1.1.1"},
+            headers=logged,
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Version '1.1.1' is not found"
@@ -222,9 +229,27 @@ class TestRestCampaign:
         assert response.json() == {"campaign_ticket_id": 1, "errors": []}
 
     campaign_error_404 = [
-        ("unknown_project", "1.0.0", 1, "ref-002", "'unknown_project' is not registered"),
-        (project_name, "0.0.0", 1, "ref-002", "Version '0.0.0' is not found"),
-        (project_name, current_version, 3, "ref-002", "Occurrence '3' not found"),
+        (
+            "unknown_project",
+            "1.0.0",
+            1,
+            "ref-002",
+            "'unknown_project' is not registered",
+        ),
+        (
+            project_name,
+            "0.0.0",
+            1,
+            "ref-002",
+            "Version '0.0.0' is not found",
+        ),
+        (
+            project_name,
+            current_version,
+            3,
+            "ref-002",
+            "Occurrence '3' not found",
+        ),
         (
             project_name,
             current_version,
@@ -253,13 +278,131 @@ class TestRestCampaign:
         assert response.status_code == 404
         assert response.json()["detail"] == message
 
+    def test_get_campaigns_with_version(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={"version": TestRestCampaign.current_version},
+            headers=logged,
+        )
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "description": None,
+                "status": "recorded",
+                "project_name": "test_campaign",
+                "occurrence": 1,
+                "version": "1.0.0",
+            }
+        ]
+
+    def test_get_campaigns_with_status(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={"status": "recorded"},
+            headers=logged,
+        )
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "description": None,
+                "status": "recorded",
+                "project_name": "test_campaign",
+                "occurrence": 1,
+                "version": "1.0.0",
+            }
+        ]
+
+    def test_get_campaigns_with_status_version(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={
+                "status": "recorded",
+                "version": TestRestCampaign.current_version,
+            },
+            headers=logged,
+        )
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "description": None,
+                "status": "recorded",
+                "project_name": "test_campaign",
+                "occurrence": 1,
+                "version": "1.0.0",
+            }
+        ]
+
+    def test_get_campaigns_with_status_no_campaign(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={"status": "in progress"},
+            headers=logged,
+        )
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_campaigns_with_version_no_campaign(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={"version": "version 999"},
+            headers=logged,
+        )
+        assert response.status_code == 404, response.text
+
+    status_version_param = [
+        ("recorded", "version 999", 404, {"detail": "Version 'version 999' is not found"}),
+        ("in progress", current_version, 200, []),
+        ("in progress", "version 999", 404, {"detail": "Version 'version 999' is not found"}),
+    ]
+
+    @pytest.mark.parametrize("status,version,status_code,payload", status_version_param)
+    def test_get_campaigns_with_status_version_no_campaign(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+        status: str,
+        version: str,
+        status_code: int,
+        payload: dict | list,
+    ) -> None:
+        response = application.get(
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
+            params={
+                "status": status,
+                "version": version,
+            },
+            headers=logged,
+        )
+        assert response.status_code == status_code, response.text
+        assert response.json() == payload, response.text
+
     def test_get_campaign(
         self: "TestRestCampaign",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             headers=logged,
         )
         assert response.status_code == 200
@@ -320,42 +463,130 @@ class TestRestCampaign:
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
+    patch_campaign_params = [
+        (
+            {"status": "in progress", "description": "wonderful"},
+            {
+                "project_name": "test_campaign",
+                "version": "1.0.0",
+                "occurrence": 1,
+                "description": "wonderful",
+                "status": "in progress",
+            },
+        ),
+        (
+            {"description": "New description"},
+            {
+                "project_name": "test_campaign",
+                "version": "1.0.0",
+                "occurrence": 1,
+                "description": "New description",
+                "status": "in progress",
+            },
+        ),
+        (
+            {"status": "paused"},
+            {
+                "project_name": "test_campaign",
+                "version": "1.0.0",
+                "occurrence": 1,
+                "description": "New description",
+                "status": "paused",
+            },
+        ),
+    ]
+
+    @pytest.mark.parametrize("payload,result", patch_campaign_params)
     def test_patch_campaign(
         self: "TestRestCampaign",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
+        payload: dict,
+        result: dict,
     ) -> None:
         response = application.patch(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
-            json={"status": "in progress", "description": "wonderful"},
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
+            json=payload,
             headers=logged,
         )
-        assert response.status_code == 200
-        assert response.json() == {
-            "project_name": "test_campaign",
-            "version": "1.0.0",
-            "occurrence": 1,
-            "description": "wonderful",
-            "status": "in progress",
-        }
+        assert response.status_code == 200, response.text
+        assert response.json() == result
 
+    patch_campaign_422 = [
+        (
+            {"status": "progress", "description": "wonderful"},
+            [
+                {
+                    "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or " "'paused'"},
+                    "input": "progress",
+                    "loc": ["body", "status"],
+                    "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' " "or 'paused'",
+                    "type": "enum",
+                }
+            ],
+        ),
+        (
+            {},
+            [
+                {
+                    "ctx": {"error": {}},
+                    "input": {},
+                    "loc": ["body"],
+                    "msg": "Value error, CampaignPatch must have at least one key of " "'('description', 'status')'",
+                    "type": "value_error",
+                }
+            ],
+        ),
+    ]
+
+    @pytest.mark.parametrize("payload,result", patch_campaign_422)
     def test_patch_campaign_errors_422(
         self: "TestRestCampaign",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
+        payload: dict,
+        result: list,
     ) -> None:
         response = application.patch(
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
-            json={"status": "progress", "description": "wonderful"},
+            json=payload,
             headers=logged,
         )
-        assert response.status_code == 422
-        assert response.json()["detail"] == [
-            {
-                "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or " "'paused'"},
-                "input": "progress",
-                "loc": ["body", "status"],
-                "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' " "or 'paused'",
-                "type": "enum",
-            }
-        ]
+        assert response.status_code == 422, response.text
+        assert response.json()["detail"] == result, response.text
+
+    patch_campaign_404 = [
+        ("unknown", current_version, 1),
+        (project_name, "version 999", 1),
+        (project_name, current_version, 999),
+    ]
+
+    @pytest.mark.parametrize("project_name,version,occurrence", patch_campaign_404)
+    def test_patch_campaign_error_404(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+        project_name: str,
+        version: str,
+        occurrence: int,
+    ) -> None:
+        response = application.patch(
+            f"/api/v1/projects/{project_name}/campaigns/{version}/{occurrence}",
+            json={"status": "in progress", "description": "wonderful"},
+            headers=logged,
+        )
+        assert response.status_code == 404, response.text
+
+    def test_patch_campaign_error_500(
+        self: "TestRestCampaign",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        with patch("app.routers.rest.project_campaigns.pg_update_campaign_occurrence") as rp:
+            rp.return_value = ApplicationError(error=ApplicationErrorCode.database_no_update, message="No update")
+            response = application.patch(
+                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+                json={"status": "in progress", "description": "wonderful"},
+                headers=logged,
+            )
+            assert response.status_code == 500

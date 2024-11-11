@@ -3,6 +3,9 @@
 "/": {"get": "base dashboard",
       "api": {
         "v1": {
+            "status": {
+                "get": "Retrieve asynchronous task status"
+            },
             "settings" : {
                 "projects": {
                     "get": "List of registered projects",
@@ -27,6 +30,7 @@
                         "get": "Retrieve campaigns in project",
                         "post": "Create a new occurrence for the campaigns (first one if none)",
                         "<version>": {
+                            "get": "Retrieve all campaign statuses and version coverage **TODO**",
                             "<occurrence>": {
                                 "get": "Retrieve the campaign-occurrence",
                                 "put": "Fill occurrence with ticket and scenario",

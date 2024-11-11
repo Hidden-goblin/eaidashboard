@@ -53,27 +53,38 @@ def if_error_raise_http(
     headers: dict = None,
     to_json: bool = False,
 ) -> T | HTTPException | JSONResponse:
-    """Return the input variable or raise HTTPException"""
+    """Return the input variable or raise HTTPException
+
+    Returns:
+        object:
+    """
     if isinstance(
         result_to_test,
         ApplicationError,
     ):
         log_error(f"Code: {result_to_test.error}: {result_to_test.message}")
-        if result_to_test.error.value < 100:
-            raise HTTPException(
-                404,
-                result_to_test.message,
-            )
-        elif result_to_test.error.value < 200:
-            raise HTTPException(
-                400,
-                result_to_test.message,
-            )
-        else:
-            raise HTTPException(
-                500,
-                result_to_test.message,
-            )
+        match result_to_test.error.value:
+            case result_to_test.error.value if result_to_test.error.value < 100:
+                raise HTTPException(
+                    404,
+                    result_to_test.message,
+                )
+            case 100:
+                raise HTTPException(
+                    409,
+                    result_to_test.message,
+                )
+            case result_to_test.error.value if result_to_test.error.value < 200:
+                raise HTTPException(
+                    400,
+                    result_to_test.message,
+                )
+            case _:
+                raise HTTPException(
+                    500,
+                    result_to_test.message,
+                )
+
     if to_json:
         return JSONResponse(
             content=jsonable_encoder(result_to_test),

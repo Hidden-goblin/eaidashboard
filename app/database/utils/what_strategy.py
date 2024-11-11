@@ -74,7 +74,7 @@ class EpicStaked(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select run_date, "
                     "count(epic_id) filter (where status = %s) as passed, "
@@ -133,7 +133,7 @@ class EpicMap(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select ter.run_date, ter.epic_id, ter.status, ep.name "
                     "from test_epic_results as ter "
@@ -204,7 +204,7 @@ class FeatureStaked(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select run_date, "
                     "count(feature_id) filter (where status = %s) as "
@@ -266,7 +266,7 @@ class FeatureMap(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select ter.run_date, ter.feature_id, ter.status, ep.name "
                     "from test_feature_results as ter "
@@ -337,7 +337,7 @@ class ScenarioStaked(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select run_date, "
                     "count(scenario_id) filter (where status = %s) as "
@@ -403,7 +403,7 @@ class ScenarioMap(WhatStrategy):
                     version,
                     campaign_occurrence,
                 )
-                campaign_id = campaign_id[0]
+                campaign_id = campaign_id.campaign_id
                 result = connection.execute(
                     "select ter.run_date, ter.scenario_id, ter.status,"
                     " concat (ft.name,'--', ep.scenario_id)"

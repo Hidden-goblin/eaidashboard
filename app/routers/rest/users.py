@@ -16,6 +16,7 @@ from app.database.postgre.pg_users import (
     self_update_user,
     update_user,
 )
+from app.database.utils.object_existence import if_error_raise_http
 from app.schema.error_code import ErrorMessage
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateMe, UpdateUser, User, UserLight
@@ -138,19 +139,21 @@ async def patch_user(
     tags=["Users"],
     description="""Update a user. Only admin can do so.""",
     response_model=RegisterVersionResponse,
+    responses={
+        400: {"model": ErrorMessage, "description": "Request fail on type or value"},
+        409: {"model": ErrorMessage, "description": "Fail the uniqueness constraint"},
+        500: {"model": ErrorMessage, "description": "Computation error"},
+    },
 )
 async def create_update(
     body: UpdateUser,
     user: User = Security(authorize_user, scopes=["admin"]),
 ) -> RegisterVersionResponse:
     try:
-        return create_user(body)
-    except IncorrectFieldsRequest as ifr:
-        raise HTTPException(400, ", ".join(ifr.args)) from ifr
-    except ProjectNotRegistered as pnr:
-        raise HTTPException(404, ", ".join(pnr.args)) from pnr
+        user_resp = create_user(body)
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
+    return if_error_raise_http(user_resp)
 
 
 @router.delete(

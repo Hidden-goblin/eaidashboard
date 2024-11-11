@@ -141,6 +141,8 @@ The docker-hub link for [app image](https://hub.docker.com/r/hiddengob/eaidashbo
 
 <a class="link-primary" hx-get="/documentation/00-br_rights.md">Roles and permissions</a>
 
+<a class="link-primary" hx-get="/documentation/00-monitoring.md">Monitoring capabilities</a>
+
 
 
 

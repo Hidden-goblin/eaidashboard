@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.status_enum import TicketType
@@ -10,6 +10,11 @@ from app.schema.ticket_schema import Ticket
 
 
 class ToBeCampaign(BaseModel, extra="forbid"):
+    """
+    Attributes
+         - version: str
+    """
+
     version: str
 
     def __getitem__(
@@ -20,6 +25,14 @@ class ToBeCampaign(BaseModel, extra="forbid"):
 
 
 class ScenarioCampaign(BaseModel):
+    """
+    Attributes:
+        - scenario_id: str
+        - epic: str
+        - feature_name: str
+        - feature_filename: Optional[str]
+    """
+
     scenario_id: str
     epic: str
     feature_name: str
@@ -33,6 +46,13 @@ class ScenarioCampaign(BaseModel):
 
 
 class Scenarios(BaseModel):
+    """
+    Attributes
+        - epic: str
+        - feature_name: str
+        - scenarios_ids: List[str]
+    """
+
     epic: str
     feature_name: str
     scenario_ids: List[str]
@@ -45,6 +65,12 @@ class Scenarios(BaseModel):
 
 
 class TicketScenarioCampaign(BaseModel):
+    """
+    Attributes
+        - ticket_reference: str
+        - scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]]
+    """
+
     ticket_reference: str
     scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]] = None
 
@@ -56,6 +82,15 @@ class TicketScenarioCampaign(BaseModel):
 
 
 class CampaignLight(BaseModel):
+    """
+    Attributes
+        - project_name: str
+        - version: str
+        - occurrence: int
+        - description: Optional[str]
+        - status: CampaignStatusEnum
+    """
+
     project_name: str
     version: str
     occurrence: int
@@ -70,6 +105,16 @@ class CampaignLight(BaseModel):
 
 
 class Scenario(BaseModel):
+    """
+    Attributes
+        - epic_id: str
+        - feature_id: str
+        - scenario_id: str
+        - name: str
+        - steps: str
+        - status: ScenarioStatusEnum | TestResultStatusEnum
+    """
+
     # TODO: Fix serialized warning
     epic_id: str
     feature_id: str
@@ -93,10 +138,29 @@ class Scenario(BaseModel):
 
 
 class ScenarioInternal(Scenario):
+    """
+    Attributes
+        - epic_id: str
+        - feature_id: str
+        - scenario_id: str
+        - internal_id: str
+        - name: str
+        - steps: str
+        - status: ScenarioStatusEnum | TestResultStatusEnum
+    """
+
     internal_id: int
 
 
 class TicketScenario(BaseModel):
+    """
+    Attributes
+        - reference: str
+        - summary: str
+        - status: Optional[TicketType] = TicketType.OPEN
+        - scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
+    """
+
     reference: str
     summary: str
     status: Optional[TicketType] = TicketType.OPEN
@@ -110,9 +174,43 @@ class TicketScenario(BaseModel):
 
 
 class CampaignFull(CampaignLight):
+    """
+    Attributes
+        - project_name: str
+        - version: str
+        - occurrence: int
+        - description: Optional[str]
+        - status: CampaignStatusEnum
+        - tickets: Optional[list[TicketScenario | Ticket]] = []
+    """
+
     tickets: Optional[list[TicketScenario | Ticket]] = []
 
 
 class CampaignPatch(BaseModel):
-    status: CampaignStatusEnum
-    description: Optional[str]
+    """
+    Attributes
+        - status: CampaignStatusEnum
+        - description: Optional[str]
+    """
+
+    status: Optional[CampaignStatusEnum] = None
+    description: Optional[str] = None
+
+    @model_validator(mode="before")
+    def check_at_least_one(cls: "CampaignPatch", ticket: "CampaignPatch"):  # noqa: ANN101, ANN201
+        keys = ("description", "status")
+        if all(ticket.get(key) is None for key in keys):
+            raise ValueError(f"CampaignPatch must have at least one key of '{keys}'")
+        return ticket
+
+
+class FillCampaignResult(BaseModel):
+    """
+    Attributes:
+        - campaign_ticket_id: str | int
+        - errors: List
+    """
+
+    campaign_ticket_id: str | int
+    errors: List = []

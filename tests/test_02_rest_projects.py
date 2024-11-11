@@ -7,6 +7,7 @@ import pytest
 from starlette.testclient import TestClient
 
 
+# noinspection PyUnresolvedReferences
 class TestRestProjects:
     def test_get_projects(
         self: "TestRestProjects",
@@ -140,7 +141,7 @@ class TestRestProjects:
         assert response.status_code == 404
         assert response.json() == {"detail": "'tests' is not registered"}
 
-    def test_create_version_errors_400(
+    def test_create_version_errors_409(
         self: "TestRestProjects",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -150,7 +151,7 @@ class TestRestProjects:
             json={"version": "1.0.0"},
             headers=logged,
         )
-        assert response.status_code == 400
+        assert response.status_code == 409
         assert response.json() == {
             "detail": "duplicate key value violates unique constraint"
             ' "unique_project_version"\nDETAIL:'

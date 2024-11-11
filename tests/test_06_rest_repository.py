@@ -5,6 +5,7 @@ from typing import Any, Generator
 from starlette.testclient import TestClient
 
 
+# noinspection PyUnresolvedReferences
 class TestRestRepository:
     project_name = "test_repository"
 

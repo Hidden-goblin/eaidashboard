@@ -1,0 +1,15 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+'https://github.com/Hidden-goblin/eaidashboard/issues/72
+
+*[#green] Monitoring endpoint
+**[#green] Basic health
+***[#green] Provide Os system
+***[#green] Provide RAM / CPU status
+***[#green] Provide 3rd party status
+**[#green] Default prometheus exporter
+**[#orange] Miscellaneous
+***[#orange] Unit test coverage
+***[#orange] Error messages
+***[#orange] Swagger doc
+@endwbs
