@@ -52,6 +52,8 @@ psycopg = {extras = ["binary", "pool"], version = "*"}
 python-docx = "*"
 redis = "*"
 markdown = "*"
+prometheus-fastapi-instrumentator = "*"
+psutil = "*"
 
 [tool.poetry.group.dev.dependencies]
 pydeps = "*"

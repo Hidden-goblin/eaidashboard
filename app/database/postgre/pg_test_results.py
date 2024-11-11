@@ -184,13 +184,21 @@ async def insert_result(
     mg_result_uuid: str,
     rows: DictReader | List[dict] | List[Scenario],
 ) -> None:
+    """
+    Insert campaign-occurrence results at the specific date
+    Args:
+        result_date: datetime, the results are observed
+        project_name: str, the project to add results
+        version: str, the project's version to add results
+        campaign_id: int, the campaign internal id
+        is_partial: bool, mark if the results are for specific tests (True) or whole test repository (False)
+        mg_result_uuid: str, uuid of the task for reporting results
+        rows: test results to compute
+
+    Returns: None
+
+    """
     results = []
-    # results = [retrieve_tuple_data(result_date,
-    #                                project_name,
-    #                                version,
-    #                                campaign_id,
-    #                                row,
-    #                                is_partial) for row in rows]
     retrieve_tuple_data(
         result_date,
         project_name,
@@ -202,8 +210,8 @@ async def insert_result(
     )
     if not results:
         return mg_insert_test_result_done(
-            project_name,
-            mg_result_uuid,
+            key_uuid=mg_result_uuid,
+            message="No result to record",
         )
     with pool.connection() as connection:
         with connection.cursor().copy(
@@ -292,7 +300,6 @@ async def insert_result(
             for epic in epics:
                 copy.write_row(epic)
     mg_insert_test_result_done(
-        project_name,
         mg_result_uuid,
     )
 

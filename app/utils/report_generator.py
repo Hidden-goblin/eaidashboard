@@ -9,6 +9,7 @@ from app.database.postgre.pg_bugs import get_bugs
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
 from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, TicketScenario
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.project_alias import provide
@@ -306,19 +307,33 @@ async def evidence_from_ticket(ticket: TicketScenario) -> str:
 
 
 async def campaign_deliverable(
-    project_name: str, version: str, occurrence: str, deliverable_type: DeliverableTypeEnum, ticket_ref: str = None
-) -> str:
+    project_name: str,
+    version: str,
+    occurrence: str,
+    deliverable_type: DeliverableTypeEnum,
+    ticket_ref: str = None,
+) -> str | ApplicationError:
     # TODO register file
     # file:project_alias:version:occurrence:type
-    if deliverable_type == DeliverableTypeEnum.TEST_PLAN:
-        campaign = await get_campaign_content(project_name, version, occurrence)
-        filename = await test_plan_from_campaign(campaign)
-    elif deliverable_type == DeliverableTypeEnum.TER:
-        campaign = await get_campaign_content(project_name, version, occurrence)
-        filename = await test_exit_report_from_campaign(campaign)
-    elif deliverable_type == DeliverableTypeEnum.EVIDENCE:
-        ticket = await get_ticket_with_scenarios(project_name, version, occurrence, ticket_ref)
-        filename = await evidence_from_ticket(ticket)
-    else:
-        return "This value is not implemented yet."
+    match deliverable_type:
+        case DeliverableTypeEnum.TEST_PLAN:
+            campaign = await get_campaign_content(project_name, version, occurrence)
+            if isinstance(campaign, ApplicationError):
+                return campaign
+            filename = await test_plan_from_campaign(campaign)
+        case DeliverableTypeEnum.TER:
+            campaign = await get_campaign_content(project_name, version, occurrence)
+            if isinstance(campaign, ApplicationError):
+                return campaign
+            filename = await test_exit_report_from_campaign(campaign)
+        case DeliverableTypeEnum.EVIDENCE:
+            ticket = await get_ticket_with_scenarios(project_name, version, occurrence, ticket_ref)
+            if isinstance(ticket, ApplicationError):
+                return ticket
+            filename = await evidence_from_ticket(ticket)
+        case _:
+            return ApplicationError(
+                error=ApplicationErrorCode.value_error,
+                message="This value is not implemented yet.",
+            )
     return filename

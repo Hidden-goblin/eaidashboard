@@ -12,3 +12,4 @@ class RdTestResult(BaseModel):
     status: str
     created: datetime = datetime.now()
     updated: datetime = datetime.now()
+    message: str = ""

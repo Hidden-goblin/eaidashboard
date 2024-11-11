@@ -10,7 +10,9 @@ from app.database.postgre.pg_campaigns_management import create_campaign, retrie
 from app.database.postgre.pg_test_results import check_result_uniqueness
 from app.database.postgre.testcampaign import db_get_campaign_scenarios
 from app.database.redis.rs_test_result import mg_insert_test_result
+from app.schema.campaign_followup_schema import ComputeResultSchema
 from app.schema.campaign_schema import Scenario
+from app.schema.error_code import ApplicationError
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
 
 
@@ -66,7 +68,7 @@ async def insert_result(
             version,
             part_of_campaign_occurrence,
         )
-    campaign_id = campaign_id[0]
+    campaign_id = campaign_id.campaign_id
     # SPEC: Record an entry into mongo testResults and return entry uuid while importing data
     test_result_uuid = mg_insert_test_result(
         project_name,
@@ -81,33 +83,42 @@ async def insert_result(
 def __convert_scenario_status_to_three_state(
     scenarios: List[Scenario],
 ) -> None:
+    """Map the scenario statuses to the 3 states passed/failed/skipped
+    Is mocked by tests/test_10_rest_campaign_workflow.py:465
+    for test
+     tests.test_100_rest_campaign_workflow.TestRestCampaignWorkflow.test_test_manager_report_campaign_advancement
+    """
     for scenario in scenarios:
-        if scenario.status == ScenarioStatusEnum.done.value:
-            scenario.status = TestResultStatusEnum.passed.value
-        elif scenario.status == ScenarioStatusEnum.waiting_fix.value:
-            scenario.status = TestResultStatusEnum.failed.value
-        else:
-            scenario.status = TestResultStatusEnum.skipped.value
+        match scenario.status:
+            case ScenarioStatusEnum.done:
+                scenario.status = TestResultStatusEnum.passed
+            case ScenarioStatusEnum.waiting_fix:
+                scenario.status = TestResultStatusEnum.failed
+            case _:
+                scenario.status = TestResultStatusEnum.skipped
 
 
 async def register_manual_campaign_result(
     project_name: str,
     version: str,
     campaign_occurrence: str,
-) -> Tuple[str, int, List[Scenario]]:
+) -> ComputeResultSchema | ApplicationError:
     """:return test_result_uuid, campaign_id, list of scenarios"""
-    campaign_id = await retrieve_campaign_id(
+    campaign_id_status = await retrieve_campaign_id(
         project_name,
         version,
         campaign_occurrence,
     )
-    campaign_id = campaign_id[0]
+    if isinstance(campaign_id_status, ApplicationError):
+        return campaign_id_status
     test_result_uuid = mg_insert_test_result(
         project_name,
         version,
-        campaign_id,
+        campaign_id_status.campaign_id,
         True,
     )
-    scenarios = db_get_campaign_scenarios(campaign_id)
+    scenarios = db_get_campaign_scenarios(campaign_id_status.campaign_id)
     __convert_scenario_status_to_three_state(scenarios)
-    return test_result_uuid, campaign_id, scenarios
+    return ComputeResultSchema(
+        result_uuid=test_result_uuid, campaign_id=campaign_id_status.campaign_id, scenarios=scenarios
+    )

@@ -1,11 +1,12 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import asyncio
 from collections import Counter
-from typing import List, Tuple
+from typing import List
 
 from psycopg.rows import dict_row, tuple_row
 
-from app.app_exception import CampaignNotFound, ScenarioNotFound, TicketNotFound
+from app.app_exception import CampaignNotFound, ScenarioNotFound
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
 from app.database.postgre.pg_tickets import get_ticket, get_tickets_by_reference
 from app.database.postgre.testrepository import db_get_scenarios_id
@@ -15,6 +16,7 @@ from app.database.utils.transitions import ticket_authorized_transition, version
 from app.schema.campaign_schema import (
     CampaignFull,
     CampaignPatch,
+    FillCampaignResult,
     Scenario,
     ScenarioCampaign,
     ScenarioInternal,
@@ -24,6 +26,7 @@ from app.schema.campaign_schema import (
 )
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.project_schema import RegisterVersionResponse
 from app.schema.status_enum import TicketType
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
@@ -35,7 +38,7 @@ async def fill_campaign(
     version: str,
     occurrence: str,
     content: TicketScenarioCampaign,
-) -> Tuple[int, list] | Tuple[ApplicationError, list]:
+) -> FillCampaignResult | ApplicationError:
     """Attach ticket to campaign
     Attach scenarios to campaign"""
     campaign_ticket_id = await add_ticket_to_campaign(
@@ -45,13 +48,13 @@ async def fill_campaign(
         content.ticket_reference,
     )
     if isinstance(campaign_ticket_id, ApplicationError):
-        return campaign_ticket_id, []
+        return campaign_ticket_id
     if isinstance(content.scenarios, list):
         scenarios = content.scenarios
     elif isinstance(content.scenarios, ScenarioCampaign):
         scenarios = [content.scenarios]
     else:
-        return campaign_ticket_id, []
+        return FillCampaignResult(campaign_ticket_id=campaign_ticket_id, errors=[])
 
     errors = []
     try:
@@ -91,9 +94,20 @@ async def fill_campaign(
         errors.append(exception.args)
         return ApplicationError(
             error=ApplicationErrorCode.database_error,
-            message=str(exception),
-        ), errors
-    return campaign_ticket_id, errors
+            message=f"Exception: {str(exception)}\n Errors: {"\n".join(errors)}",
+        )
+
+    return (
+        FillCampaignResult(
+            campaign_ticket_id=campaign_ticket_id,
+            errors=errors,
+        )
+        if not isinstance(
+            campaign_ticket_id,
+            ApplicationError,
+        )
+        else campaign_ticket_id
+    )
 
 
 async def retrieve_campaign_ticket_id(
@@ -101,37 +115,45 @@ async def retrieve_campaign_ticket_id(
     version: str,
     occurrence: str,
     ticket_reference: str,
-) -> Tuple[int]:
+) -> ApplicationError:
     if not await is_campaign_exist(
         project_name,
         version,
         occurrence,
     ):
-        raise CampaignNotFound(
-            f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found"
+        return ApplicationError(
+            error=ApplicationErrorCode.campaign_not_found,
+            message=f"Campaign occurrence {occurrence} for project {project_name} in version {version} not found",
         )
-    campaign_id = await retrieve_campaign_id(
-        project_name,
-        version,
-        occurrence,
-    )
+    async with asyncio.TaskGroup() as tg:
+        campaign_id = tg.create_task(
+            retrieve_campaign_id(
+                project_name,
+                version,
+                occurrence,
+            ),
+        )
 
-    ticket = await get_ticket(
-        project_name,
-        version,
-        ticket_reference,
-    )
-    if not ticket:
-        raise TicketNotFound(
-            f"Ticket {ticket_reference} does not belong to project {project_name}," f" version {version}"
+        ticket = tg.create_task(
+            get_ticket(
+                project_name,
+                version,
+                ticket_reference,
+            ),
         )
+
+    if isinstance(ticket.result(), ApplicationError):
+        return ticket.result()
+
+    if isinstance(campaign_id.result(), ApplicationError):
+        return campaign_id.result()
 
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         return connection.execute(
-            "select id " "from campaign_tickets " "where campaign_id = %s " "and ticket_reference = %s;",
+            "select id from campaign_tickets where campaign_id = %s and ticket_reference = %s;",
             (
-                campaign_id[0],
+                campaign_id.result().campaign_id,
                 ticket_reference,
             ),
         ).fetchone()
@@ -157,7 +179,7 @@ async def get_campaign_content(
         connection.row_factory = dict_row
         result = connection.execute(
             "select description from campaigns where id = %s",
-            (campaign_id[0],),
+            (campaign_id.campaign_id,),
         )
         # Prepare the result
         camp = CampaignFull(
@@ -165,7 +187,7 @@ async def get_campaign_content(
             version=version,
             description=result.fetchone()["description"],
             occurrence=int(occurrence),
-            status=campaign_id[1],
+            status=campaign_id.status,
         )
         if only_status:
             return camp
@@ -178,7 +200,7 @@ async def get_campaign_content(
             "join tickets as tk on ct.ticket_id = tk.id "
             "where ct.campaign_id = %s "
             "order by ct.ticket_reference desc;",
-            (campaign_id[0],),
+            (campaign_id.campaign_id,),
         )
         # Accumulators
         tickets = set()
@@ -253,6 +275,8 @@ async def db_get_campaign_tickets(
         version,
         occurrence,
     )
+    if isinstance(campaign_id, ApplicationError):
+        return campaign_id
 
     with pool.connection() as connection:
         connection.row_factory = tuple_row
@@ -261,7 +285,7 @@ async def db_get_campaign_tickets(
             "from campaign_tickets as ct "
             "where campaign_id = %s "
             "order by ct.ticket_reference desc;",
-            (campaign_id[0],),
+            (campaign_id.campaign_id,),
         )
         tickets = result.fetchall()
         updated_tickets = list(
@@ -276,7 +300,7 @@ async def db_get_campaign_tickets(
             project_name=project_name,
             version=version,
             occurrence=occurrence,
-            status=campaign_id[1],
+            status=campaign_id.status,
             tickets=updated_tickets,
         )
 
@@ -286,23 +310,34 @@ async def db_get_campaign_ticket_scenarios(
     version: str,
     occurrence: str,
     reference: str,
-) -> List[ScenarioInternal]:
+) -> List[ScenarioInternal] | ApplicationError:
     """Retrieve scenarios associated to a ticket in a campaign"""
     if not await is_campaign_exist(
         project_name,
         version,
         occurrence,
     ):
-        raise CampaignNotFound(
-            f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found"
+        return ApplicationError(
+            error=ApplicationErrorCode.campaign_not_found,
+            message=f"Campaign occurrence {occurrence} for project {project_name} in version {version} not found",
         )
     campaign_id = await retrieve_campaign_id(
         project_name,
         version,
         occurrence,
     )
+    if isinstance(campaign_id, ApplicationError):
+        return campaign_id
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
+        exist = connection.execute(
+            "select 1 " " from campaign_tickets" " where campaign_id = %s" " and ticket_reference = %s;",
+            (
+                campaign_id.campaign_id,
+                reference,
+            ),
+        )
         result = connection.execute(
             "select sc.scenario_id as scenario_id,"
             " sc.name as name,"
@@ -320,11 +355,18 @@ async def db_get_campaign_ticket_scenarios(
             " where ct.campaign_id = %s"
             " and ct.ticket_reference = %s;",
             (
-                campaign_id[0],
+                campaign_id.campaign_id,
                 reference,
             ),
         )
-        return [ScenarioInternal(**res) for res in result.fetchall()]
+        return (
+            [ScenarioInternal(**res) for res in result.fetchall()]
+            if exist.fetchone()
+            else ApplicationError(
+                error=ApplicationErrorCode.ticket_not_found,
+                message=f"Could not find {reference} in the campaign",
+            )
+        )
 
 
 async def db_get_campaign_ticket_scenarios_status_count(
@@ -359,7 +401,7 @@ async def db_get_campaign_ticket_scenarios_status_count(
             " where ct.campaign_id = %s"
             " and ct.ticket_reference = %s;",
             (
-                campaign_id[0],
+                campaign_id.campaign_id,
                 reference,
             ),
         )
@@ -373,15 +415,16 @@ async def db_get_campaign_ticket_scenario(
     occurrence: str,
     reference: str,
     scenario_internal_id: str,
-) -> dict:
+) -> dict | ApplicationError:
     """Todo Add schema to ticket_scenario"""
     if not await is_campaign_exist(
         project_name,
         version,
         occurrence,
     ):
-        raise CampaignNotFound(
-            f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found"
+        return ApplicationError(
+            error=ApplicationErrorCode.campaign_not_found,
+            message=f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found",
         )
     campaign_ticket_id = await retrieve_campaign_ticket_id(
         project_name,
@@ -389,6 +432,9 @@ async def db_get_campaign_ticket_scenario(
         occurrence,
         reference,
     )
+    if isinstance(campaign_ticket_id, ApplicationError):
+        return campaign_ticket_id
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
         result = connection.execute(
@@ -415,13 +461,16 @@ async def db_put_campaign_ticket_scenarios(
     occurrence: str,
     reference: str,
     scenarios: List[Scenarios],
-) -> None:
+) -> ApplicationError | RegisterVersionResponse:
     campaign_ticket_id = await retrieve_campaign_ticket_id(
         project_name,
         version,
         occurrence,
         reference,
     )
+    if isinstance(campaign_ticket_id, ApplicationError):
+        return campaign_ticket_id
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
         # Get scenario_internal_id ids
@@ -448,6 +497,9 @@ async def db_put_campaign_ticket_scenarios(
             ),
         )
         rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
+    return RegisterVersionResponse(
+        inserted_id=campaign_ticket_id[0], acknowledge=True, message="Miss linked scenario ids"
+    )
 
 
 async def db_delete_campaign_ticket_scenario(
@@ -488,17 +540,20 @@ async def db_set_campaign_ticket_scenario_status(
     reference: str,
     scenario_internal_id: str,
     new_status: str,
-) -> dict:
+) -> dict | ApplicationError:
+    # TODO: create model to replace 'dict' response
     campaign_ticket_id = await retrieve_campaign_ticket_id(
         project_name,
         version,
         occurrence,
         reference,
     )
+    if isinstance(campaign_ticket_id, ApplicationError):
+        return campaign_ticket_id
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rs_invalidate_file(f"file:{provide(project_name)}:{version}:{occurrence}:*")
-        return connection.execute(
+        result = connection.execute(
             "update campaign_ticket_scenarios as cts "
             "set status = %s "
             # "from scenarios as sc "
@@ -512,6 +567,14 @@ async def db_set_campaign_ticket_scenario_status(
                 scenario_internal_id,
             ),
         ).fetchone()
+    return (
+        result
+        if result
+        else ApplicationError(
+            error=ApplicationErrorCode.ticket_not_found,
+            message="Cannot find the scenario linked to the campaign to update the status",
+        )
+    )
 
 
 def db_is_scenario_internal_id_exist(

@@ -7,6 +7,7 @@ import pytest
 from starlette.testclient import TestClient
 
 
+# noinspection PyUnresolvedReferences
 class TestRestUsers:
     project_name = "test_users"
     second_project_name = "test_users2"
@@ -191,6 +192,18 @@ class TestRestUsers:
         assert response.status_code == 200
         assert response.json()["access_token"]
 
+    def test_create_user_duplicate_error(
+        self: "TestRestUsers",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        response = application.post(
+            "/api/v1/users",
+            json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+            headers=logged,
+        )
+        assert response.status_code == 409
+
     def test_update_user_error_401(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -309,7 +322,7 @@ class TestRestUsers:
 
         # Where token expired get not authenticated
         response = application.delete("/api/v1/token", headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 200
+        assert response.status_code == 204
 
         response = application.post(
             f"/api/v1/projects/{TestRestUsers.project_name}/bugs",

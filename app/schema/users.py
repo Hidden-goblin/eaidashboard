@@ -6,6 +6,11 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+
+
 class UpdateMe(BaseModel):
     password: str
     new_password: str

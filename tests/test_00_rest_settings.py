@@ -3,10 +3,12 @@
 from typing import Any, Generator
 from unittest.mock import patch
 
+import jwt
 import pytest
 from starlette.testclient import TestClient
 
 
+# noinspection PyUnresolvedReferences
 class TestSettings:
     def test_log_in_errors(
         self: "TestSettings",
@@ -67,7 +69,7 @@ class TestSettings:
             "/api/v1/token",
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 204, response.text
 
     def test_registered_projects_200(
         self: "TestSettings",
@@ -80,6 +82,45 @@ class TestSettings:
         )
         assert response.status_code == 200
         assert response.json() == []
+
+    def test_authorization_error_no_email(
+        self: "TestSettings",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        with patch("app.database.authorization.token_user") as rp:
+            rp.return_value = None
+            response = application.get(
+                "/api/v1/settings/projects",
+                headers=logged,
+            )
+            assert response.status_code == 401, response.text
+
+    def test_authorization_error_user_not_found(
+        self: "TestSettings",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        with patch("app.database.authorization.get_user") as rp:
+            rp.return_value = None
+            response = application.get(
+                "/api/v1/settings/projects",
+                headers=logged,
+            )
+            assert response.status_code == 401, response.text
+
+    def test_authorization_error_signature_error(
+        self: "TestSettings",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        with patch("app.database.authorization.token_user") as rp:
+            rp.side_effect = jwt.InvalidSignatureError("Error")
+            response = application.get(
+                "/api/v1/settings/projects",
+                headers=logged,
+            )
+            assert response.status_code == 401, response.text
 
     def test_registered_projects_errors_500(
         self: "TestSettings",

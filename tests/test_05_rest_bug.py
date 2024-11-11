@@ -11,6 +11,7 @@ from app.schema.status_enum import BugStatusEnum
 from tests.conftest import error_message_extraction
 
 
+# noinspection PyUnresolvedReferences
 class TestRestBug:
     project_name = "test_bug"
     current_version = "1.0.0"

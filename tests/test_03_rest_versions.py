@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 from tests.conftest import error_message_extraction
 
 
+# noinspection PyUnresolvedReferences
 class TestRestVersions:
     project_name = "test"
     project_version = "1.0.1"
@@ -115,7 +116,7 @@ class TestRestVersions:
             {"loc": ["body", "description"], "msg": "Field required", "type": "missing"},
         ]
 
-    def test_add_ticket_errors_400(
+    def test_add_ticket_errors_409(
         self: "TestRestVersions",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -125,7 +126,7 @@ class TestRestVersions:
             json={"reference": "ref-001", "description": "Description"},
             headers=logged,
         )
-        assert response.status_code == 400
+        assert response.status_code == 409
         assert response.json()["detail"] == (
             "duplicate key value violates unique constraint "
             '"unique_ticket_project"\n'

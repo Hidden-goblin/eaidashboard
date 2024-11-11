@@ -770,20 +770,22 @@ async def front_campaign_occurrence_snapshot_status(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        test_result_uuid, campaign_id, scenarios = await register_manual_campaign_result(
+        result = await register_manual_campaign_result(
             project_name,
             version,
             occurrence,
         )
+        if isinstance(result, ApplicationError):
+            raise Exception(result.message)
         background_task.add_task(
             pg_insert_result,
             datetime.datetime.now(),
             project_name,
             version,
-            campaign_id,
+            result.campaign_id,
             True,
-            test_result_uuid,
-            scenarios,
+            result.result_uuid,
+            result.scenarios,
         )
         background_task.add_task(
             rs_invalidate_file,
@@ -795,7 +797,7 @@ async def front_campaign_occurrence_snapshot_status(
                 "request": request,
                 "highlight": "Your request has been taken in " "account.",
                 "sequel": " The application is processing data.",
-                "advise": f"You might see the status for " f"{test_result_uuid}.",
+                "advise": f"You might see the status for " f"{result.result_uuid}.",
             },
             headers={"HX-Retarget": "#messageBox"},
         )

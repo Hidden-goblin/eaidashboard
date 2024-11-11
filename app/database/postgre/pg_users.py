@@ -7,7 +7,7 @@ import psycopg.errors
 from psycopg.rows import dict_row, tuple_row
 from psycopg.types.json import Json
 
-from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered
+from app.app_exception import InvalidDeletion, ProjectNotRegistered
 from app.database.redis.token_management import revoke
 from app.database.utils.password_management import get_password_hash
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
@@ -36,7 +36,7 @@ def init_user() -> None:
 
 def create_user(
     user: UpdateUser,
-) -> RegisterVersionResponse:
+) -> RegisterVersionResponse | ApplicationError:
     """
     SPEC Cannot create a user without a password and a username
     SPEC Cannot create a user which scopes contain non-existing project
@@ -46,9 +46,15 @@ def create_user(
     """
     log_message(f"Create user {user.username} with {user.scopes}")
     if user.password is None or user.password == "":
-        raise IncorrectFieldsRequest("Cannot create user without password")
+        return ApplicationError(
+            error=ApplicationErrorCode.value_error,
+            message="Cannot create user without password",
+        )
     if user.scopes:
-        _check_scopes(user.scopes)
+        try:
+            _check_scopes(user.scopes)
+        except ProjectNotRegistered as pnr:
+            return ApplicationError(error=ApplicationErrorCode.project_not_registered, message=" ".join(pnr.args))
     else:
         user.scopes["*"] = "user"
     try:
@@ -68,16 +74,28 @@ def create_user(
             )
     except psycopg.errors.UniqueViolation as uve:
         log_error("\n".join(uve.args))
-        raise
+        return ApplicationError(
+            error=ApplicationErrorCode.duplicate_element,
+            message="Violate the uniqueness constraint",
+        )
     except TypeError as te:
         log_error("\n".join(te.args))
-        raise
+        return ApplicationError(
+            error=ApplicationErrorCode.type_error,
+            message="Unexpected type for an argument",
+        )
     except ValueError as ve:
         log_error("\n".join(ve.args))
-        raise
+        return ApplicationError(
+            error=ApplicationErrorCode.value_error,
+            message="Unexpected value for an argument",
+        )
     except Exception as exception:
         log_error("\n".join(exception.args))
-        raise
+        return ApplicationError(
+            error=ApplicationErrorCode.database_error,
+            message="Computation error",
+        )
 
 
 def _check_scopes(

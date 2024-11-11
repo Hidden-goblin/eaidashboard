@@ -6,8 +6,10 @@ from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
+from app.schema.campaign_followup_schema import CampaignIdStatus
 from app.schema.campaign_schema import CampaignLight, CampaignPatch
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
+from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
@@ -138,8 +140,9 @@ async def retrieve_campaign_id(
     project_name: str,
     version: str,
     occurrence: str,
-) -> Tuple[int, str] | ApplicationError:
+) -> CampaignIdStatus | ApplicationError:
     """get campaign internal id and status"""
+    # ToDO: Add model response
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
@@ -159,23 +162,10 @@ async def retrieve_campaign_id(
                 error=ApplicationErrorCode.occurrence_not_found,
                 message=f"Occurrence '{occurrence}' not found",
             )
-        return row
-
-
-async def retrieve_all_campaign_id_for_version(
-    project_name: str,
-    version: str,
-) -> List[Tuple[int, str]]:
-    """Get campaigns internal id and status"""
-    with pool.connection() as connection:
-        connection.row_factory = tuple_row
-        return connection.execute(
-            "select id, status" " from campaigns" " where project_id = %s " " and version = %s ",
-            (
-                project_name,
-                version,
-            ),
-        ).fetchall()
+        return CampaignIdStatus(
+            campaign_id=row[0],
+            status=CampaignStatusEnum(row[1]),
+        )
 
 
 async def is_campaign_exist(
@@ -184,16 +174,14 @@ async def is_campaign_exist(
     occurrence: str,
 ) -> bool:
     """Check if campaign exist"""
-    try:
-        return bool(
-            await retrieve_campaign_id(
-                project_name,
-                version,
-                occurrence,
-            )
-        )
-    except Exception:
-        return False
+    return isinstance(
+        await retrieve_campaign_id(
+            project_name,
+            version,
+            occurrence,
+        ),
+        CampaignIdStatus,
+    )
 
 
 async def enrich_tickets_with_campaigns(
@@ -238,7 +226,7 @@ async def update_campaign_occurrence(
     version: str,
     occurrence: str,
     update_occurrence: CampaignPatch,
-) -> List[str] | ApplicationError:
+) -> PGResult | ApplicationError:
     campaign_id = await retrieve_campaign_id(
         project_name,
         version,
@@ -260,8 +248,9 @@ async def update_campaign_occurrence(
             values.append(
                 update_occurrence.description,
             )
-        values.append(campaign_id[0])
+        values.append(campaign_id.campaign_id)
         query_full = "update campaigns" f" set {', '.join(query)}" " where id = %s;"
+
         rows = connection.execute(
             query_full,
             values,
@@ -271,7 +260,16 @@ async def update_campaign_occurrence(
         )
         connection.commit()
 
-    return rows
+    return (
+        PGResult(
+            message="Update done",
+        )
+        if rows.statusmessage == "UPDATE 1"
+        else ApplicationError(
+            message=rows.statusmessage,
+            error=ApplicationErrorCode.database_no_update,
+        )
+    )
 
 
 def merge_failing_scenario(
