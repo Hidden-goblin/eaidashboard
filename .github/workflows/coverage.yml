@@ -1,0 +1,46 @@
+name: Update Coverage Badge on README
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  update-readme-coverage:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install coverage  # or include any other necessary dependencies
+
+    - name: Run tests and generate coverage
+      run: |
+        coverage run -m pytest
+        coverage report
+        coverage json -o coverage.json  # Generates a JSON report to access coverage data
+
+    - name: Update SVG coverage badge
+      run: |
+        COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent'])")
+        echo "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='20'><text x='10' y='15' fill='black'>Coverage: ${COVERAGE}%</text></svg>" > coverage_badge.svg
+
+    - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git checkout main
+        git add coverage_badge.svg
+        git commit -m "Update coverage badge SVG [skip ci]"
+        git push origin main

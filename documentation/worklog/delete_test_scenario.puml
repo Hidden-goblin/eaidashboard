@@ -1,0 +1,48 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+'https://github.com/Hidden-goblin/eaidashboard/issues/6
+
+* Delete test scenario
+** Database update
+*** Update scenario table to handle the deleted state
+*** Upgrade scenario script
+*** Update get scenario queries
+****: Deleted scenario can't be selected on
+  - new campaign
+  - updating existing campaign;
+****: Deleted scenario appears on
+    - existing campaign;
+*** Delete function
+** API
+*** GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios
+****[#green] Tests
+**** Implementation
+*** GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
+****[#green] Tests
+**** Implementation
+*** DELETE  /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
+****[#green] Tests
+**** Implementation
+** Front GUI
+*** On repository allow to delete a scenario
+**** Update the GUI
+**** Add an action element to delete (with confirmation)
+****: Implement the delete action
+DELETE /front/v1/projects/{project}/repository/scenarios/{scenario}
+;
+** Miscellaneous
+*** Coverage svg badge on README
+*** Documentation
+*** Workflow
+**** API
+**** Front
+*** Load test
+
+legend right
+   Deleting a scenario must not impact existing campaign
+   Deleting a scenario cannot be undone at UI or API level
+   Deleting all scenarios within a feature doesn't delete the feature
+   Reimporting a scenario doesn't create a new scenario
+endlegend
+
+@endwbs

@@ -61,7 +61,16 @@
                         "get": "Retrieve project's epics",
                         "<epic_ref>": {
                             "features": {
-                                "get": "Retrieve epic's features"
+                                "get": "Retrieve epic's features",
+                                "<feature_ref>": {
+                                        "scenarios": {
+                                            "get": "retrieve feature's scenario",
+                                            "<scenario_ref>" :{
+                                                "get": "retrieve scenario",
+                                                "delete": "remove scenario access"
+                                            }
+                                        }
+                                }
                             }
                         }
                     },
@@ -142,7 +151,18 @@
                         }
                     },
                     "repository": {
-                        "get": "Repository tab"
+                        "get": "Repository tab",
+                        "get + req = FORM": "Form to upload a repository",
+                        "post": "Create update repository",
+                        "epics-features": {
+                            "get": "epics and feature dropdowns"
+                        },
+                        "scenarios": {
+                            "get": "Paginated table of scenarios",
+                            "<scenario_ref>": {
+                                "delete": "Delete scenario"
+                            }
+                        }
                     },
                     "campaigns": {
                         "get": "Campaigns tab",
