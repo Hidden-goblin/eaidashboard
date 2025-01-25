@@ -43,14 +43,14 @@ jobs:
           poetry install --with dev
       - name: Run tests with coverage
         env:
-          PG_USR: ${{ secrets.PG_USR }}
-          PG_PWD: ${{ secrets.PG_PWD }}
+          PG_USR: postgres
+          PG_PWD: postgres
           PG_URL: localhost
-          PG_PORT: ${{ secrets.PG_PORT }}
+          PG_PORT: 5432
           REDIS_URL: localhost
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_PORT: 6379
           TIMEDELTA: 3600
-          SESSION_KEY: ${{ secrets.SESSION_KEY }}
+          SESSION_KEY: poiuytrezz
         run: |
             mkdir app/static
             poetry run coverage run -m pytest
