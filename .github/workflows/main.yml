@@ -6,15 +6,6 @@ jobs:
   test:
     environment: eaidashboard
     runs-on: ubuntu-latest
-    env:
-      PG_USR: ${{ secrets.PG_USR }}
-      PG_PWD: ${{ secrets.PG_PWD }}
-      PG_URL: ${{ secrets.PG_URL }}
-      PG_PORT: ${{ secrets.PG_PORT }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      TIMEDELTA: 3600
-      SESSION_KEY: ${{ secrets.SESSION_KEY }}
     services:
       postgres:
         image: postgres
@@ -31,7 +22,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -39,8 +29,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pipenv
-          pipenv install --dev
+          pip install poetry
+          poetry install --with dev
       - name: Run tests with coverage
         env:
           PG_USR: postgres
@@ -53,6 +43,5 @@ jobs:
           SESSION_KEY: poiuytrezz
         run: |
             mkdir app/static
-            pipenv run coverage run -m pytest
-            pipenv run coverage xml
-        continue-on-error: true
+            poetry run coverage run -m pytest
+        continue-on-error: false

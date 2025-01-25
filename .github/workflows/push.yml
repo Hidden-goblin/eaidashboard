@@ -48,11 +48,17 @@ jobs:
             mkdir app/static
             poetry run coverage run -m pytest
             poetry run coverage xml
+            poetry run coverage report
+            poetry run coverage-badge -o coverage.svg
         continue-on-error: true
-      - name: Code Coverage Summary Report
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: coverage.xml
-          badge: true
-          output: both
-          format: markdown
+      - name: Commit badge
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            branch=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+            git checkout $branch
+            git add coverage.svg
+            git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
+            git push
