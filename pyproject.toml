@@ -26,13 +26,21 @@ show_missing = "true"
 [tool.coverage.html]
 directory = "cov_html"
 
-[tool.poetry]
+[tool.pytest.ini_options]
+rootdir = "."
+testpaths = "tests"
+addopts = "--order-dependencies"
+
+[project]
 name = "eaidashboard"
 version = "3.6"
 description = "Simple test campaign dashboard using FastApi, Jinja2 and redis and Postgresql database."
 authors = ["Hidden <hiddengob@free.fr>"]
 license = "GNU GPL v3"
 readme = "README.md"
+
+[tool.poetry]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
