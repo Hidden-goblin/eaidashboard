@@ -57,7 +57,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == []
 
     def test_get_campaigns_errors_404(
@@ -70,7 +70,7 @@ class TestRestCampaign:
             "/api/v1/projects/toto/campaigns",
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "'toto' is not registered"
 
         # version not found
@@ -79,7 +79,7 @@ class TestRestCampaign:
             params={"version": "3.0.0"},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "Version '3.0.0' is not found"
 
     def test_get_campaigns_errors_500(
@@ -93,7 +93,7 @@ class TestRestCampaign:
                 f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_create_campaigns_errors_401(
@@ -104,7 +104,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
             json={"version": TestRestCampaign.current_version},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     def test_create_campaigns(
@@ -117,7 +117,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {
             "project_name": TestRestCampaign.project_name,
             "version": TestRestCampaign.current_version,
@@ -147,7 +147,7 @@ class TestRestCampaign:
             json=payload,
             headers=logged,
         )
-        assert response.status_code == 422
+        assert response.status_code == 422, response.text
         assert error_message_extraction(response.json()["detail"]) == message
 
     def test_create_campaigns_errors_404_project(
@@ -160,7 +160,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "'unknown_project' is not registered"
 
     def test_create_campaigns_errors_404_version(
@@ -173,7 +173,7 @@ class TestRestCampaign:
             json={"version": "1.1.1"},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "Version '1.1.1' is not found"
 
     def test_create_campaigns_errors_500(
@@ -188,7 +188,7 @@ class TestRestCampaign:
                 json={"version": TestRestCampaign.current_version},
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_fill_campaign_errors_401(
@@ -199,7 +199,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
             json={"version": TestRestCampaign.current_version},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     def test_fill_campaign(
@@ -212,7 +212,7 @@ class TestRestCampaign:
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {"campaign_ticket_id": 1, "errors": []}
 
     def test_fill_campaign_200_no_error_on_duplicate(
@@ -225,7 +225,7 @@ class TestRestCampaign:
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {"campaign_ticket_id": 1, "errors": []}
 
     campaign_error_404 = [
@@ -275,7 +275,7 @@ class TestRestCampaign:
             json={"ticket_reference": ticket},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == message
 
     def test_get_campaigns_with_version(
@@ -288,7 +288,7 @@ class TestRestCampaign:
             params={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -309,7 +309,7 @@ class TestRestCampaign:
             params={"status": "recorded"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -333,7 +333,7 @@ class TestRestCampaign:
             },
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -354,7 +354,7 @@ class TestRestCampaign:
             params={"status": "in progress"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == []
 
     def test_get_campaigns_with_version_no_campaign(
@@ -405,7 +405,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {
             "description": None,
             "status": "recorded",
@@ -435,7 +435,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == message
 
     def test_get_campaign_errors_500(
@@ -449,7 +449,7 @@ class TestRestCampaign:
                 f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_patch_campaign_errors_401(
@@ -460,7 +460,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
             json={"status": "in progress", "description": "wonderful"},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     patch_campaign_params = [
@@ -589,4 +589,4 @@ class TestRestCampaign:
                 json={"status": "in progress", "description": "wonderful"},
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text

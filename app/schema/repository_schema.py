@@ -10,7 +10,7 @@ class Feature(BaseModel):
     tags: Optional[str]
     filename: str
 
-    def __getitem__(self: "Feature", index: str) -> str:
+    def __getitem__(self: "Feature", index: str) -> str | None:
         return self.model_dump().get(index, None)
 
 
@@ -24,7 +24,7 @@ class Scenario(BaseModel):
     tags: str
     steps: str
 
-    def __getitem__(self: "Scenario", index: str) -> str | int:
+    def __getitem__(self: "Scenario", index: str) -> str | int | None:
         return self.model_dump().get(index, None)
 
 
@@ -36,7 +36,7 @@ class TestFeature(BaseModel):
     filename: str
     tags: str
 
-    def __getitem__(self: "TestFeature", index: str) -> str:
+    def __getitem__(self: "TestFeature", index: str) -> str | None:
         return self.model_dump().get(index, None)
 
 
@@ -49,6 +49,7 @@ class TestScenario(BaseModel):
     description: str
     steps: str
     tags: str
+    is_deleted: Optional[bool] = False
 
-    def __getitem__(self: "TestScenario", index: str) -> str | bool:
+    def __getitem__(self: "TestScenario", index: str) -> str | bool | None:
         return self.model_dump().get(index, None)

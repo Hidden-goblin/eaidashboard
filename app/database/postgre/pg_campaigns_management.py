@@ -46,94 +46,55 @@ async def create_campaign(
 
 
 async def retrieve_campaign(
-    project_name: str,
-    version: str = None,
-    status: str = None,
-    limit: int = 10,
-    skip: int = 0,
+        project_name: str,
+        version: str = None,
+        status: str = None,
+        limit: int = 10,
+        skip: int = 0,
 ) -> Tuple[List[CampaignLight], int]:
-    """Get raw campaign with version, occurrence, description and status
-    TODO: check if dict could be replace with a model
+    """Get raw campaign with version, occurrence, description, and status
+    :return List[CampaignLight], <total result>
     """
+    base_query = """
+        select project_id as project_name,
+               version as version,
+               occurrence as occurrence,
+               description as description,
+               status as status
+          from campaigns
+    """
+
+    count_query = """
+        select count(*) as total
+          from campaigns
+    """
+
+    conditions = ["project_id = %s",]
+    params = [project_name,]
+
+    # Dynamically add conditions based on inputs
+    if version:
+        conditions.append("version = %s")
+        params.append(version)
+    if status:
+        conditions.append("status = %s")
+        params.append(status)
+
+    base_query = (f"{base_query} where {' and '.join(conditions)}"
+                  f" order by version desc, occurrence desc"
+                  f" limit %s offset %s;")
+    count_query = f"{count_query} where {' and '.join(conditions)};"
+
+    params.extend([limit, skip])
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        if version is None and status is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    limit,
-                    skip,
-                ),
-            )
-        elif version is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s"
-                " and status = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    status,
-                    limit,
-                    skip,
-                ),
-            )
-        elif status is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                " and version = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    version,
-                    limit,
-                    skip,
-                ),
-            )
-        else:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                " and version = %s"
-                " and status = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    version,
-                    status,
-                    limit,
-                    skip,
-                ),
-            )
-        count = connection.execute(
-            "select count(*) as total " "from campaigns " "where project_id = %s;",
-            (project_name,),
-        )
-        return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
+
+        # Execute queries
+        conn = connection.execute(base_query, tuple(params))
+        count = connection.execute(count_query, tuple(params[:-2]))
+
+    return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
 
 
 async def retrieve_campaign_id(

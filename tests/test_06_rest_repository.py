@@ -4,10 +4,15 @@ from typing import Any, Generator
 
 from starlette.testclient import TestClient
 
+from tests.utils.context_manager import Context
+from tests.utils.project_setting import set_project
+
 
 # noinspection PyUnresolvedReferences
 class TestRestRepository:
     project_name = "test_repository"
+    second_project_name = "test.repository"
+    context = Context()
 
     def test_setup(
         self: "TestRestRepository",
@@ -17,12 +22,16 @@ class TestRestRepository:
         """setup any state specific to the execution of the given class (which
         usually contains tests).
         """
-        response = application.post(
-            "/api/v1/settings/projects",
-            json={"name": TestRestRepository.project_name},
-            headers=logged,
+        set_project(
+            TestRestRepository.project_name,
+            application,
+            logged,
         )
-        assert response.status_code == 200
+        set_project(
+            TestRestRepository.second_project_name,
+            application,
+            logged,
+        )
 
     def test_upload_repository(
         self: "TestRestRepository",
@@ -32,6 +41,12 @@ class TestRestRepository:
         with open("tests/resources/repository_as_csv.csv", "rb") as file:
             response = application.post(
                 f"/api/v1/projects/{TestRestRepository.project_name}/repository",
+                files={"file": file},
+                headers=logged,
+            )
+            assert response.status_code == 204
+            response = application.post(
+                f"/api/v1/projects/{TestRestRepository.second_project_name}/repository",
                 files={"file": file},
                 headers=logged,
             )
@@ -127,6 +142,7 @@ class TestRestRepository:
         )
         assert response.status_code == 200
         assert len(response.json()) != 0
+        TestRestRepository.context.set_context(f"{TestRestRepository.project_name}/scenarios", response.json())
 
     def test_retrieve_repository_epic_specific_scenarios(
         self: "TestRestRepository",

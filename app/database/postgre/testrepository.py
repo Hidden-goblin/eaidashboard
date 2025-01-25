@@ -77,7 +77,8 @@ async def add_scenario(
             "description = %(sc_desc)s,"
             "steps = %(sc_steps)s,"
             "tags = %(sc_tags)s,"
-            "isoutline = %(sc_outline)s "
+            "isoutline = %(sc_outline)s,"
+            "is_deleted = FALSE "
             "where scenarios.scenario_id = %(sc_id)s "
             "and scenarios.feature_id = %(ftr_id)s "
             "and scenarios.project_id = %(project)s;",
@@ -100,7 +101,7 @@ async def clean_scenario_with_fake_id(
 ) -> None:
     with pool.connection() as connection:
         connection.execute(
-            "delete from scenarios " "where " " project_id = %s and scenario_id like  %s;",
+            "delete from scenarios where project_id = %s and scenario_id like  %s;",
             (
                 project,
                 "XXX-application-undefined-id-%",
@@ -117,7 +118,7 @@ async def db_project_epics(
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = connection.execute(
-            "select name as name from epics " "where project_id = %s " "order by name " "limit %s offset %s",
+            "select name as name from epics where project_id = %s order by name limit %s offset %s",
             (
                 project.casefold(),
                 limit,
@@ -138,7 +139,10 @@ async def db_project_features(
         connection.row_factory = dict_row
         if epic is not None:
             cursor = connection.execute(
-                "select features.name as name, tags as tags, filename as filename from features "
+                "select features.name as name,"
+                " tags as tags,"
+                " filename as filename"
+                " from features "
                 "join epics on epics.id = features.epic_id "
                 "where features.project_id = %s and epics.name = %s "
                 "order by features.name "
@@ -152,7 +156,9 @@ async def db_project_features(
             )
         else:
             cursor = connection.execute(
-                "select features.name as name, tags as tags, filename as filename from features "
+                "select features.name as name,"
+                " tags as tags,"
+                " filename as filename from features "
                 "where project_id = %s "
                 "order by name "
                 "limit %s  offset %s",
@@ -173,142 +179,56 @@ async def db_project_scenarios(
     offset: int = 0,
 ) -> Tuple[List[Scenario], int]:
     """All scenarios for a project"""
+    base_query = """
+        select epics.name as epic,
+               features.name as feature_name,
+               features.filename as filename,
+               scenarios.id as scenario_tech_id,
+               scenarios.scenario_id as scenario_id,
+               scenarios.name as name,
+               scenarios.tags as tags,
+               scenarios.steps as steps
+          from scenarios
+     full join features on features.id = scenarios.feature_id
+     full join epics on epics.id = features.epic_id
+    """
+
+    count_query = """
+        select count(*) as total
+          from scenarios
+     full join features on features.id = scenarios.feature_id
+     full join epics on epics.id = features.epic_id
+    """
+
+    conditions = [
+        "scenarios.project_id = %s",
+        "scenarios.is_deleted = False",
+    ]
+    params = [project.casefold()]
+
+    if epic:
+        conditions.append("epics.name = %s")
+        params.append(epic)
+    if feature:
+        conditions.append("features.name = %s")
+        params.append(feature)
+
+    # Add conditions to the queries
+    base_query = f"""{base_query}
+                    where {' and '.join(conditions)}
+                    order by epics.name,
+                        features.filename,
+                        scenarios.scenario_id
+                    limit %s offset %s; """
+    count_query = f"{count_query} where {' and '.join(conditions)};"
+    params.extend([limit, offset])
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        cursor = None
-        count = None
-        if epic is not None and feature is not None:
-            cursor = connection.execute(
-                "select epics.name as epic, features.name as feature_name, "
-                "features.filename as filename, scenarios.id as scenario_tech_id,"
-                " scenarios.scenario_id as scenario_id,"
-                " scenarios.name as name, scenarios.tags as tags, "
-                "scenarios.steps as steps from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and epics.name = %s "
-                "and features.name = %s "
-                "order by epics.name,"
-                " features.filename,"
-                " scenarios.scenario_id "
-                "limit %s offset %s",
-                (
-                    project.casefold(),
-                    epic,
-                    feature,
-                    limit,
-                    offset,
-                ),
-            )
-            count = connection.execute(
-                "select count(*) as total from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and epics.name = %s "
-                "and features.name = %s ",
-                (
-                    project.casefold(),
-                    epic,
-                    feature,
-                ),
-            )
-        elif epic is not None:
-            cursor = connection.execute(
-                "select epics.name as epic, features.name as feature_name, "
-                "features.filename as filename, scenarios.id as scenario_tech_id,"
-                " scenarios.scenario_id as scenario_id,"
-                " scenarios.name as name, scenarios.tags as tags, "
-                "scenarios.steps as steps from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and epics.name = %s "
-                "order by epics.name,"
-                " features.filename,"
-                " scenarios.scenario_id "
-                "limit %s offset %s",
-                (
-                    project.casefold(),
-                    epic,
-                    limit,
-                    offset,
-                ),
-            )
-            count = connection.execute(
-                "select count(*) as total from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and epics.name = %s ",
-                (
-                    project.casefold(),
-                    epic,
-                ),
-            )
-        elif feature is not None:
-            cursor = connection.execute(
-                "select epics.name as epic, features.name as feature_name, "
-                "features.filename as filename, scenarios.id as scenario_tech_id,"
-                " scenarios.scenario_id as scenario_id,"
-                " scenarios.name as name, scenarios.tags as tags, "
-                "scenarios.steps as steps from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and features.name = %s "
-                "order by epics.name,"
-                " features.filename,"
-                " scenarios.scenario_id "
-                "limit %s offset %s",
-                (
-                    project.casefold(),
-                    feature,
-                    limit,
-                    offset,
-                ),
-            )
-            count = connection.execute(
-                "select count(*) as total from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "and features.name = %s ",
-                (
-                    project.casefold(),
-                    feature,
-                ),
-            )
-        else:
-            cursor = connection.execute(
-                "select epics.name as epic, features.name as feature_name, "
-                "features.filename as filename, scenarios.id as scenario_tech_id,"
-                " scenarios.scenario_id as scenario_id,"
-                " scenarios.name as name, scenarios.tags as tags, "
-                "scenarios.steps as steps"
-                " from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s "
-                "order by epics.name,"
-                " features.filename,"
-                " scenarios.scenario_id "
-                "limit %s offset %s",
-                (
-                    project.casefold(),
-                    limit,
-                    offset,
-                ),
-            )
-            count = connection.execute(
-                "select count(*) as total from scenarios "
-                "full join features on features.id = scenarios.feature_id "
-                "full join epics on epics.id = features.epic_id "
-                "where scenarios.project_id = %s ",
-                (project.casefold(),),
-            )
-        return [Scenario(**cur) for cur in cursor], count.fetchone()["total"]
+        cursor = connection.execute(base_query, tuple(params))
+        count = connection.execute(count_query, tuple(params[:-2]))
+
+    return [Scenario(**cur) for cur in cursor], count.fetchone()["total"]
 
 
 async def db_get_scenarios_id(
@@ -318,44 +238,52 @@ async def db_get_scenarios_id(
     scenarios_ref: list | str,
     feature_filename: str = None,
 ) -> List[int]:
+    """
+    Test repository scenarios technical id
+    Args:
+        project_name: Todo check if there is no issue here
+        epic_name:
+        feature_name:
+        scenarios_ref:
+        feature_filename:
+
+    Returns:
+
+    """
     if isinstance(scenarios_ref, str):
         scenarios_ref = [scenarios_ref]
+
+    base_query = """select sc.id as id
+                from scenarios as sc
+                join features as ft on sc.feature_id = ft.id
+                join epics as epc on epc.id = ft.epic_id """
+    conditions = [
+        "sc.project_id = %s ",
+        "epc.name = %s ",
+        "ft.name =  %s ",
+        "sc.scenario_id =Any(%s)",
+    ]
+    parameters = [
+        project_name,
+        epic_name,
+        feature_name,
+        scenarios_ref,
+    ]
+
+    if feature_filename is not None:
+        conditions.append("ft.filename = %s ")
+        parameters.append(feature_filename)
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        if feature_filename is None:
-            cursor = connection.execute(
-                "select sc.id as id "
-                "from scenarios as sc "
-                "join features as ft on sc.feature_id = ft.id "
-                "join epics as epc on epc.id = ft.epic_id "
-                "where sc.project_id = %s "
-                "and epc.name = %s "
-                "and ft.name =  %s "
-                "and sc.scenario_id =Any(%s);",
-                [
-                    project_name,
-                    epic_name,
-                    feature_name,
-                    scenarios_ref,
-                ],
-            )
-        else:
-            cursor = connection.execute(
-                "select sc.id as id "
-                "from scenarios as sc "
-                "join features as ft on sc.feature_id = ft.id "
-                "join epics as epc on epc.id = ft.epic_id "
-                "where sc.project_id = %s "
-                "and epc.name = %s "
-                "and ft.name =  %s "
-                "and ft.filename = %s "
-                "and sc.scenario_id =Any(%s);",
-                [
-                    project_name,
-                    epic_name,
-                    feature_name,
-                    feature_filename,
-                    scenarios_ref,
-                ],
-            )
+
+        cursor = connection.execute(
+            f"{base_query} where {' and '.join(conditions)};",
+            parameters,
+        )
         return [row["id"] for row in cursor]
+
+
+async def db_update_scenario():
+    """Update a unique scenario in database"""
+    pass

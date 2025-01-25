@@ -191,14 +191,13 @@ class TestDeleteScenario:
         self: "TestDeleteScenario",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
-            project_name: str,
-            epic_ref: str,
-            feature_ref: str,
-            scenario_ref: str,
+        project_name: str,
+        epic_ref: str,
+        feature_ref: str,
+        scenario_ref: str,
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{project_name}/epics/{epic_ref}/"
-            f"features/{feature_ref}/scenarios/{scenario_ref}",
+            f"/api/v1/projects/{project_name}/epics/{epic_ref}/" f"features/{feature_ref}/scenarios/{scenario_ref}",
             headers=logged,
         )
         assert response.status_code == 404, response.text
@@ -249,25 +248,24 @@ class TestDeleteScenario:
 
     @pytest.mark.parametrize("project_name,epic_ref,feature_ref,scenario_ref", project_epic_feature_scenario_not_found)
     def test_delete_scenario_error_404(
-            self: "TestDeleteScenario",
-            application: Generator[TestClient, Any, None],
-            logged: Generator[dict[str, str], Any, None],
-            project_name: str,
-            epic_ref: str,
-            feature_ref: str,
-            scenario_ref: str,
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+        project_name: str,
+        epic_ref: str,
+        feature_ref: str,
+        scenario_ref: str,
     ) -> None:
         response = application.delete(
-            f"/api/v1/projects/{project_name}/epics/{epic_ref}/"
-            f"features/{feature_ref}/scenarios/{scenario_ref}",
+            f"/api/v1/projects/{project_name}/epics/{epic_ref}/" f"features/{feature_ref}/scenarios/{scenario_ref}",
             headers=logged,
         )
 
         assert response.status_code == 404, response.text
 
     def test_delete_scenario_error_401(
-            self: "TestDeleteScenario",
-            application: Generator[TestClient, Any, None],
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.delete(
             f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/"
@@ -277,9 +275,9 @@ class TestDeleteScenario:
         assert response.status_code == 401, response.text
 
     def test_delete_scenario(
-            self: "TestDeleteScenario",
-            application: Generator[TestClient, Any, None],
-            logged: Generator[dict[str, str], Any, None],
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.delete(
             f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/"
