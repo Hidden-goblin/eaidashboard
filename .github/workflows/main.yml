@@ -22,7 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+        with:
+          ref: ${{ github.ref_name }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -55,6 +56,8 @@ jobs:
         run: |
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            branch=$(echo $GITHUB_REF | sed 's/refs\/heads\///')
+            git checkout $branch
             git add coverage.svg
             git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
             git push
