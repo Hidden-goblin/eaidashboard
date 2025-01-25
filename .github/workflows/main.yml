@@ -6,23 +6,14 @@ jobs:
   test:
     environment: eaidashboard
     runs-on: ubuntu-latest
-    env:
-      PG_USR: ${{ secrets.PG_USR }}
-      PG_PWD: ${{ secrets.PG_PWD }}
-      PG_URL: ${{ secrets.PG_URL }}
-      PG_PORT: ${{ secrets.PG_PORT }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      TIMEDELTA: 3600
-      SESSION_KEY: ${{ secrets.SESSION_KEY }}
     services:
       postgres:
         image: postgres
         ports:
           - 5432:5432
         env:
-          POSTGRES_USER: ${{ secrets.PG_USR }}
-          POSTGRES_PASSWORD: ${{ secrets.PG_PWD }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: testdb
       redis:
         image: redis
