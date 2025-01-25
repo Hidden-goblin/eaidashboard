@@ -18,7 +18,6 @@ from app.schema.campaign_schema import (
     CampaignPatch,
     FillCampaignResult,
     Scenario,
-    ScenarioCampaign,
     ScenarioInternal,
     Scenarios,
     TicketScenario,
@@ -27,6 +26,7 @@ from app.schema.campaign_schema import (
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.project_schema import RegisterVersionResponse
+from app.schema.repository_schema import BaseScenario
 from app.schema.status_enum import TicketType
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
@@ -51,7 +51,7 @@ async def fill_campaign(
         return campaign_ticket_id
     if isinstance(content.scenarios, list):
         scenarios = content.scenarios
-    elif isinstance(content.scenarios, ScenarioCampaign):
+    elif isinstance(content.scenarios, BaseScenario):
         scenarios = [content.scenarios]
     else:
         return FillCampaignResult(campaign_ticket_id=campaign_ticket_id, errors=[])

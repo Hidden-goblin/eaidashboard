@@ -4,7 +4,7 @@
 
 * Delete test scenario
 ** Model update
-*** Update scenario model\n with an optional is_deleted flag
+***[#green] Update scenario model\n with an optional is_deleted flag
 ** Database update
 ***[#green] Update scenario table to handle the deleted state
 ***[#green] Upgrade scenario script

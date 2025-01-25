@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, model_validator
 
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
+from app.schema.repository_schema import BaseScenario
 from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import Ticket
 
@@ -19,27 +20,6 @@ class ToBeCampaign(BaseModel, extra="forbid"):
 
     def __getitem__(
         self: "ToBeCampaign",
-        index: str,
-    ) -> str | None:
-        return self.model_dump().get(index, None)
-
-
-class ScenarioCampaign(BaseModel):
-    """
-    Attributes:
-        - scenario_id: str
-        - epic: str
-        - feature_name: str
-        - feature_filename: Optional[str]
-    """
-
-    scenario_id: str
-    epic: str
-    feature_name: str
-    feature_filename: Optional[str] = None
-
-    def __getitem__(
-        self: "ScenarioCampaign",
         index: str,
     ) -> str | None:
         return self.model_dump().get(index, None)
@@ -72,12 +52,12 @@ class TicketScenarioCampaign(BaseModel):
     """
 
     ticket_reference: str
-    scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]] = None
+    scenarios: Optional[Union[BaseScenario, List[BaseScenario]]] = None
 
     def __getitem__(
         self: "TicketScenarioCampaign",
         index: str,
-    ) -> str | ScenarioCampaign | List[ScenarioCampaign] | None:
+    ) -> str | BaseScenario | List[BaseScenario] | None:
         return self.model_dump().get(index, None)
 
 
