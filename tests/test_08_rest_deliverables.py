@@ -146,7 +146,7 @@ class TestRestDeliverables:
         campaign_occurrence: int,
     ) -> None:
         response = application.post(
-            f"/api/v1/projects/{project_name}/campaigns/{project_version}" f"/{campaign_occurrence}",
+            f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}",
             headers=logged,
         )
         assert response.status_code == 404, response.text
@@ -208,7 +208,7 @@ class TestRestDeliverables:
         campaign_occurrence: int,
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{project_name}/campaigns/{project_version}" f"/{campaign_occurrence}/deliverables",
+            f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}/deliverables",
             headers=logged,
         )
         assert response.status_code == 404, response.text

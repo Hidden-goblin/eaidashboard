@@ -80,19 +80,14 @@ def check_result_uniqueness(
     :raise DuplicateTestResults"""
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        if (
-            result := connection.execute(  # noqa: F841
-                "select 0 from test_scenario_results "
-                "where project_id = %s "
-                "and version = %s "
-                "and run_date = %s;",
-                (
-                    project_name,
-                    version,
-                    result_date,
-                ),
-            ).fetchall()
-        ):
+        if result := connection.execute(  # noqa: F841
+            "select 0 from test_scenario_results where project_id = %s and version = %s and run_date = %s;",
+            (
+                project_name,
+                version,
+                result_date,
+            ),
+        ).fetchall():
             raise DuplicateTestResults(
                 f"A test execution result exist for project '{project_name}'"
                 f" in version '{version}' run at '{result_date}'"

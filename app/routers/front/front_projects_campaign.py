@@ -469,7 +469,7 @@ async def front_get_campaign_ticket(
 
 
 @router.put(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -514,7 +514,7 @@ async def front_update_campaign_ticket_scenario_status(
 
 
 @router.get(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -559,7 +559,7 @@ async def front_update_campaign_ticket_scenario_update_form(
 
 
 @router.delete(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -727,7 +727,7 @@ async def front_campaign_occurrence_status(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        result = rs_retrieve_file(f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html")
+        result = rs_retrieve_file(f"file:{provide(project_name)}:{version}:{occurrence}:scenarios:map:text/html")
         if result is None:
             test_results = TestResults(
                 REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][RestTestResultRenderingEnum.MAP],
@@ -739,7 +739,7 @@ async def front_campaign_occurrence_status(
                 occurrence,
             )
             rs_record_file(
-                f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html",
+                f"file:{provide(project_name)}:{version}:{occurrence}:scenarios:map:text/html",
                 result,
             )
         return templates.TemplateResponse(
@@ -795,9 +795,9 @@ async def front_campaign_occurrence_snapshot_status(
             "back_message.html",
             {
                 "request": request,
-                "highlight": "Your request has been taken in " "account.",
+                "highlight": "Your request has been taken in account.",
                 "sequel": " The application is processing data.",
-                "advise": f"You might see the status for " f"{result.result_uuid}.",
+                "advise": f"You might see the status for {result.result_uuid}.",
             },
             headers={"HX-Retarget": "#messageBox"},
         )
@@ -824,7 +824,7 @@ async def front_campaign_occurrence_deliverables(
         return user
     try:
         if ticket_ref is not None:
-            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" f"{deliverable_type.value}"
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
         filename = rs_retrieve_file(key)

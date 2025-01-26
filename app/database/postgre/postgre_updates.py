@@ -30,7 +30,7 @@ POSTGRE_UPDATES = [
         "request": """alter table campaign_tickets_scenarios
          rename column ticket_name 
          to ticket_reference;""",
-        "description": "Rename column in campaign-tickets-scenarios from ticket_name" " to ticket_reference",
+        "description": "Rename column in campaign-tickets-scenarios from ticket_name to ticket_reference",
     },
     {
         "request": """alter table campaign_tickets_scenarios

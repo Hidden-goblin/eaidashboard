@@ -221,7 +221,7 @@ class TestRestUsers:
         assert response.status_code == 422
         assert response.json()["detail"][0]["loc"] == ["body"]
         assert response.json()["detail"][0]["msg"] == (
-            "Value error, UpdateUser must have at least one" " key of '('password', 'scopes')'"
+            "Value error, UpdateUser must have at least one key of '('password', 'scopes')'"
         )
         assert response.json()["detail"][0]["type"] == "value_error"
 

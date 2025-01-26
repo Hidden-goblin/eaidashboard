@@ -32,9 +32,7 @@ def update_postgres() -> None:
         connexion,
     )
     with connexion.cursor() as cursor:
-        cursor.execute(
-            "select op_order from operations " "where type = 'database' " "order by op_order desc " "limit 1;"
-        )
+        cursor.execute("select op_order from operations where type = 'database' order by op_order desc limit 1;")
         last_update = cursor.fetchone()[0]
         for index, update in enumerate(POSTGRE_UPDATES):
             if index + 1 > last_update:
@@ -61,7 +59,7 @@ def update_postgres() -> None:
                                             on conflict (type, op_order) do nothing; """,
                         (
                             index + 1,
-                            f'{update["description"]} - error {repr(exc)}',
+                            f"{update['description']} - error {repr(exc)}",
                         ),
                     )
                     connexion.commit()

@@ -370,7 +370,7 @@ class TestRestCampaignWorkflow:
         ), response.text
         response = application.get(
             f"api/v1/projects/{TestRestCampaignWorkflow.project_name}/bugs/"
-            f"{TestRestCampaignWorkflow.context.get_context("bugs/bug_id")}",
+            f"{TestRestCampaignWorkflow.context.get_context('bugs/bug_id')}",
             headers=header,
         )
         assert response.status_code == 200, response.text

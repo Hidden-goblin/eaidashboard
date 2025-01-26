@@ -62,7 +62,7 @@ def create_user(
             log_message(f"Create user {user.username} with {user.scopes}")
             conn.row_factory = tuple_row
             row = conn.execute(
-                "insert into users (username, password, scopes) " " values (%s, %s, %s)" " returning id;",
+                "insert into users (username, password, scopes)  values (%s, %s, %s) returning id;",
                 (
                     user.username,
                     get_password_hash(user.password),
@@ -187,7 +187,7 @@ def __all_users(
         connection1.row_factory = None
         connection1.row_factory = dict_row
         rows = connection1.execute(
-            "select username, scopes" " from users" " order by username" " limit %s" " offset %s;",
+            "select username, scopes from users order by username limit %s offset %s;",
             (
                 limit,
                 skip,
@@ -233,11 +233,7 @@ def __list_of_users(
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         rows = connection.execute(
-            "select username"
-            " from users"
-            " where scopes::jsonb ?| %s"
-            " or scopes ->> '*' = 'admin'"
-            " order by username;",
+            "select username from users where scopes::jsonb ?| %s or scopes ->> '*' = 'admin' order by username;",
             (f"{{{project_name}}}",),
         )
         return [row[0] for row in rows.fetchall()]
@@ -265,7 +261,7 @@ def update_user_password(
     with pool.connection() as conn:
         conn.row_factory = tuple_row
         row = conn.execute(
-            "update users " " set password = %s " " where username = %s " " returning id;",
+            "update users  set password = %s  where username = %s  returning id;",
             (
                 get_password_hash(user.password),
                 user.username,
@@ -288,7 +284,7 @@ def update_user_scopes(
         # Check project: include special project "*"
         _check_scopes(user.scopes)
         row = conn.execute(
-            "update users " " set scopes = %s " " where username = %s " " returning id;",
+            "update users  set scopes = %s  where username = %s  returning id;",
             (
                 Json(user.scopes),
                 user.username,

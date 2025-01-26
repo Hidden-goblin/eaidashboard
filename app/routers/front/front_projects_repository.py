@@ -217,7 +217,7 @@ async def filter_repository(
                 "pages": pages,
                 "current_page": current_page,
                 "nav_bar": count > 10,
-                "filter": f"&epic={body['epic']}&feature=" f"{body['feature']}",
+                "filter": f"&epic={body['epic']}&feature={body['feature']}",
             },
         )
     except Exception as exception:

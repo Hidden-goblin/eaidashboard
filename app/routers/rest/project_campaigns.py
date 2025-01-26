@@ -59,7 +59,7 @@ log = logging.getLogger(__name__)
     responses={
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case)," " the version does not exist",
+            "description": "Project name is not registered (ignore case), the version does not exist",
         },
         401: {"model": ErrorMessage, "description": "You are not authenticated"},
         422: {"model": ErrorMessage, "description": "Payload does not match the expected schema"},
@@ -136,7 +136,7 @@ async def fill_campaign(
     responses={
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case)," " the version does not exist",
+            "description": "Project name is not registered (ignore case), the version does not exist",
         },
         401: {"model": ErrorMessage, "description": "You are not authenticated"},
         500: {"model": ErrorMessage, "description": "Computation error"},

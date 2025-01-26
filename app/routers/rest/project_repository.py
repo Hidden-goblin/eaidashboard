@@ -32,24 +32,6 @@ router = APIRouter(prefix="/api/v1/projects")
 
 
 @router.get(
-    "/{project_name}/epics",
-    response_model=List[str],
-    tags=["Repository"],
-    description="Retrieve all epics linked to the project.",
-)
-async def get_epics(
-    project_name: str,
-    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
-) -> List[str]:
-    if project_name.casefold() not in await registered_projects():
-        raise HTTPException(404, detail=f"Project '{project_name}' not found")
-    try:
-        return await db_project_epics(project_name.casefold())
-    except Exception as exp:
-        raise HTTPException(500, repr(exp))
-
-
-@router.get(
     "/{project_name}/epics/{epic}/features",
     response_model=List[Feature],
     tags=["Repository"],
@@ -128,7 +110,7 @@ async def get_scenarios(
 @router.post(
     "/{project_name}/repository",
     status_code=204,
-    description="Successful request, processing data." " It might be import error during the process.",
+    description="Successful request, processing data. It might be import error during the process.",
     responses={
         # 204: {"description": "Processing data"},
         400: {"model": ErrorMessage, "description": "CSV file with no headers or bad headers"},

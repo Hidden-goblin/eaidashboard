@@ -19,7 +19,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Plan", 0)
     document.add_paragraph(
-        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        f"Campaign for {campaign.project_name} in version {campaign.version}",
         style="Subtitle",
     )
     document.add_page_break()
@@ -107,7 +107,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
             row_cells[4].text = scenario.steps
 
     filename = (
-        BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_" f"{campaign.version}_{uuid.uuid4()}.docx"
+        BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_{campaign.version}_{uuid.uuid4()}.docx"
     )  # pragma:noqa
 
     document.save(filename)
@@ -131,7 +131,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Exit Report", 0)
     document.add_paragraph(
-        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        f"Campaign for {campaign.project_name} in version {campaign.version}",
         style="Subtitle",
     )
     document.add_page_break()
@@ -240,7 +240,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     filename = (
         BASE_DIR
         / "static"
-        / (f"TER_{provide(campaign.project_name)}" f"_{campaign.version}_" f"{campaign.occurrence}{uuid.uuid4()}.docx")
+        / (f"TER_{provide(campaign.project_name)}_{campaign.version}_{campaign.occurrence}{uuid.uuid4()}.docx")
     )  # pragma:noqa
 
     document.save(filename)

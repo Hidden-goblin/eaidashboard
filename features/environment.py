@@ -179,8 +179,7 @@ def before_scenario(
         context.post_conditions = {}
         # Build the evidence folder location for the current scenario, create it and store the path in the model
         evidence_folder = Path(
-            f"evidence/{folder_file_name_cleaning(scenario.feature.name)}"
-            f"/{folder_file_name_cleaning(scenario.name)}"
+            f"evidence/{folder_file_name_cleaning(scenario.feature.name)}/{folder_file_name_cleaning(scenario.name)}"
         )
         os.makedirs(evidence_folder.absolute(), exist_ok=True)
         context.model.evidence_location = evidence_folder.absolute()
@@ -201,7 +200,7 @@ def after_scenario(context: Context, scenario: Scenario) -> None:
     try:
         log.debug(f"{scenario.name} is {scenario.status}")
         context.model.create_evidence(
-            f"{folder_file_name_cleaning(scenario.name)}-" f"{status_to_string(scenario.status)}.docx", "word"
+            f"{folder_file_name_cleaning(scenario.name)}-{status_to_string(scenario.status)}.docx", "word"
         )
         # For Web testing #######################################
         # Your model should have a method to close the current browser.

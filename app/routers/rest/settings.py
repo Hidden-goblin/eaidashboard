@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1/settings")
     responses={
         400: {
             "model": ErrorMessage,
-            "description": "Project name is not a valid one. More than 63 characters or" " contains / \\ $ character",
+            "description": "Project name is not a valid one. More than 63 characters or contains / \\ $ character",
         },
         401: {"model": ErrorMessage, "description": "You are not authenticated"},
         409: {"model": ErrorMessage, "description": "A project with this name already exist"},

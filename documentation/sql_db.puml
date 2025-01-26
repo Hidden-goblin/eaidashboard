@@ -51,6 +51,7 @@ description: text
 steps: text
 tags: text
 isoutline: boolean
+is_deleted: boolean
 --
 unique (scenario_id, feature_id, project_id)
 FK feature_id: features.id

@@ -134,7 +134,7 @@ class TestDeleteScenario:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/" f"features/Test feature/scenarios",
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/features/Test feature/scenarios",
             headers=logged,
         )
         assert response.status_code == 200, response.text
@@ -144,7 +144,7 @@ class TestDeleteScenario:
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/" f"features/Test feature/scenarios",
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/features/Test feature/scenarios",
         )
         assert response.status_code == 401, response.text
 
@@ -197,7 +197,7 @@ class TestDeleteScenario:
         scenario_ref: str,
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{project_name}/epics/{epic_ref}/" f"features/{feature_ref}/scenarios/{scenario_ref}",
+            f"/api/v1/projects/{project_name}/epics/{epic_ref}/features/{feature_ref}/scenarios/{scenario_ref}",
             headers=logged,
         )
         assert response.status_code == 404, response.text
@@ -226,8 +226,7 @@ class TestDeleteScenario:
         response = application.get(
             f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/"
             f"features/Test feature"
-            f"/scenarios/{TestDeleteScenario.context.get_context(
-                                       "repository/to_delete_scenario_tech_id")}",
+            f"/scenarios/{TestDeleteScenario.context.get_context('repository/to_delete_scenario_tech_id')}",
             headers=logged,
         )
         assert response.status_code == 200, response.text
@@ -257,7 +256,7 @@ class TestDeleteScenario:
         scenario_ref: str,
     ) -> None:
         response = application.delete(
-            f"/api/v1/projects/{project_name}/epics/{epic_ref}/" f"features/{feature_ref}/scenarios/{scenario_ref}",
+            f"/api/v1/projects/{project_name}/epics/{epic_ref}/features/{feature_ref}/scenarios/{scenario_ref}",
             headers=logged,
         )
 

@@ -196,7 +196,7 @@ class TestRestCampaign:
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"version": TestRestCampaign.current_version},
         )
         assert response.status_code == 401, response.text
@@ -208,7 +208,7 @@ class TestRestCampaign:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
@@ -221,7 +221,7 @@ class TestRestCampaign:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
@@ -271,7 +271,7 @@ class TestRestCampaign:
         message: str,
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{project}/campaigns" f"/{version}/{occurrence}",
+            f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
             json={"ticket_reference": ticket},
             headers=logged,
         )
@@ -446,7 +446,7 @@ class TestRestCampaign:
         with patch("app.routers.rest.project_campaigns.get_campaign_content") as rp:
             rp.side_effect = Exception("error")
             response = application.get(
-                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
                 headers=logged,
             )
             assert response.status_code == 500, response.text
@@ -457,7 +457,7 @@ class TestRestCampaign:
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.patch(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"status": "in progress", "description": "wonderful"},
         )
         assert response.status_code == 401, response.text
@@ -517,10 +517,10 @@ class TestRestCampaign:
             {"status": "progress", "description": "wonderful"},
             [
                 {
-                    "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or " "'paused'"},
+                    "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or 'paused'"},
                     "input": "progress",
                     "loc": ["body", "status"],
-                    "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' " "or 'paused'",
+                    "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' or 'paused'",
                     "type": "enum",
                 }
             ],
@@ -532,7 +532,7 @@ class TestRestCampaign:
                     "ctx": {"error": {}},
                     "input": {},
                     "loc": ["body"],
-                    "msg": "Value error, CampaignPatch must have at least one key of " "'('description', 'status')'",
+                    "msg": "Value error, CampaignPatch must have at least one key of '('description', 'status')'",
                     "type": "value_error",
                 }
             ],
@@ -548,7 +548,7 @@ class TestRestCampaign:
         result: list,
     ) -> None:
         response = application.patch(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json=payload,
             headers=logged,
         )
@@ -585,7 +585,7 @@ class TestRestCampaign:
         with patch("app.routers.rest.project_campaigns.pg_update_campaign_occurrence") as rp:
             rp.return_value = ApplicationError(error=ApplicationErrorCode.database_no_update, message="No update")
             response = application.patch(
-                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
                 json={"status": "in progress", "description": "wonderful"},
                 headers=logged,
             )

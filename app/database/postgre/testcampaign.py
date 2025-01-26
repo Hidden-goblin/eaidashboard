@@ -9,7 +9,7 @@ from psycopg.rows import dict_row, tuple_row
 from app.app_exception import CampaignNotFound, ScenarioNotFound
 from app.database.postgre.pg_campaigns_management import is_campaign_exist, retrieve_campaign_id
 from app.database.postgre.pg_tickets import get_ticket, get_tickets_by_reference
-from app.database.postgre.testrepository import db_get_scenarios_id
+from app.database.postgre.test_repository.scenarios_utils import db_get_scenarios_id
 from app.database.redis.rs_file_management import rs_invalidate_file
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.database.utils.transitions import ticket_authorized_transition, version_transition
@@ -66,7 +66,7 @@ async def fill_campaign(
                     scenario.epic,
                     scenario.feature_name,
                     scenario.scenario_id,
-                    scenario.feature_filename,
+                    scenario.filename,
                 )
 
                 if not scenario_id or len(scenario_id) > 1:
@@ -94,7 +94,7 @@ async def fill_campaign(
         errors.append(exception.args)
         return ApplicationError(
             error=ApplicationErrorCode.database_error,
-            message=f"Exception: {str(exception)}\n Errors: {"\n".join(errors)}",
+            message=f"Exception: {str(exception)}\n Errors: {'\n'.join(errors)}",
         )
 
     return (
@@ -266,9 +266,7 @@ async def db_get_campaign_tickets(
     ):
         return ApplicationError(
             error=ApplicationErrorCode.campaign_not_found,
-            message=f"Campaign occurrence {occurrence} "
-            f"for project {project_name} in version {version} not "
-            f"found",
+            message=f"Campaign occurrence {occurrence} for project {project_name} in version {version} not found",
         )
     campaign_id = await retrieve_campaign_id(
         project_name,
@@ -332,7 +330,7 @@ async def db_get_campaign_ticket_scenarios(
     with pool.connection() as connection:
         connection.row_factory = dict_row
         exist = connection.execute(
-            "select 1 " " from campaign_tickets" " where campaign_id = %s" " and ticket_reference = %s;",
+            "select 1  from campaign_tickets where campaign_id = %s and ticket_reference = %s;",
             (
                 campaign_id.campaign_id,
                 reference,
@@ -381,7 +379,7 @@ async def db_get_campaign_ticket_scenarios_status_count(
         occurrence,
     ):
         raise CampaignNotFound(
-            f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found"
+            f"Campaign occurrence {occurrence} for project {project_name} in version {version} not found"
         )
     campaign_id = await retrieve_campaign_id(
         project_name,
@@ -424,7 +422,7 @@ async def db_get_campaign_ticket_scenario(
     ):
         return ApplicationError(
             error=ApplicationErrorCode.campaign_not_found,
-            message=f"Campaign occurrence {occurrence} " f"for project {project_name} in version {version} not found",
+            message=f"Campaign occurrence {occurrence} for project {project_name} in version {version} not found",
         )
     campaign_ticket_id = await retrieve_campaign_ticket_id(
         project_name,
@@ -520,11 +518,11 @@ async def db_delete_campaign_ticket_scenario(
         project_name,
         scenario_internal_id,
     ):
-        raise ScenarioNotFound(f"No scenario with id {scenario_internal_id} " f"found in project {project_name}")
+        raise ScenarioNotFound(f"No scenario with id {scenario_internal_id} found in project {project_name}")
     with pool.connection() as connection:
         connection.row_factory = dict_row
         connection.execute(
-            "delete from campaign_ticket_scenarios " "where campaign_ticket_id = %s " "and scenario_id = %s ",
+            "delete from campaign_ticket_scenarios where campaign_ticket_id = %s and scenario_id = %s ",
             (
                 campaign_ticket_id[0],
                 scenario_internal_id,

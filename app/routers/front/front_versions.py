@@ -181,7 +181,7 @@ async def add_ticket_to_version(
             "error_message.html",
             {
                 "request": request,
-                "highlight": f"Ticket with {body.get('reference')} " f"reference already exist in " f"{project_name} ",
+                "highlight": f"Ticket with {body.get('reference')} reference already exist in {project_name} ",
                 "sequel": " so you cannot record it.",
                 "advise": "Check the reference or the version.",
             },
@@ -228,7 +228,7 @@ async def project_version_update(
                 "project_name": project_name,
                 "version": version,
                 "transitions": authorized_transition[StatusEnum(version.status)],
-                "message": "Started date could not be " "after end forecast date",
+                "message": "Started date could not be after end forecast date",
             },
             headers={"HX-Retarget": "#modal", "HX-Reswap": "beforeend"},
         )

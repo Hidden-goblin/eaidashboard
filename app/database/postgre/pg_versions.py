@@ -134,10 +134,7 @@ async def get_project_versions(
             ).fetchall()
         else:
             rows = connection.execute(
-                "select * "
-                " from versions as ve"
-                " join projects as pjt on pjt.id = ve.project_id "
-                " where pjt.alias = %s ;",
+                "select *  from versions as ve join projects as pjt on pjt.id = ve.project_id  where pjt.alias = %s ;",
                 (provide(project_name),),
             ).fetchall()
         for row in rows:
@@ -295,9 +292,7 @@ async def update_status_for_ticket_in_version(
         if current_ticket is None:
             return ApplicationError(
                 error=ApplicationErrorCode.ticket_not_found,
-                message=f"Ticket '{ticket_reference}' does not exist in "
-                f"project '{project_name}'"
-                f" version '{version}'",
+                message=f"Ticket '{ticket_reference}' does not exist in project '{project_name}' version '{version}'",
             )
         if current_ticket[0] != updated_status:
             row = connection.execute(
@@ -369,7 +364,7 @@ async def refresh_version_stats(
             query_data,
         ).fetchall()
 
-        query = "select count(tk.id)" " from tickets as tk" " where tk.current_version = %s" " and tk.status = %s;"
+        query = "select count(tk.id) from tickets as tk where tk.current_version = %s and tk.status = %s;"
         for version in versions:
             count_open = connection.execute(
                 query,

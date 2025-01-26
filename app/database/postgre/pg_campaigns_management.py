@@ -46,11 +46,11 @@ async def create_campaign(
 
 
 async def retrieve_campaign(
-        project_name: str,
-        version: str = None,
-        status: str = None,
-        limit: int = 10,
-        skip: int = 0,
+    project_name: str,
+    version: str = None,
+    status: str = None,
+    limit: int = 10,
+    skip: int = 0,
 ) -> Tuple[List[CampaignLight], int]:
     """Get raw campaign with version, occurrence, description, and status
     :return List[CampaignLight], <total result>
@@ -69,8 +69,12 @@ async def retrieve_campaign(
           from campaigns
     """
 
-    conditions = ["project_id = %s",]
-    params = [project_name,]
+    conditions = [
+        "project_id = %s",
+    ]
+    params = [
+        project_name,
+    ]
 
     # Dynamically add conditions based on inputs
     if version:
@@ -80,9 +84,9 @@ async def retrieve_campaign(
         conditions.append("status = %s")
         params.append(status)
 
-    base_query = (f"{base_query} where {' and '.join(conditions)}"
-                  f" order by version desc, occurrence desc"
-                  f" limit %s offset %s;")
+    base_query = (
+        f"{base_query} where {' and '.join(conditions)} order by version desc, occurrence desc limit %s offset %s;"
+    )
     count_query = f"{count_query} where {' and '.join(conditions)};"
 
     params.extend([limit, skip])
@@ -107,11 +111,7 @@ async def retrieve_campaign_id(
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
-            "select id, status"
-            " from campaigns"
-            " where project_id = %s "
-            " and version = %s "
-            " and occurrence = %s;",
+            "select id, status from campaigns where project_id = %s  and version = %s  and occurrence = %s;",
             (
                 project_name,
                 version,
@@ -210,7 +210,7 @@ async def update_campaign_occurrence(
                 update_occurrence.description,
             )
         values.append(campaign_id.campaign_id)
-        query_full = "update campaigns" f" set {', '.join(query)}" " where id = %s;"
+        query_full = f"update campaigns set {', '.join(query)} where id = %s;"
 
         rows = connection.execute(
             query_full,
@@ -299,7 +299,7 @@ def campaign_failing_scenarios(
                 " where cts.scenario_id = %(scenario_id)s"
                 " and ct.ticket_reference = %(ticket_reference)s;"
             )
-            query_bug = "select scenario_id, ticket_reference" " from bugs_issues" " where bug_id = %s;"
+            query_bug = "select scenario_id, ticket_reference from bugs_issues where bug_id = %s;"
             rows = connection.execute(
                 query_bug,
                 (bug_internal_id,),

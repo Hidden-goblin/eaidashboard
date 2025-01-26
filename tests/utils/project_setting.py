@@ -137,7 +137,7 @@ def set_campaign_scenario_status(
     for sc in scenario_status:
         response = application.get(
             f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}"
-            f"/tickets/{sc["ticket_reference"]}",
+            f"/tickets/{sc['ticket_reference']}",
             headers=logged,
         )
         assert response.status_code == 200
@@ -148,7 +148,7 @@ def set_campaign_scenario_status(
         assert __scenario_internal_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}"
-            f"/tickets/{sc["ticket_reference"]}/scenarios/{__scenario_internal_id}/status",
+            f"/tickets/{sc['ticket_reference']}/scenarios/{__scenario_internal_id}/status",
             params={"new_status": sc["status"]},
             headers=logged,
         )

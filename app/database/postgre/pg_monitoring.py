@@ -14,7 +14,7 @@ def pg_health() -> dict:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(
-            "select count(*) as connections" " from pg_stat_activity" " where datname = %s;",
+            "select count(*) as connections from pg_stat_activity where datname = %s;",
             (config["PG_DB"],),
         )
 
