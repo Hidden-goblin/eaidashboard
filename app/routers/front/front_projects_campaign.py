@@ -39,9 +39,10 @@ from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
-from app.schema.campaign_schema import CampaignPatch, Scenarios
+from app.schema.campaign_schema import CampaignPatch
 from app.schema.error_code import ApplicationError
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.respository.feature_schema import Feature
 from app.schema.rest_enum import (
     DeliverableTypeEnum,
     RestTestResultCategoryEnum,
@@ -605,25 +606,22 @@ async def add_scenarios_to_ticket(
     version: str,
     occurrence: str,
     ticket_reference: str,
-    element: dict,
+    element: Feature,
     request: Request,
     user: User = Security(front_authorize, scopes=["admin", "user"]),
 ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        valid = "scenario_ids" in element
-        if valid and not isinstance(element["scenario_ids"], list):
-            element["scenario_ids"] = [element["scenario_ids"]]
-
-        if valid:
-            await db_put_campaign_ticket_scenarios(
-                project_name,
-                version,
-                occurrence,
-                ticket_reference,
-                [Scenarios(**element)],
-            )
+        await db_put_campaign_ticket_scenarios(
+            project_name,
+            version,
+            occurrence,
+            ticket_reference,
+            [
+                element,
+            ],
+        )
         return templates.TemplateResponse(
             "void.html",
             {"request": request},

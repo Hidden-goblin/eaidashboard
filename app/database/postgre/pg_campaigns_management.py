@@ -95,6 +95,7 @@ async def retrieve_campaign(
         connection.row_factory = dict_row
 
         # Execute queries
+        # Todo add async fetch
         conn = connection.execute(base_query, tuple(params))
         count = connection.execute(count_query, tuple(params[:-2]))
 
@@ -107,7 +108,6 @@ async def retrieve_campaign_id(
     occurrence: str,
 ) -> CampaignIdStatus | ApplicationError:
     """get campaign internal id and status"""
-    # ToDO: Add model response
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
@@ -188,6 +188,7 @@ async def update_campaign_occurrence(
     occurrence: str,
     update_occurrence: CampaignPatch,
 ) -> PGResult | ApplicationError:
+    # Ensure the campaign exist
     campaign_id = await retrieve_campaign_id(
         project_name,
         version,
@@ -195,23 +196,25 @@ async def update_campaign_occurrence(
     )
     if isinstance(campaign_id, ApplicationError):
         return campaign_id
+
+    # Prepare request
+    query = []
+    values = []
+    if update_occurrence.status is not None:
+        query.append("status = %s")
+        values.append(
+            update_occurrence.status.value,
+        )
+    if update_occurrence.description is not None:
+        query.append("description = %s")
+        values.append(
+            update_occurrence.description,
+        )
+    values.append(campaign_id.campaign_id)
+    query_full = f"update campaigns set {', '.join(query)} where id = %s;"
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        query = []
-        values = []
-        if update_occurrence.status is not None:
-            query.append("status = %s")
-            values.append(
-                update_occurrence.status.value,
-            )
-        if update_occurrence.description is not None:
-            query.append("description = %s")
-            values.append(
-                update_occurrence.description,
-            )
-        values.append(campaign_id.campaign_id)
-        query_full = f"update campaigns set {', '.join(query)} where id = %s;"
-
         rows = connection.execute(
             query_full,
             values,

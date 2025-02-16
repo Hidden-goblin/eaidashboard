@@ -54,19 +54,19 @@ class TestRestDeliverables:
         {
             "ticket_reference": "td-001",
             "scenario_id": "test_1",
-            "feature_id": "New Test feature",
+            "feature_name": "New Test feature",
             "status": "in progress",
         },
         {
             "ticket_reference": "td-001",
             "scenario_id": "test_2",
-            "feature_id": "New Test feature",
+            "feature_name": "New Test feature",
             "status": "waiting fix",
         },
         {
             "ticket_reference": "td-002",
             "scenario_id": "test_2",
-            "feature_id": "Test feature",
+            "feature_name": "Test feature",
             "status": "waiting answer",
         },
     ]

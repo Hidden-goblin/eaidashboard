@@ -8,6 +8,9 @@ class Context:
 
     __context: dict = {}
 
+    def __str__(self) -> str:
+        return f"{self.__context}"
+
     def set_context(
         self: "Context",
         path: str,

@@ -374,8 +374,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
 
         response = application.get(
@@ -400,8 +400,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
 
         response = application.get(
@@ -430,8 +430,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
 
         response = application.get(
@@ -456,8 +456,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
 
         with patch("app.routers.rest.project_campaigns.db_get_campaign_ticket_scenario") as rp:
@@ -484,8 +484,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{TestRestCampaignScenario.project_name}/campaigns/"
@@ -525,8 +525,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200, response.text
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{TestRestCampaignScenario.project_name}/campaigns/"
@@ -551,8 +551,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200, response.text
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{TestRestCampaignScenario.project_name}/campaigns/"
@@ -581,8 +581,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200, response.text
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{project_name}/campaigns/"
@@ -607,8 +607,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200, response.text
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         __scenario_id += 1000  # Change the id
         response = application.put(
@@ -634,8 +634,8 @@ class TestRestCampaignScenario:
         assert response.status_code == 200
         __scenario_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == "New Test feature":
-                __scenario_id = _sc["internal_id"]
+            if _sc["feature_name"] == "New Test feature":
+                __scenario_id = _sc["scenario_tech_id"]
         assert __scenario_id is not None, "Cannot retrieve the scenario internal id"
         with patch("app.routers.rest.project_campaigns.db_set_campaign_ticket_scenario_status") as rp:
             rp.side_effect = Exception("Error")

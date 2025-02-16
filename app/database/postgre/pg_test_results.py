@@ -10,7 +10,7 @@ from app.app_exception import DuplicateTestResults
 from app.database.redis.rs_test_result import mg_insert_test_result_done
 from app.database.utils.output_strategy import OutputStrategy
 from app.database.utils.what_strategy import WhatStrategy
-from app.schema.campaign_schema import Scenario
+from app.schema.respository.scenario_schema import ScenarioExecution
 from app.utils.pgdb import pool
 
 
@@ -49,7 +49,7 @@ def retrieve_tuple_data(
                 "and sc.scenario_id = %s "
                 "and ep.project_id = %s;",
                 (
-                    row["epic_id"],
+                    row.get("epic", row.get("epic_id", None)),
                     row.get("feature_name", row.get("feature_id", None)),
                     row["scenario_id"],
                     project_name,
@@ -177,7 +177,7 @@ async def insert_result(
     campaign_id: int,
     is_partial: bool,
     mg_result_uuid: str,
-    rows: DictReader | List[dict] | List[Scenario],
+    rows: DictReader | List[dict] | List[ScenarioExecution],
 ) -> None:
     """
     Insert campaign-occurrence results at the specific date

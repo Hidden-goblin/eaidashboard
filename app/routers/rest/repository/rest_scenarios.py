@@ -7,7 +7,7 @@ from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_scenarios
 from app.database.utils.object_existence import if_error_raise_http
 from app.schema.error_code import ErrorMessage
-from app.schema.repository_schema import Scenarios
+from app.schema.respository.scenario_schema import Scenarios
 from app.schema.users import UpdateUser
 
 router = APIRouter(prefix="/api/v1/projects/{project_name}/epics/{epic_ref}/features/{feature_ref}/scenarios")
@@ -18,11 +18,10 @@ router = APIRouter(prefix="/api/v1/projects/{project_name}/epics/{epic_ref}/feat
     response_model=Scenarios,
     tags=["Repository"],
     description="Retrieve all scenarios in a feature.",
-responses={
+    responses={
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case),"
-            " the epic or feature does not exist",
+            "description": "Project name is not registered (ignore case), the epic or feature does not exist",
         },
         401: {"model": ErrorMessage, "description": "You are not authenticated"},
     },

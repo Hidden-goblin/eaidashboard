@@ -92,7 +92,7 @@ def set_project_tickets(
             json={"reference": ticket["reference"], "description": ticket["description"]},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Retrieve {response.status_code},\n\r {response.text}"
 
 
 def set_project_campaign(
@@ -131,7 +131,7 @@ def set_campaign_scenario_status(
     """Set scenario status. Expecting key:
     - ticket_reference
     - scenario_id
-    - feature_id
+    - feature_name
     - status
     """
     for sc in scenario_status:
@@ -143,8 +143,8 @@ def set_campaign_scenario_status(
         assert response.status_code == 200
         __scenario_internal_id = None
         for _sc in response.json():
-            if _sc["feature_id"] == sc["feature_id"] and _sc["scenario_id"] == sc["scenario_id"]:
-                __scenario_internal_id = _sc["internal_id"]
+            if _sc["feature_name"] == sc["feature_name"] and _sc["scenario_id"] == sc["scenario_id"]:
+                __scenario_internal_id = _sc["scenario_tech_id"]
         assert __scenario_internal_id is not None, "Cannot retrieve the scenario internal id"
         response = application.put(
             f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}"

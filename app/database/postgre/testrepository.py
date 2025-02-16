@@ -7,7 +7,10 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
-from app.schema.repository_schema import BaseScenario, Feature, Scenario, Scenarios, TestFeature, TestScenario, Epic
+from app.schema.repository_schema import TestFeature, TestScenario
+from app.schema.respository.epic_schema import Epic
+from app.schema.respository.feature_schema import Feature
+from app.schema.respository.scenario_schema import BaseScenario, Scenario, Scenarios
 from app.utils.pgdb import pool
 
 
@@ -132,8 +135,8 @@ async def db_project_epics(
 
 
 async def db_project_epic(
-        project_name: str,
-        epic_ref: str,
+    project_name: str,
+    epic_ref: str,
 ) -> Epic | ApplicationError:
     """
 
@@ -151,16 +154,15 @@ async def db_project_epic(
             " project_id as project_name,"
             " id as epic_tech_id "
             "from epics where project_id = %s and name = %s;",
-            (
-                project_name.casefold(),
-                epic_ref
-            )).fetchone()
+            (project_name.casefold(), epic_ref),
+        ).fetchone()
         if cursor is not None:
             return Epic(**cursor)
         else:
-            return ApplicationError(error=ApplicationErrorCode.epic_not_found,
-                                    message=f"Epic '{epic_ref}' not found in project '{project_name}'.")
-
+            return ApplicationError(
+                error=ApplicationErrorCode.epic_not_found,
+                message=f"Epic '{epic_ref}' not found in project '{project_name}'.",
+            )
 
 
 async def db_project_features(
@@ -193,10 +195,11 @@ async def db_project_features(
             cursor = connection.execute(
                 "select features.name as name,"
                 " tags as tags,"
-                " filename as filename from features "
-                "where project_id = %s "
-                "order by name "
-                "limit %s  offset %s",
+                " filename as filename"
+                " from features"
+                " where project_id = %s"
+                " order by name "
+                " limit %s  offset %s",
                 (
                     project.casefold(),
                     limit,
@@ -205,29 +208,43 @@ async def db_project_features(
             )
         return [Feature(**cur) for cur in cursor]
 
+
 async def db_project_feature(
-        project_name: str,
-        epic_ref: str,
-        feature_name: str,
+    project_name: str,
+    epic_ref: str,
+    feature_name: str,
 ) -> Feature | ApplicationError:
+    """
+    Retrieve Feature from a project using the feature name and epic name
+    Args:
+        project_name:
+        epic_ref: epic name as reference
+        feature_name:
+
+    Returns: Feature or ApplicationError where the query returns nothing
+    """
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = connection.execute(
-            "select ft.name, ft.tags, ft.filename "
-            "from features as ft "
-            "join epics as ep on ep.id = ft.epic_id "
-            "where ft.project_id = %s and ft.name = %s and ep.name = %s;",
+            "select ft.name,"
+            " ft.tags,"
+            " ft.filename"
+            " from features as ft"
+            " join epics as ep on ep.id = ft.epic_id"
+            " where ft.project_id = %s and ft.name = %s and ep.name = %s;",
             (
                 project_name.casefold(),
                 feature_name,
                 epic_ref,
-            )).fetchone()
+            ),
+        ).fetchone()
         if cursor is not None:
             return Feature(**cursor)
         else:
-            return ApplicationError(error=ApplicationErrorCode.feature_not_found,
-                                    message=f"Feature '{feature_name}' not found in project"
-                                            f" '{project_name}' and epic '{epic_ref}.")
+            return ApplicationError(
+                error=ApplicationErrorCode.feature_not_found,
+                message=f"Feature '{feature_name}' not found in project '{project_name}' and epic '{epic_ref}.",
+            )
 
 
 async def db_project_scenarios(
@@ -291,7 +308,9 @@ async def db_project_scenarios(
 
 
 async def db_update_scenario(
-    project_name: str, scenario: BaseScenario, is_deleted: bool
+    project_name: str,
+    scenario: BaseScenario,
+    is_deleted: bool,
 ) -> RegisterVersionResponse | ApplicationError:
     """Update a unique scenario in database
     Currently only toggle the is_deleted flag
@@ -373,8 +392,8 @@ async def db_scenarios(
     sc.is_deleted as is_deleted,
     ft.name as feature_name,
     ft.filename as filename,
-    epc.name as epic 
-    from scenarios as sc
+    epc.name as epic
+     from scenarios as sc
     join features as ft on ft.id = sc.feature_id
     join epics as epc on epc.id = ft.epic_id
     where epc.project_id = %s

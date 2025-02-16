@@ -30,8 +30,6 @@ from app.schema.campaign_schema import (
     CampaignLight,
     CampaignPatch,
     FillCampaignResult,
-    ScenarioInternal,
-    Scenarios,
     TicketScenarioCampaign,
     ToBeCampaign,
 )
@@ -39,6 +37,8 @@ from app.schema.error_code import ErrorMessage
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.project_schema import RegisterVersionResponse
+from app.schema.respository.feature_schema import Feature
+from app.schema.respository.scenario_schema import ScenarioExecution
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
@@ -307,7 +307,7 @@ async def get_campaign_tickets(
     "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",
     tags=["Campaign"],
     description="Retrieve a campaign ticket",
-    response_model=List[ScenarioInternal],
+    response_model=List[ScenarioExecution],
 )
 async def get_campaign_ticket(
     project_name: str,
@@ -315,7 +315,7 @@ async def get_campaign_ticket(
     occurrence: str,
     ticket_ref: str,
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
-) -> List[ScenarioInternal]:
+) -> List[ScenarioExecution]:
     try:
         result = await db_get_campaign_ticket_scenarios(
             project_name,
@@ -346,7 +346,7 @@ async def put_campaign_ticket_scenarios(
     version: str,
     occurrence: str,
     ticket_ref: str,
-    scenarios: List[Scenarios],
+    scenarios: List[Feature],
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
 ) -> RegisterVersionResponse:
     try:

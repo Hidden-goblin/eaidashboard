@@ -146,7 +146,8 @@ async def repository_dropdowns(
             },
         )
     if epic is not None and feature is None:
-        features = {feature["name"] for feature in await db_project_features(project_name, epic)}
+        _features = await db_project_features(project_name, epic)
+        features = {feature["name"] for feature in _features}
         return templates.TemplateResponse(
             "selectors/feature_label_selectors.html",
             {

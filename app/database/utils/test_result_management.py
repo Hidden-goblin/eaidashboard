@@ -11,9 +11,9 @@ from app.database.postgre.pg_test_results import check_result_uniqueness
 from app.database.postgre.testcampaign import db_get_campaign_scenarios
 from app.database.redis.rs_test_result import mg_insert_test_result
 from app.schema.campaign_followup_schema import ComputeResultSchema
-from app.schema.campaign_schema import Scenario
 from app.schema.error_code import ApplicationError
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
+from app.schema.respository.scenario_schema import ScenarioExecution
 
 
 async def insert_result(
@@ -81,7 +81,7 @@ async def insert_result(
 
 
 def __convert_scenario_status_to_three_state(
-    scenarios: List[Scenario],
+    scenarios: List[ScenarioExecution],
 ) -> None:
     """Map the scenario statuses to the 3 states passed/failed/skipped
     Is mocked by tests/test_10_rest_campaign_workflow.py:465
@@ -103,7 +103,7 @@ async def register_manual_campaign_result(
     version: str,
     campaign_occurrence: str,
 ) -> ComputeResultSchema | ApplicationError:
-    """:return test_result_uuid, campaign_id, list of scenarios"""
+    """:return test_result_uuid, campaign_id, list of scenarios_execution"""
     campaign_id_status = await retrieve_campaign_id(
         project_name,
         version,
@@ -117,8 +117,10 @@ async def register_manual_campaign_result(
         campaign_id_status.campaign_id,
         True,
     )
-    scenarios = db_get_campaign_scenarios(campaign_id_status.campaign_id)
-    __convert_scenario_status_to_three_state(scenarios)
+    scenarios_execution = db_get_campaign_scenarios(campaign_id_status.campaign_id)
+    __convert_scenario_status_to_three_state(scenarios_execution)
     return ComputeResultSchema(
-        result_uuid=test_result_uuid, campaign_id=campaign_id_status.campaign_id, scenarios=scenarios
+        result_uuid=test_result_uuid,
+        campaign_id=campaign_id_status.campaign_id,
+        scenarios=scenarios_execution,
     )
