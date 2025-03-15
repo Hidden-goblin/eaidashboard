@@ -15,6 +15,6 @@ class ExtendedBaseModel(BaseModel):
     def get(
         self: "ExtendedBaseModel",
         index: str,
-        default: Any = None,
+        default: Any = None,  # noqa: ANN401
     ) -> Any | None:  # noqa: ANN401
         return self.model_dump().get(index, default)
