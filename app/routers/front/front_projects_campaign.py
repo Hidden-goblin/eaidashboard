@@ -388,7 +388,7 @@ async def front_get_campaign_ticket_add_scenario(
     try:
         epics = await db_project_epics(project_name)
         if epics:
-            features = await db_project_features(
+            features, _count = await db_project_features(
                 project_name,
                 epics[0],
             )

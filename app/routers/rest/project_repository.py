@@ -5,7 +5,6 @@ from io import StringIO
 from typing import List, Union
 
 from fastapi import APIRouter, File, HTTPException, Security, UploadFile
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from starlette.background import BackgroundTasks
 from starlette.responses import Response
@@ -22,6 +21,7 @@ from app.database.postgre.testrepository import (
     db_project_features,
     db_project_scenarios,
 )
+from app.database.utils.object_existence import if_error_raise_http
 from app.schema.error_code import ErrorMessage
 from app.schema.postgres_enums import RepositoryEnum
 from app.schema.repository_schema import TestFeature, TestScenario
@@ -31,25 +31,6 @@ from app.schema.users import UpdateUser
 from app.utils.project_alias import provide
 
 router = APIRouter(prefix="/api/v1/projects")
-
-
-@router.get(
-    "/{project_name}/epics/{epic}/features",
-    response_model=List[Feature],
-    tags=["Repository"],
-    description="Retrieve all features linked to the project for this epic",
-)
-async def get_feature(
-    project_name: str,
-    epic: str,
-    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
-) -> List[Feature]:
-    if project_name.casefold() not in await registered_projects():
-        raise HTTPException(404, detail=f"Project '{project_name}' not found")
-    try:
-        return await db_project_features(project_name, epic)
-    except Exception as exp:
-        raise HTTPException(500, repr(exp))
 
 
 @router.get(
@@ -74,39 +55,36 @@ async def get_scenarios(
         raise HTTPException(404, detail=f"Project '{project_name}' not found")
     try:
         if elements == RepositoryEnum.epics:
-            return await db_project_epics(
+            _elements, _count = await db_project_epics(
                 project_name,
                 limit=limit,
                 offset=offset,
             )
         elif elements == RepositoryEnum.features:
             if epic is not None:
-                return await db_project_features(
+                _elements, _count = await db_project_features(
                     project_name,
                     epic=epic,
                     limit=limit,
                     offset=offset,
                 )
-            return await db_project_features(
-                project_name,
-                limit=limit,
-                offset=offset,
-            )
+            else:
+                _elements, _count = await db_project_features(
+                    project_name,
+                    limit=limit,
+                    offset=offset,
+                )
         else:
             temp = {"epic": epic, "feature": feature}
-            result, count = await db_project_scenarios(
+            _elements, _count = await db_project_scenarios(
                 project_name,
                 limit=limit,
                 offset=offset,
                 **{key: value for key, value in temp.items() if value is not None},
             )
-            response.headers["X-total-count"] = str(count)
-            return JSONResponse(
-                content=jsonable_encoder(result),
-                headers={"X-total-count": str(count)},
-            )
     except Exception as exp:
         raise HTTPException(500, repr(exp))
+    return if_error_raise_http(_elements, {"X-total-count": str(_count)}, True)
 
 
 @router.post(

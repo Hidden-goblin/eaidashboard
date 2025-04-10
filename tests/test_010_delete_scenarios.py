@@ -228,6 +228,7 @@ class TestDeleteScenario:
             f"features/Test feature"
             f"/scenarios/{TestDeleteScenario.context.get_context('repository/to_delete_scenario_tech_id')}",
             headers=logged,
+            params={"technicalId": True},
         )
         assert response.status_code == 200, response.text
         assert response.json()["scenario_id"] == "t_test_1", response.text
@@ -242,6 +243,7 @@ class TestDeleteScenario:
             f"features/Test feature"
             f"/scenarios/10000",
             headers=logged,
+            params={"technicalId": True},
         )
         assert response.status_code == 404, response.text
 
@@ -273,6 +275,8 @@ class TestDeleteScenario:
 
         assert response.status_code == 401, response.text
 
+# Create a campaign with this scenario
+
     def test_delete_scenario(
         self: "TestDeleteScenario",
         application: Generator[TestClient, Any, None],
@@ -285,3 +289,7 @@ class TestDeleteScenario:
         )
 
         assert response.status_code == 204, response.text
+
+# Deleted scenario cannot be requested repository, feature' scenarios
+# Deleted scenario cannot be added to new campaign
+# Deleted scenario appear on existing campaign

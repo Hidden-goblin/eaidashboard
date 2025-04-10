@@ -42,6 +42,7 @@ from app.routers.rest import (
 )
 from app.routers.rest.repository import (
     rest_epics,
+    rest_features,
     rest_scenarios,
 )
 from app.utils.log_management import log_message
@@ -108,6 +109,7 @@ app.include_router(project_repository.router)
 app.include_router(project_campaigns.router)
 app.include_router(rest_epics.router)
 app.include_router(rest_scenarios.router)
+app.include_router(rest_features.router)
 app.include_router(async_status.router)
 app.include_router(front_projects.router)
 app.include_router(front_projects_campaign.router)

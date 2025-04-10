@@ -6,11 +6,10 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.project_schema import RegisterVersionResponse
 from app.schema.repository_schema import TestFeature, TestScenario
 from app.schema.respository.epic_schema import Epic
 from app.schema.respository.feature_schema import Feature
-from app.schema.respository.scenario_schema import BaseScenario, Scenario, Scenarios
+from app.schema.respository.scenario_schema import Scenario, Scenarios
 from app.utils.pgdb import pool
 
 
@@ -120,7 +119,7 @@ async def db_project_epics(
     project: str,
     limit: int = 100,
     offset: int = 0,
-) -> List[str]:
+) -> Tuple[List[str], int]:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         cursor = connection.execute(
@@ -131,7 +130,11 @@ async def db_project_epics(
                 offset,
             ),
         )
-        return [row["name"] for row in cursor]
+        count = connection.execute(
+            "select count(*) as total from epics where project_id = %s",
+            (project.casefold(),),
+        )
+        return [row["name"] for row in cursor], count.fetchone()["total"]
 
 
 async def db_project_epic(
@@ -170,43 +173,81 @@ async def db_project_features(
     epic: str = None,
     limit: int = 100,
     offset: int = 0,
-) -> List[Feature]:
+) -> Tuple[List[Feature] | ApplicationError, int]:
+    """Return all features either bound to a project or a project's feature"""
+    if epic is not None:
+        return await __epic_all_features(project, epic, limit, offset)
+    else:
+        return await __project_all_features(project, limit, offset)
+
+
+async def __project_all_features(project: str, limit: int, offset: int) -> (List[Feature], int):
+    """Retrieve all paginated features of a project"""
+    count_query = "select count(*) as total  from features where project_id =%s"
+    select_query = (
+        "select features.name as name,"
+        " tags as tags,"
+        " filename as filename"
+        " from features"
+        " where project_id = %s"
+        " order by name "
+        " limit %s  offset %s"
+    )
     with pool.connection() as connection:
-        cursor = None
         connection.row_factory = dict_row
-        if epic is not None:
-            cursor = connection.execute(
-                "select features.name as name,"
-                " tags as tags,"
-                " filename as filename"
-                " from features "
-                "join epics on epics.id = features.epic_id "
-                "where features.project_id = %s and epics.name = %s "
-                "order by features.name "
-                "limit %s offset %s",
-                (
-                    project.casefold(),
-                    epic,
-                    limit,
-                    offset,
-                ),
-            )
-        else:
-            cursor = connection.execute(
-                "select features.name as name,"
-                " tags as tags,"
-                " filename as filename"
-                " from features"
-                " where project_id = %s"
-                " order by name "
-                " limit %s  offset %s",
-                (
-                    project.casefold(),
-                    limit,
-                    offset,
-                ),
-            )
-        return [Feature(**cur) for cur in cursor]
+        count = connection.execute(count_query, (project,))
+        select = connection.execute(
+            select_query,
+            (
+                project,
+                limit,
+                offset,
+            ),
+        )
+
+    return [Feature(**cur) for cur in select], count.fetchone()["total"]
+
+
+async def __epic_all_features(
+    project: str,
+    epic: str = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> Tuple[List[Feature] | ApplicationError, int]:
+    if isinstance(_epic := await db_project_epic(project, epic), ApplicationError):
+        return _epic, -1
+
+    select_query = (
+        "select features.name as name,"
+        " tags as tags,"
+        " filename as filename"
+        " from features "
+        "join epics on epics.id = features.epic_id "
+        "where features.project_id = %s and epics.name = %s "
+        "order by features.name "
+        "limit %s offset %s"
+    )
+
+    count_query = (
+        "select count(*) as total"
+        " from features "
+        "join epics on epics.id = features.epic_id "
+        "where features.project_id = %s and epics.name = %s "
+    )
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        count = connection.execute(count_query, (project, epic))
+        select = connection.execute(
+            select_query,
+            (
+                project,
+                epic,
+                limit,
+                offset,
+            ),
+        )
+
+    return [Feature(**cur) for cur in select], count.fetchone()["total"]
 
 
 async def db_project_feature(
@@ -305,41 +346,6 @@ async def db_project_scenarios(
         count = connection.execute(count_query, tuple(params[:-2]))
 
     return [Scenario(**cur) for cur in cursor], count.fetchone()["total"]
-
-
-async def db_update_scenario(
-    project_name: str,
-    scenario: BaseScenario,
-    is_deleted: bool,
-) -> RegisterVersionResponse | ApplicationError:
-    """Update a unique scenario in database
-    Currently only toggle the is_deleted flag
-    """
-    query = """update scenarios as scn
-    set is_deleted = %s
-    from features as ft
-    """
-    where_clause = ["sc.feature_id = ft.id", "ft.project_id = %s", "ft.name = %s", "sc.scenario_id = %s"]
-    parameters = [is_deleted, project_name, scenario.feature_name, scenario.scenario_id]
-
-    if scenario.filename is not None:
-        where_clause.append("ft.filename = %s")
-        parameters.append(scenario.filename)
-    with pool.connection() as connection:
-        connection.row_factory = dict_row
-        cursor = connection.execute(
-            f"{query} where {' and '.join(where_clause)} returning sc.scenario_id",
-            parameters,
-        ).fetchone()
-        connection.commit()
-
-        if cursor is not None:
-            return RegisterVersionResponse(inserted_id=cursor["scenario_id"])
-        else:
-            return ApplicationError(
-                error=ApplicationErrorCode.database_no_update,
-                message=f"Scenario '{scenario.scenario_id}' has not been {'deleted' if is_deleted else 'activated'}",
-            )
 
 
 async def db_scenarios(

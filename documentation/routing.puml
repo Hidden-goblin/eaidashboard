@@ -67,7 +67,9 @@
                                             "get": "retrieve feature's scenario",
                                             "<scenario_ref>" :{
                                                 "get": "retrieve scenario",
-                                                "delete": "remove scenario access"
+                                                "get + params 'technicalId=true'": "retrieve scenario by technical id",
+                                                "delete": "remove scenario access",
+                                                "delete + params 'technicalId=true'": "remove scenario by technical id"
                                             }
                                         }
                                 }

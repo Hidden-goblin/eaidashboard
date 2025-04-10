@@ -14,17 +14,23 @@
   - updating existing campaign;
 ****: Deleted scenario appears on
     - existing campaign;
-*** Delete function
-** API
-*** GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios
+***[#green] Delete function
+**[#green] API
+***[#green] GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios
 ****[#green] Tests
-**** Implementation
-*** GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
+****[#green] Implementation
+***[#green] GET /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
 ****[#green] Tests
-**** Implementation
-*** DELETE  /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
+****[#green]  Implementation
+***[#green] DELETE  /api/v1/projects/{project}/epics/{epic}/features/{feature}/scenarios/{scenario}
 ****[#green] Tests
-**** Implementation
+****[#green] Implementation
+***[#green] GET /api/v1/projects/{project}/epics/{epic}/features
+****[#green] Tests
+****[#green]  Implementation
+***[#green] GET /api/v1/projects/{project}/epics/
+****[#green]  Tests
+****[#green]  Implementation
 ** Front GUI
 *** On repository allow to delete a scenario
 **** Update the GUI

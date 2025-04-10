@@ -128,7 +128,8 @@ class TestRestRepository:
             params={"elements": "features", "epic": "first_epc"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 404, f"Expecting status code '404', get '{response.status_code}'"
+        assert response.json() == {"detail": "Epic 'first_epc' not found in project 'test_repository'."}
 
     def test_retrieve_repository_all_scenarios(
         self: "TestRestRepository",
@@ -228,6 +229,9 @@ class TestRestRepository:
             headers=logged,
         )
         assert response.status_code == 200
+        assert len(response.json()) == 2, (
+            f"Should retrieve 2 features but get '{len(response.json())} from response\n {response.text}"
+        )
 
     def test_retrieve_features_error_404_project(
         self: "TestRestRepository",
@@ -249,5 +253,5 @@ class TestRestRepository:
             f"/api/v1/projects/{TestRestRepository.project_name}/epics/first_epc/features",
             headers=logged,
         )
-        assert response.status_code == 200
-        assert response.json() == []
+        assert response.status_code == 404, f"Expecting status code 404, get {response.status_code}"
+        assert response.json() == {"detail": "Epic 'first_epc' not found in project 'test_repository'."}

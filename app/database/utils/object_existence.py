@@ -58,6 +58,8 @@ def if_error_raise_http(
     Returns:
         object:
     """
+    if result_to_test is None:
+        return None
     if isinstance(
         result_to_test,
         ApplicationError,
