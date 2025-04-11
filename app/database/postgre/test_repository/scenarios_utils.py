@@ -1,12 +1,10 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import List, Any, Coroutine
+from typing import List
 
 from psycopg.rows import dict_row
 
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.pg_schema import PGResult
-from app.schema.project_schema import RegisterVersionResponse
 from app.schema.respository.scenario_schema import BaseScenario, Scenario, Scenarios
 from app.utils.pgdb import pool
 
@@ -219,7 +217,7 @@ async def db_get_scenario_from_partial(
 
 async def db_update_scenario(
     project_name: str,
-    scenario: BaseScenario |ApplicationError,
+    scenario: BaseScenario | ApplicationError,
     is_deleted: bool,
 ) -> ApplicationError | None:
     """Update a unique scenario in database

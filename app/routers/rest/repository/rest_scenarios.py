@@ -8,7 +8,6 @@ from app.database.postgre.test_repository.scenarios_utils import db_get_scenario
 from app.database.postgre.testrepository import db_scenarios
 from app.database.utils.object_existence import if_error_raise_http
 from app.schema.error_code import ErrorMessage
-from app.schema.pg_schema import PGResult
 from app.schema.respository.scenario_schema import Scenario, Scenarios
 from app.schema.users import UpdateUser
 

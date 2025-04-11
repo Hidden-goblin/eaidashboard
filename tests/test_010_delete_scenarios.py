@@ -275,7 +275,7 @@ class TestDeleteScenario:
 
         assert response.status_code == 401, response.text
 
-# Create a campaign with this scenario
+    # Create a campaign with this scenario
 
     def test_delete_scenario(
         self: "TestDeleteScenario",
@@ -289,6 +289,7 @@ class TestDeleteScenario:
         )
 
         assert response.status_code == 204, response.text
+
 
 # Deleted scenario cannot be requested repository, feature' scenarios
 # Deleted scenario cannot be added to new campaign
