@@ -51,7 +51,7 @@ async def db_get_scenarios(
         "sc.scenario_id =Any(%s)",
     ]
     parameters = [
-        project_name,
+        project_name.casefold(),
         epic_name,
         feature_name,
         scenarios_ref,

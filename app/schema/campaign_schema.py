@@ -6,6 +6,7 @@ from pydantic import model_validator
 
 from app.schema.base_schema import ExtendedBaseModel
 from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.respository.feature_schema import Feature
 from app.schema.respository.scenario_schema import BaseScenario, ScenarioExecution
 from app.schema.status_enum import TicketType
 from app.schema.ticket_schema import Ticket
@@ -29,6 +30,43 @@ class TicketScenarioCampaign(ExtendedBaseModel):
 
     ticket_reference: str
     scenarios: Optional[Union[BaseScenario, List[BaseScenario]]] = None
+
+    def to_features(self: "TicketScenarioCampaign", project_name: str) -> List[Feature]:
+        """
+        Convert the scenarios into Features
+        Args:
+            project_name: str
+
+        Returns:List of Feature object
+
+        """
+        if self.scenarios is None:
+            return []
+        # Need the project_name (/)
+        # Don't create multiple time the same object
+        if isinstance(self.scenarios, BaseScenario):
+            return [
+                Feature(
+                    name=self.scenarios.feature_name,
+                    epic_name=self.scenarios.epic,
+                    project_name=project_name,
+                    scenario_ids=[self.scenarios.scenario_id],
+                )
+            ]
+        else:
+            accumulator = {}
+            for scenario in self.scenarios:
+                key = (scenario.epic, scenario.feature_name)
+                if key in accumulator:
+                    accumulator[key].scenario_ids.append(scenario.scenario_id)
+                else:
+                    accumulator[key] = Feature(
+                        name=scenario.feature_name,
+                        epic_name=scenario.epic,
+                        project_name=project_name,
+                        scenario_ids=[scenario.scenario_id],
+                    )
+            return list(accumulator.values())
 
 
 class CampaignLight(ExtendedBaseModel):

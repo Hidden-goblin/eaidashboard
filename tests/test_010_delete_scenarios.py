@@ -275,22 +275,50 @@ class TestDeleteScenario:
 
         assert response.status_code == 401, response.text
 
-    # Create a campaign with this scenario
-
     def test_delete_scenario(
         self: "TestDeleteScenario",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.delete(
-            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/second_epic/"
-            f"features/Test feature/scenarios/t_test_1",
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/first_epic/"
+            f"features/Test feature/scenarios/test_2",
             headers=logged,
         )
 
         assert response.status_code == 204, response.text
 
+    def test_deleted_scenario_cannot_be_requested(
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        # Deleted scenario cannot be requested repository, feature' scenarios
+        response = application.get(
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/epics/first_epic/"
+            f"features/Test feature/scenarios/test_2",
+            headers=logged,
+        )
+        assert response.status_code == 404, response.text
 
-# Deleted scenario cannot be requested repository, feature' scenarios
-# Deleted scenario cannot be added to new campaign
-# Deleted scenario appear on existing campaign
+    def test_deleted_scenario_cannot_be_in_new_campaign(
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        # Deleted scenario cannot be added to new campaign
+        # Create new occurrence
+        response = application.post(
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/campaigns",
+            json={"version": TestDeleteScenario.current_version},
+            headers=logged,
+        )
+        _occurrence: int = response.json()["occurrence"]
+
+        response = application.put(
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/campaigns/{TestDeleteScenario.current_version}/{_occurrence}",
+            json=TestDeleteScenario.project_test_ticket_scenarios[1],
+            headers=logged,
+        )
+        assert response.status_code == 409, response.text
+        # Deleted scenario appear on existing campaign

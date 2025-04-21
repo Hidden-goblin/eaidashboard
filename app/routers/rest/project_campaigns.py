@@ -24,21 +24,20 @@ from app.database.postgre.testcampaign import fill_campaign as db_fill_campaign
 from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_file
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.database.utils.test_result_management import register_manual_campaign_result
+from app.schema.base_schema import CreateUpdateModel
 from app.schema.campaign_followup_schema import ComputeResultSchema
 from app.schema.campaign_schema import (
     CampaignFull,
     CampaignLight,
     CampaignPatch,
-    FillCampaignResult,
     TicketScenarioCampaign,
     ToBeCampaign,
 )
 from app.schema.error_code import ErrorMessage
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
-from app.schema.project_schema import RegisterVersionResponse
 from app.schema.respository.feature_schema import Feature
-from app.schema.respository.scenario_schema import ScenarioExecution
+from app.schema.respository.scenario_schema import BaseScenario, ScenarioExecution
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.schema.users import UpdateUser
 from app.utils.log_management import log_error
@@ -91,7 +90,7 @@ async def create_campaigns(
     "/{project_name}/campaigns/{version}/{occurrence}",
     tags=["Campaign"],
     description="Fill the campaign with ticket and scenarios",
-    response_model=FillCampaignResult,
+    response_model=CreateUpdateModel,
     responses={
         404: {
             "model": ErrorMessage,
@@ -108,7 +107,7 @@ async def fill_campaign(
     occurrence: str,
     content: TicketScenarioCampaign,
     user: UpdateUser = Security(authorize_user, scopes=["admin"]),
-) -> FillCampaignResult:
+) -> CreateUpdateModel:
     await project_version_raise(
         project_name,
         version,
@@ -120,6 +119,17 @@ async def fill_campaign(
             occurrence,
             content,
         )
+        if isinstance(campaign_ticket_id, CreateUpdateModel) and isinstance(content.scenarios, list | BaseScenario):
+            scenarios = content.to_features(project_name)
+            link_scenario = await db_put_campaign_ticket_scenarios(
+                project_name,
+                version,
+                occurrence,
+                content.ticket_reference,
+                scenarios,
+            )
+            campaign_ticket_id += link_scenario
+
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
@@ -332,7 +342,7 @@ async def get_campaign_ticket(
     "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_ref}",
     tags=["Campaign"],
     description="Add scenarios to a ticket",
-    response_model=RegisterVersionResponse,
+    response_model=CreateUpdateModel,
     responses={
         404: {
             "model": ErrorMessage,
@@ -348,7 +358,7 @@ async def put_campaign_ticket_scenarios(
     ticket_ref: str,
     scenarios: List[Feature],
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
-) -> RegisterVersionResponse:
+) -> CreateUpdateModel:
     try:
         result = await db_put_campaign_ticket_scenarios(
             project_name,

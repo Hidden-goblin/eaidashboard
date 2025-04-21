@@ -213,7 +213,12 @@ class TestRestCampaign:
             headers=logged,
         )
         assert response.status_code == 200, response.text
-        assert response.json() == {"campaign_ticket_id": 1, "errors": []}
+        assert response.json() == {
+            "acknowledged": True,
+            "message": "Ticket ref-001 has been linked to the occurrence 1 of the 1.0.0 campaign",
+            "raw_data": None,
+            "resource_id": 1,
+        }
 
     def test_fill_campaign_200_no_error_on_duplicate(
         self: "TestRestCampaign",
@@ -226,7 +231,12 @@ class TestRestCampaign:
             headers=logged,
         )
         assert response.status_code == 200, response.text
-        assert response.json() == {"campaign_ticket_id": 1, "errors": []}
+        assert response.json() == {
+            "resource_id": 1,
+            "message": "Ticket ref-001 has been linked to the occurrence 1 of the 1.0.0 campaign",
+            "acknowledged": True,
+            "raw_data": None,
+        }
 
     campaign_error_404 = [
         (

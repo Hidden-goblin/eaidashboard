@@ -128,28 +128,19 @@ class TestRestCampaignScenario:
             "test_99",
             "first_epic",
             "New Test feature",
-            [
-                "Found 0 scenarios while expecting one and only one.\nSearch criteria was scenario_id='test_99'"
-                " epic='first_epic' feature_name='New Test feature' filename=None"
-            ],
+            {"not_found_scenario": ["test_99"]},
         ),
         (
             "test_1",
             "cipe_tsrif",
             "New Test feature",
-            [
-                "Found 0 scenarios while expecting one and only one.\nSearch criteria was scenario_id='test_1'"
-                " epic='cipe_tsrif' feature_name='New Test feature' filename=None"
-            ],
+            {"not_found_scenario": ["test_1"]},
         ),
         (
             "test_1",
             "first_epic",
             "NTf",
-            [
-                "Found 0 scenarios while expecting one and only one.\n"
-                "Search criteria was scenario_id='test_1' epic='first_epic' feature_name='NTf' filename=None"
-            ],
+            {"not_found_scenario": ["test_1"]},
         ),
     ]
 
@@ -173,7 +164,7 @@ class TestRestCampaignScenario:
             headers=logged,
         )
         assert response.status_code == 200, response.text
-        assert response.json()["errors"] == errors_message
+        assert response.json().get("raw_data", "") == errors_message, response.text
 
     def test_fill_campaign_with_ticket_and_scenario_error_500(
         self: "TestRestCampaignScenario",

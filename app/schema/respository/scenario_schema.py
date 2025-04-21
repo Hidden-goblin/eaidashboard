@@ -65,6 +65,12 @@ class Scenario(BaseScenario):
 class Scenarios(ExtendedBaseModel):
     scenarios: List[Scenario]
 
-    def scenario_tech_ids(self: "Scenarios") -> List[int]:
+    def __len__(self: "Scenarios") -> int:
+        return len(self.scenarios)
+
+    def scenario_tech_ids(self: "Scenarios") -> list[int]:
         """Extract tech ids from scenarios"""
         return [scn.scenario_tech_id for scn in self.scenarios]
+
+    def scenario_not_in_scenarios(self: "Scenarios", scenario_id: List[str]) -> set[str]:
+        return set(scenario_id) - {scenario.scenario_id for scenario in self.scenarios}
