@@ -3,16 +3,18 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, File, Security, UploadFile
+from fastapi import APIRouter, File, Query, Security, UploadFile
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
-from app.app_exception import MalformedCsvFile, front_error_message
+from app.app_exception import ApplicationError, MalformedCsvFile, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.testrepository import db_project_scenarios
+from app.database.postgre.test_repository.scenarios_utils import db_get_scenario_from_partial, db_update_scenario
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
+from app.schema.respository.scenario_schema import BaseScenario
 from app.schema.users import User, UserLight
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering
@@ -57,6 +59,111 @@ async def front_project_repository(
                 "project_name_alias": provide(project_name),
             },
         )
+    except Exception as exception:
+        log_error(repr(exception))
+        return front_error_message(templates, request, exception)
+
+
+@router.delete(
+    "/{project_name}/repository/scenarios/{scenario_tech_id}/delete",
+    tags=["Front - Repository"],
+    include_in_schema=False,
+)
+async def delete_scenario(
+    project_name: str,
+    scenario_tech_id: str,
+    request: Request,
+    user: User = Security(front_authorize, scopes=["admin", "user"]),
+    limit: int = Query(10), # Default limit from get_scenario
+    skip: int = Query(0),   # Default skip
+    epic: Optional[str] = Query(None),
+    feature: Optional[str] = Query(None),
+) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
+    try:
+        # Attempt to fetch the scenario to ensure it exists before deletion
+        # and to potentially get epic/feature if not provided in query
+        # (though current logic uses query params directly for filtering)
+        current_scenario = await db_get_scenario_from_partial(scenario_tech_id)
+        if not current_scenario:
+            # Or handle as an ApplicationError if preferred
+            raise ApplicationError(f"Scenario with tech_id {scenario_tech_id} not found.")
+
+        updated_scenario_data = BaseScenario(
+            **current_scenario.model_dump(),  # Use current_scenario data
+            is_deleted=True,
+        )
+        await db_update_scenario(updated_scenario_data)
+
+        # Use query parameters for epic and feature directly for consistency
+        epic_query_param = epic
+        feature_query_param = feature
+
+        # Get the new total count of scenarios with the current filters
+        # We use a small limit like 1 because we only need the count.
+        # Offset 0 to get the total count from the beginning.
+        _transient_scenarios, new_count = await db_project_scenarios(
+            project_name,
+            epic=epic_query_param,
+            feature=feature_query_param,
+            limit=1, # Only need the count
+            offset=0
+        )
+
+        # Adjust skip value
+        if new_count == 0:
+            final_skip = 0
+        elif skip >= new_count:
+            # If original skip is now out of bounds, go to the start of the last page
+            final_skip = max(0, ((new_count - 1) // limit) * limit)
+        else:
+            final_skip = skip
+
+        # Fetch the actual scenarios for the current page with adjusted skip
+        scenarios, count_after_skip_adjustment = await db_project_scenarios(
+            project_name,
+            epic=epic_query_param,
+            feature=feature_query_param,
+            limit=limit,
+            offset=final_skip,
+        )
+        # new_count is the total count for pagination, count_after_skip_adjustment is for the current view (should be same as new_count if not for this call)
+
+        pages, current_page = page_numbering(
+            new_count, # Use the total count under current filters for pagination
+            limit=limit,
+            skip=final_skip,
+        )
+
+        filter_parts = []
+        if epic_query_param:
+            filter_parts.append(f"epic={epic_query_param}")
+        if feature_query_param:
+            filter_parts.append(f"feature={feature_query_param}")
+        _filter = "&" + "&".join(filter_parts) if filter_parts else ""
+
+        return templates.TemplateResponse(
+            "tables/scenario_table.html",
+            {
+                "request": request,
+                "project_name": project_name,
+                "project_name_alias": provide(project_name),
+                "scenarios": scenarios,
+                "pages": pages,
+                "current_page": current_page,
+                "nav_bar": new_count > limit,
+                "filter": _filter,
+                "limit": limit,
+                "skip": final_skip, # Pass the adjusted skip
+                "epic": epic_query_param,
+                "feature": feature_query_param,
+            },
+        )
+    except ApplicationError as app_exception:
+        log_error(repr(app_exception))
+        # You might want a specific error message or handling here
+        return front_error_message(templates, request, app_exception)
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
@@ -177,6 +284,10 @@ async def get_scenario(
                 "current_page": current_page,
                 "nav_bar": count > limit,
                 "filter": _filter,
+                "limit": limit,
+                "skip": skip,
+                "epic": epic,
+                "feature": feature,
             },
         )
     except Exception as exception:
