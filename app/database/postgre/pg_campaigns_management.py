@@ -7,7 +7,8 @@ from typing import List, Tuple
 from psycopg.rows import dict_row, tuple_row
 
 from app.schema.campaign_followup_schema import CampaignIdStatus
-from app.schema.campaign_schema import CampaignLight, CampaignPatch
+from app.schema.campaign_schema import CampaignPatch
+from app.schema.campaign.campaign_response_schema import CampaignLight
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum

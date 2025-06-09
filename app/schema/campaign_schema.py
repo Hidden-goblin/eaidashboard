@@ -9,7 +9,6 @@ from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.respository.feature_schema import Feature
 from app.schema.respository.scenario_schema import BaseScenario, ScenarioExecution
 from app.schema.status_enum import TicketType
-from app.schema.ticket_schema import Ticket
 
 
 class ToBeCampaign(ExtendedBaseModel, extra="forbid"):
@@ -69,23 +68,6 @@ class TicketScenarioCampaign(ExtendedBaseModel):
             return list(accumulator.values())
 
 
-class CampaignLight(ExtendedBaseModel):
-    """
-    Attributes
-        - project_name: str
-        - version: str
-        - occurrence: int
-        - description: Optional[str]
-        - status: CampaignStatusEnum
-    """
-
-    project_name: str
-    version: str
-    occurrence: int
-    description: Optional[str] = ""
-    status: CampaignStatusEnum
-
-
 class TicketScenario(ExtendedBaseModel):
     """
     Attributes
@@ -99,20 +81,6 @@ class TicketScenario(ExtendedBaseModel):
     summary: str
     status: Optional[TicketType] = TicketType.OPEN
     scenarios: Optional[list[ScenarioExecution]] = []
-
-
-class CampaignFull(CampaignLight):
-    """
-    Attributes
-        - project_name: str
-        - version: str
-        - occurrence: int
-        - description: Optional[str]
-        - status: CampaignStatusEnum
-        - tickets: Optional[list[TicketScenario | Ticket]] = []
-    """
-
-    tickets: Optional[list[TicketScenario | Ticket]] = []
 
 
 class CampaignPatch(ExtendedBaseModel):
@@ -132,13 +100,3 @@ class CampaignPatch(ExtendedBaseModel):
             raise ValueError(f"CampaignPatch must have at least one key of '{keys}'")
         return ticket
 
-
-class FillCampaignResult(ExtendedBaseModel):
-    """
-    Attributes:
-        - campaign_ticket_id: str | int
-        - errors: List
-    """
-
-    campaign_ticket_id: str | int
-    errors: List = []

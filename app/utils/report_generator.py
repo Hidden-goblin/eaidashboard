@@ -8,7 +8,8 @@ from app.conf import BASE_DIR
 from app.database.postgre.pg_bugs import get_bugs
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
-from app.schema.campaign_schema import CampaignFull, TicketScenario
+from app.schema.campaign_schema import TicketScenario
+from app.schema.campaign.campaign_response_schema import CampaignFull
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import ScenarioStatusEnum, TestResultStatusEnum
 from app.schema.respository.scenario_schema import ScenarioExecution

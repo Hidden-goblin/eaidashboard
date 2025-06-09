@@ -8,7 +8,19 @@ jobs:
   update-readme-coverage:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -16,22 +28,31 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: 3.12
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install coverage  # or include any other necessary dependencies
-
-    - name: Run tests and generate coverage
+        pip install poetry
+        poetry install --with dev
+    - name: Run tests with coverage
+      env:
+        PG_USR: postgres
+        PG_PWD: postgres
+        PG_URL: localhost
+        PG_PORT: 5432
+        REDIS_URL: localhost
+        REDIS_PORT: 6379
+        TIMEDELTA: 3600
+        SESSION_KEY: poiuytrezz
       run: |
-        coverage run -m pytest
-        coverage report
-        coverage json -o coverage.json  # Generates a JSON report to access coverage data
+          mkdir app/static
+          poetry run coverage run -m pytest
+          poetry run coverage report
+          poetry run coverage json -o coverage.json
 
     - name: Update SVG coverage badge
       run: |
-        COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent'])")
+        COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])")
         echo "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='20'><text x='10' y='15' fill='black'>Coverage: ${COVERAGE}%</text></svg>" > coverage_badge.svg
 
     - name: Commit and push changes

@@ -30,9 +30,6 @@ directory = "cov_html"
 rootdir = "."
 testpaths = ["tests"]
 addopts = "--order-dependencies"
-env = [
-    "PG_DB=test_db"
-]
 
 [project]
 name = "eaidashboard"
@@ -78,7 +75,6 @@ eaibat = "*"
 requests = "*"
 eaiautomatontools = "*"
 coverage-badge = "^1.1.2"
-pytest-env = "*"
 
 [build-system]
 requires = ["poetry-core"]

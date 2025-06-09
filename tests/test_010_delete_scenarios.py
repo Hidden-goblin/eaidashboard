@@ -3,6 +3,7 @@
 from typing import Any, Generator
 
 import pytest
+import dpath
 from starlette.testclient import TestClient
 
 from tests.utils.context_manager import Context
@@ -320,5 +321,26 @@ class TestDeleteScenario:
             json=TestDeleteScenario.project_test_ticket_scenarios[1],
             headers=logged,
         )
-        assert response.status_code == 409, response.text
+        assert response.status_code == 200, response.text
+        assert dpath.get(response.json(), "raw_data/not_found_scenario") == ["test_2"], response.text
+
+
+    def test_deleted_scenario_appear_on_existing_campaign(
+            self: "TestDeleteScenario",
+            application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        _occurrence = TestDeleteScenario.context.get_context(
+            f'campaign/{TestDeleteScenario.current_version}/occurrence'
+        )
+        response = application.get(f"/api/v1/projects/{TestDeleteScenario.project_name}/campaigns/"
+                                   f"{TestDeleteScenario.current_version}/{_occurrence}",
+                                   headers=logged,
+                                   )
+        assert response.status_code == 200, response.text
+        assert dpath.search(
+            response.json(),
+            "tickets/*/scenarios/*/name",
+            afilter=lambda x: str(x) == 'test_2',
+        ) is not None, response.text
         # Deleted scenario appear on existing campaign

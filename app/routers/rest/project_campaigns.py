@@ -27,12 +27,11 @@ from app.database.utils.test_result_management import register_manual_campaign_r
 from app.schema.base_schema import CreateUpdateModel
 from app.schema.campaign_followup_schema import ComputeResultSchema
 from app.schema.campaign_schema import (
-    CampaignFull,
-    CampaignLight,
     CampaignPatch,
     TicketScenarioCampaign,
     ToBeCampaign,
 )
+from app.schema.campaign.campaign_response_schema import CampaignLight, CampaignFull
 from app.schema.error_code import ErrorMessage
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum

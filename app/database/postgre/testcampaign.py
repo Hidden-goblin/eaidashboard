@@ -14,11 +14,11 @@ from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.database.utils.transitions import ticket_authorized_transition, version_transition
 from app.schema.base_schema import CreateUpdateModel
 from app.schema.campaign_schema import (
-    CampaignFull,
     CampaignPatch,
     TicketScenario,
     TicketScenarioCampaign,
 )
+from app.schema.campaign.campaign_response_schema import CampaignFull
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import ScenarioStatusEnum
 from app.schema.respository.feature_schema import Feature
