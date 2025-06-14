@@ -11,11 +11,11 @@ from pytest import fixture
 from starlette.testclient import TestClient
 
 
-def pytest_configure(config) -> None:
+def pytest_configure(config) -> None:  # noqa: ANN001
     os.environ["PG_DB"] = "test_db"
 
 
-def pytest_unconfigure(config) -> None:
+def pytest_unconfigure(config) -> None:  # noqa: ANN001
     os.environ.pop("PG_DB")
 
 

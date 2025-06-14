@@ -13,12 +13,12 @@ from app.database.redis.rs_file_management import rs_invalidate_file
 from app.database.utils.ticket_management import add_ticket_to_campaign
 from app.database.utils.transitions import ticket_authorized_transition, version_transition
 from app.schema.base_schema import CreateUpdateModel
+from app.schema.campaign.campaign_response_schema import CampaignFull
 from app.schema.campaign_schema import (
     CampaignPatch,
     TicketScenario,
     TicketScenarioCampaign,
 )
-from app.schema.campaign.campaign_response_schema import CampaignFull
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import ScenarioStatusEnum
 from app.schema.respository.feature_schema import Feature
@@ -61,8 +61,10 @@ async def fill_campaign(
     # else:
 
     # Attach scenario to ticket
-    # attached_scenarios = await db_put_campaign_ticket_scenarios(project_name, version, occurrence, content.ticket_reference, scenarios,)
-    # Call db_put_campaign_ticket_scenarios() / check to split in two functions one with a direct call with campaign_ticket_id
+    # attached_scenarios = await db_put_campaign_ticket_scenarios(
+    # project_name, version, occurrence, content.ticket_reference, scenarios,)
+    # Call db_put_campaign_ticket_scenarios() / check to split in two functions one with a direct call
+    # with campaign_ticket_id
     # errors = []
     # try:
     #     with pool.connection() as connection:

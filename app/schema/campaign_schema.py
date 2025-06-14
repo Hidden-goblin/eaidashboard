@@ -99,4 +99,3 @@ class CampaignPatch(ExtendedBaseModel):
         if all(ticket.get(key) is None for key in keys):
             raise ValueError(f"CampaignPatch must have at least one key of '{keys}'")
         return ticket
-

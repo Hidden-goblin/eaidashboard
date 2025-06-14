@@ -2,8 +2,8 @@
 # -*- Author: E.Aivayan -*-
 from typing import Any, Generator
 
-import pytest
 import dpath
+import pytest
 from starlette.testclient import TestClient
 
 from tests.utils.context_manager import Context
@@ -324,70 +324,26 @@ class TestDeleteScenario:
         assert response.status_code == 200, response.text
         assert dpath.get(response.json(), "raw_data/not_found_scenario") == ["test_2"], response.text
 
-
     def test_deleted_scenario_appear_on_existing_campaign(
-            self: "TestDeleteScenario",
-            application: Generator[TestClient, Any, None],
+        self: "TestDeleteScenario",
+        application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         _occurrence = TestDeleteScenario.context.get_context(
-            f'campaign/{TestDeleteScenario.current_version}/occurrence'
+            f"campaign/{TestDeleteScenario.current_version}/occurrence"
         )
-        response = application.get(f"/api/v1/projects/{TestDeleteScenario.project_name}/campaigns/"
-                                   f"{TestDeleteScenario.current_version}/{_occurrence}",
-                                   headers=logged,
-                                   )
+        response = application.get(
+            f"/api/v1/projects/{TestDeleteScenario.project_name}/campaigns/"
+            f"{TestDeleteScenario.current_version}/{_occurrence}",
+            headers=logged,
+        )
         assert response.status_code == 200, response.text
-        assert dpath.search(
-            response.json(),
-            "tickets/*/scenarios/*/name",
-            afilter=lambda x: str(x) == 'test_2',
-        ) is not None, response.text
+        assert (
+            dpath.search(
+                response.json(),
+                "tickets/*/scenarios/*/name",
+                afilter=lambda x: str(x) == "test_2",
+            )
+            is not None
+        ), response.text
         # Deleted scenario appear on existing campaign
-
-    # def test_front_delete_scenario(
-    #     self: "TestDeleteScenario",
-    #     application: Generator[TestClient, Any, None],
-    #     logged: Generator[dict[str, str], Any, None],
-    # ) -> None:
-    #     # Ensure setup has run and scenario_tech_id for "t_test_1" is in context
-    #     # This relies on test_get_scenario_from_feature having run and populated the context
-    #     scenario_tech_id_to_delete = TestDeleteScenario.context.get_context(
-    #         "repository/to_delete_scenario_tech_id"
-    #     )
-    #     assert scenario_tech_id_to_delete is not None, "scenario_tech_id was not found in context"
-    #
-    #     # Scenario details for "t_test_1"
-    #     project_name = TestDeleteScenario.project_name
-    #     epic_name = "second_epic"
-    #     feature_name = "Test feature" # As per CSV and existing tests
-    #     scenario_id = "t_test_1"
-    #     scenario_name_to_check = "Duplicate" # Name of t_test_1
-    #
-    #     # Make DELETE request to the front-end delete endpoint
-    #     delete_response = application.delete(
-    #         f"/front/v1/projects/{project_name}/repository/scenarios/{scenario_tech_id_to_delete}/delete",
-    #         headers=logged,
-    #     )
-    #     assert delete_response.status_code == 200, delete_response.text
-    #     # Verify the scenario name is NOT in the returned HTML table
-    #     assert scenario_name_to_check not in delete_response.text, \
-    #         f"Deleted scenario '{scenario_name_to_check}' found in immediate HTML response."
-    #
-    #     # Verify by fetching the scenarios table again via the front-end
-    #     get_scenarios_response = application.get(
-    #         f"/front/v1/projects/{project_name}/repository/scenarios?limit=10&skip=0", # Adjust params if needed
-    #         headers=logged,
-    #     )
-    #     assert get_scenarios_response.status_code == 200, get_scenarios_response.text
-    #     assert scenario_name_to_check not in get_scenarios_response.text, \
-    #         f"Deleted scenario '{scenario_name_to_check}' found in subsequent GET request to scenarios table."
-    #
-    #     # Verify by trying to get the specific scenario via API (should be 404)
-    #     # This uses the scenario_id 't_test_1', not the scenario_tech_id
-    #     get_deleted_api_response = application.get(
-    #         f"/api/v1/projects/{project_name}/epics/{epic_name}/features/{feature_name}/scenarios/{scenario_id}",
-    #         headers=logged,
-    #     )
-    #     assert get_deleted_api_response.status_code == 404, \
-    #         f"Scenario '{scenario_id}' was not properly soft-deleted; API returned {get_deleted_api_response.status_code} instead of 404."

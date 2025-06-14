@@ -9,6 +9,15 @@ from app.schema.base_schema import ExtendedBaseModel
 from app.schema.respository.scenario_schema import Scenarios
 
 
+def validate_list(value: list[str | int] | str) -> list[str | int]:
+    if isinstance(value, (str, int)):
+        return [value]
+    elif isinstance(value, list):
+        return value
+    else:
+        raise ValueError("scenario_ids must be a string, integer, or list of strings/integers")
+
+
 class Feature(ExtendedBaseModel):
     """
     Attributes:
@@ -32,8 +41,8 @@ class Feature(ExtendedBaseModel):
     scenarios: Scenarios | None = None
     scenario_ids: list[str | int] | str = []
 
-    @classmethod
     @field_validator("scenario_ids", mode="before")
+    @classmethod
     def validate_scenario_ids(cls: "Feature", value: Any) -> List[str | int]:  # noqa: ANN401
         if isinstance(value, (str, int)):
             return [value]

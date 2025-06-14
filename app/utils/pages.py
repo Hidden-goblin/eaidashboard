@@ -40,5 +40,5 @@ def page_numbering_general_case(
     if current_page - delta_before - remain <= 0:
         delta_before = current_page - 1
     if max_pages > 2 * current_page - delta_before - 1 + delta_after:
-        delta_after = delta_after + 1
+        delta_after += 1
     return pages[current_page - delta_before - 1 : current_page + delta_after], current_page

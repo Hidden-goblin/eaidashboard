@@ -386,7 +386,7 @@ async def front_get_campaign_ticket_add_scenario(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        epics = await db_project_epics(project_name)
+        epics, __ = await db_project_epics(project_name)
         if epics:
             features, _count = await db_project_features(
                 project_name,

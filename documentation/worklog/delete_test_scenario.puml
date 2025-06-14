@@ -3,16 +3,16 @@
 'https://github.com/Hidden-goblin/eaidashboard/issues/6
 
 * Delete test scenario
-** Model update
+**[#green] Model update
 ***[#green] Update scenario model\n with an optional is_deleted flag
-** Database update
+**[#green] Database update
 ***[#green] Update scenario table to handle the deleted state
 ***[#green] Upgrade scenario script
-*** Update get scenario queries
-****: Deleted scenario can't be selected on
+***[#green] Update get scenario queries
+****[#green]: Deleted scenario can't be selected on
   - new campaign
   - updating existing campaign;
-****: Deleted scenario appears on
+****[#green]: Deleted scenario appears on
     - existing campaign;
 ***[#green] Delete function
 **[#green] API
@@ -31,11 +31,11 @@
 ***[#green] GET /api/v1/projects/{project}/epics/
 ****[#green]  Tests
 ****[#green]  Implementation
-** Front GUI
-*** On repository allow to delete a scenario
-**** Update the GUI
-**** Add an action element to delete (with confirmation)
-****: Implement the delete action
+**[#green] Front GUI
+***[#green] On repository allow to delete a scenario
+****[#green] Update the GUI
+****[#green] Add an action element to delete (with confirmation)
+****[#green]: Implement the delete action
 DELETE /front/v1/projects/{project}/repository/scenarios/{scenario}
 ;
 ** Miscellaneous

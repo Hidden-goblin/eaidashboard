@@ -17,6 +17,7 @@ class Ticket(BaseModel):
         created
         updated
     """
+
     status: str
     reference: str
     description: str
