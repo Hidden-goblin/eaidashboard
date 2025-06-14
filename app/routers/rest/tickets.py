@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/v1")
         400: {"model": ErrorMessage, "description": "Ticket reference already exists for the project"},
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case)" " or version does not exist",
+            "description": "Project name is not registered (ignore case) or version does not exist",
         },
         422: {"model": ErrorMessage, "description": "The payload does not match the expected schema"},
         500: {"model": ErrorMessage, "description": "Backend computation error"},
@@ -63,7 +63,7 @@ async def create_ticket(
         400: {"model": ErrorMessage, "description": "Mal"},
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case)" " or version does not exist",
+            "description": "Project name is not registered (ignore case) or version does not exist",
         },
         500: {"model": ErrorMessage, "description": "Backend computation error"},
     },
@@ -141,7 +141,7 @@ async def get_one_ticket(
         401: {"model": ErrorMessage, "description": "You are not authorized to process this action"},
         404: {
             "model": ErrorMessage,
-            "description": "Project name is not registered (ignore case)" " or version does not exist",
+            "description": "Project name is not registered (ignore case) or version does not exist",
         },
         422: {"model": ErrorMessage, "description": "The payload does not match the expected schema"},
         500: {"model": ErrorMessage, "description": "Backend computation error"},

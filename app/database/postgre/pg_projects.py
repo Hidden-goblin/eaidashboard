@@ -25,9 +25,7 @@ async def register_project(project_name: str) -> str:
         raise ProjectNameInvalid("Project name must be different from '*' special project")
     if contains(project_name):
         raise DuplicateProject(
-            f"Project name '{project_name}' "
-            f"already exists. Please update the name "
-            f"so that project can be registered."
+            f"Project name '{project_name}' already exists. Please update the name so that project can be registered."
         )
     register(project_name)
     with pool.connection() as connection:

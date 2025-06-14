@@ -2,14 +2,16 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
 
-from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum, TestResultStatusEnum
+from app.schema.base_schema import ExtendedBaseModel
+from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.respository.feature_schema import Feature
+from app.schema.respository.scenario_schema import BaseScenario, ScenarioExecution
 from app.schema.status_enum import TicketType
-from app.schema.ticket_schema import Ticket
 
 
-class ToBeCampaign(BaseModel, extra="forbid"):
+class ToBeCampaign(ExtendedBaseModel, extra="forbid"):
     """
     Attributes
          - version: str
@@ -17,54 +19,8 @@ class ToBeCampaign(BaseModel, extra="forbid"):
 
     version: str
 
-    def __getitem__(
-        self: "ToBeCampaign",
-        index: str,
-    ) -> str | None:
-        return self.model_dump().get(index, None)
 
-
-class ScenarioCampaign(BaseModel):
-    """
-    Attributes:
-        - scenario_id: str
-        - epic: str
-        - feature_name: str
-        - feature_filename: Optional[str]
-    """
-
-    scenario_id: str
-    epic: str
-    feature_name: str
-    feature_filename: Optional[str] = None
-
-    def __getitem__(
-        self: "ScenarioCampaign",
-        index: str,
-    ) -> str | None:
-        return self.model_dump().get(index, None)
-
-
-class Scenarios(BaseModel):
-    """
-    Attributes
-        - epic: str
-        - feature_name: str
-        - scenarios_ids: List[str]
-    """
-
-    epic: str
-    feature_name: str
-    scenario_ids: List[str]
-
-    def __getitem__(
-        self: "Scenarios",
-        index: str,
-    ) -> str | List[str] | None:
-        return self.model_dump().get(index, None)
-
-
-class TicketScenarioCampaign(BaseModel):
+class TicketScenarioCampaign(ExtendedBaseModel):
     """
     Attributes
         - ticket_reference: str
@@ -72,122 +28,62 @@ class TicketScenarioCampaign(BaseModel):
     """
 
     ticket_reference: str
-    scenarios: Optional[Union[ScenarioCampaign, List[ScenarioCampaign]]] = None
+    scenarios: Optional[Union[BaseScenario, List[BaseScenario]]] = None
 
-    def __getitem__(
-        self: "TicketScenarioCampaign",
-        index: str,
-    ) -> str | ScenarioCampaign | List[ScenarioCampaign] | None:
-        return self.model_dump().get(index, None)
+    def to_features(self: "TicketScenarioCampaign", project_name: str) -> List[Feature]:
+        """
+        Convert the scenarios into Features
+        Args:
+            project_name: str
 
+        Returns:List of Feature object
 
-class CampaignLight(BaseModel):
-    """
-    Attributes
-        - project_name: str
-        - version: str
-        - occurrence: int
-        - description: Optional[str]
-        - status: CampaignStatusEnum
-    """
-
-    project_name: str
-    version: str
-    occurrence: int
-    description: Optional[str] = ""
-    status: CampaignStatusEnum
-
-    def __getitem__(
-        self: "CampaignLight",
-        index: str,
-    ) -> str | int | CampaignStatusEnum | None:
-        return self.model_dump().get(index, None)
-
-
-class Scenario(BaseModel):
-    """
-    Attributes
-        - epic_id: str
-        - feature_id: str
-        - scenario_id: str
-        - name: str
-        - steps: str
-        - status: ScenarioStatusEnum | TestResultStatusEnum
-    """
-
-    # TODO: Fix serialized warning
-    epic_id: str
-    feature_id: str
-    scenario_id: str
-    name: str
-    steps: str
-    status: ScenarioStatusEnum | TestResultStatusEnum
-
-    def __getitem__(
-        self: "Scenario",
-        index: str,
-    ) -> str | ScenarioStatusEnum | TestResultStatusEnum | None:
-        return self.model_dump().get(index, None)
-
-    def get(
-        self: "Scenario",
-        index: str,
-        default: str | ScenarioStatusEnum | TestResultStatusEnum,
-    ) -> str | ScenarioStatusEnum | TestResultStatusEnum:
-        return self.model_dump().get(index, default)
+        """
+        if self.scenarios is None:
+            return []
+        # Need the project_name (/)
+        # Don't create multiple time the same object
+        if isinstance(self.scenarios, BaseScenario):
+            return [
+                Feature(
+                    name=self.scenarios.feature_name,
+                    epic_name=self.scenarios.epic,
+                    project_name=project_name,
+                    scenario_ids=[self.scenarios.scenario_id],
+                )
+            ]
+        else:
+            accumulator = {}
+            for scenario in self.scenarios:
+                key = (scenario.epic, scenario.feature_name)
+                if key in accumulator:
+                    accumulator[key].scenario_ids.append(scenario.scenario_id)
+                else:
+                    accumulator[key] = Feature(
+                        name=scenario.feature_name,
+                        epic_name=scenario.epic,
+                        project_name=project_name,
+                        scenario_ids=[scenario.scenario_id],
+                    )
+            return list(accumulator.values())
 
 
-class ScenarioInternal(Scenario):
-    """
-    Attributes
-        - epic_id: str
-        - feature_id: str
-        - scenario_id: str
-        - internal_id: str
-        - name: str
-        - steps: str
-        - status: ScenarioStatusEnum | TestResultStatusEnum
-    """
-
-    internal_id: int
-
-
-class TicketScenario(BaseModel):
+class TicketScenario(ExtendedBaseModel):
     """
     Attributes
         - reference: str
         - summary: str
         - status: Optional[TicketType] = TicketType.OPEN
-        - scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
+        - scenarios: Optional[list[ScenarioExecution]] = []
     """
 
     reference: str
     summary: str
     status: Optional[TicketType] = TicketType.OPEN
-    scenarios: Optional[list[Union[Scenario, ScenarioInternal]]] = []
-
-    def __getitem__(
-        self: "TicketScenario",
-        index: str,
-    ) -> str | TicketType | List[Scenario | ScenarioInternal] | None:
-        return self.model_dump().get(index, None)
+    scenarios: Optional[list[ScenarioExecution]] = []
 
 
-class CampaignFull(CampaignLight):
-    """
-    Attributes
-        - project_name: str
-        - version: str
-        - occurrence: int
-        - description: Optional[str]
-        - status: CampaignStatusEnum
-        - tickets: Optional[list[TicketScenario | Ticket]] = []
-    """
-
-    tickets: Optional[list[TicketScenario | Ticket]] = []
-
-
-class CampaignPatch(BaseModel):
+class CampaignPatch(ExtendedBaseModel):
     """
     Attributes
         - status: CampaignStatusEnum
@@ -203,14 +99,3 @@ class CampaignPatch(BaseModel):
         if all(ticket.get(key) is None for key in keys):
             raise ValueError(f"CampaignPatch must have at least one key of '{keys}'")
         return ticket
-
-
-class FillCampaignResult(BaseModel):
-    """
-    Attributes:
-        - campaign_ticket_id: str | int
-        - errors: List
-    """
-
-    campaign_ticket_id: str | int
-    errors: List = []

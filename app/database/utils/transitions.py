@@ -120,6 +120,4 @@ def version_transition(
     if (
         _current_status not in transition_dict or _to_be_status not in _transition
     ) and _current_status != _to_be_status:
-        raise StatusTransitionForbidden(
-            f"You are not allowed to go from {current_status} to " f"{to_be_status} status."
-        )
+        raise StatusTransitionForbidden(f"You are not allowed to go from {current_status} to {to_be_status} status.")

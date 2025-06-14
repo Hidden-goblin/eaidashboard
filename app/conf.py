@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 templates = Jinja2Templates(directory=str(Path(BASE_DIR, "templates")))
 
-config = {**dotenv_values(".env"), **os.environ}
+config = dotenv_values(".env") | os.environ
 
 
 date_format = "%Y-%m-%d %H:%M"
@@ -30,4 +30,4 @@ redis_dict = {"host": config["REDIS_URL"], "port": config["REDIS_PORT"]}
 SECRET_KEY = None
 PUBLIC_KEY = None
 ALGORITHM = None
-APP_VERSION = "3.10"
+APP_VERSION = "3.11"

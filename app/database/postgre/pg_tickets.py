@@ -69,9 +69,7 @@ async def get_ticket(
         if row is None:
             return ApplicationError(
                 error=ApplicationErrorCode.ticket_not_found,
-                message=f"Ticket '{reference}' does not exist in project '"
-                f"{project_name}'"
-                f" version '{project_version}'",
+                message=f"Ticket '{reference}' does not exist in project '{project_name}' version '{project_version}'",
             )
         return Ticket(**row)
 
@@ -178,7 +176,7 @@ async def move_tickets(
         for _ticket in _ticket_references:
             connection.row_factory = tuple_row
             ticket_id = connection.execute(
-                "select id" " from tickets" " where current_version = %s" " and reference = %s;",
+                "select id from tickets where current_version = %s and reference = %s;",
                 (
                     current_version_id,
                     _ticket,
@@ -202,7 +200,7 @@ async def _update_ticket_version(
         connection.row_factory = tuple_row
         for _id in ticket_ids:
             row = connection.execute(
-                "update tickets" " set current_version = %s" " where id = %s;",
+                "update tickets set current_version = %s where id = %s;",
                 (
                     target_version_id,
                     _id,
@@ -239,7 +237,7 @@ async def update_ticket(
         if isinstance(result, ApplicationError):
             return result
     # SPEC: update the values first then move the ticket to another version
-    query = "update tickets tk" " set"
+    query = "update tickets tk set"
     update = [
         f" {key} = %s" for key, value in updated_ticket.model_dump().items() if value is not None and key != "version"
     ]
@@ -265,9 +263,7 @@ async def update_ticket(
         if row is None:
             return ApplicationError(
                 error=ApplicationErrorCode.ticket_not_found,
-                message=f"Ticket {ticket_reference} does not exist in "
-                f"project {project_name}"
-                f" version {project_version}",
+                message=f"Ticket {ticket_reference} does not exist in project {project_name} version {project_version}",
             )
         if updated_ticket.version is None:
             return RegisterVersionResponse(

@@ -39,7 +39,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--display",
-        help=("Display the html report after the " "execution using the default browser"),
+        help=("Display the html report after the execution using the default browser"),
         action="store_true",
     )
     parser.add_argument(
@@ -75,7 +75,7 @@ def main() -> None:
     ]
 
     if args.tags:
-        behave_arguments.extend(f'-t {"".join(tags)}' for tags in args.tags)
+        behave_arguments.extend(f"-t {''.join(tags)}" for tags in args.tags)
     value = behave_main(behave_arguments)
 
     # Result management: return value is 0 if everything is fine

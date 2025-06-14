@@ -2,33 +2,10 @@
 # -*- Author: E.Aivayan -*-
 from typing import Optional
 
-from pydantic import BaseModel
+from app.schema.base_schema import ExtendedBaseModel
 
 
-class Feature(BaseModel):
-    name: str
-    tags: Optional[str]
-    filename: str
-
-    def __getitem__(self: "Feature", index: str) -> str:
-        return self.model_dump().get(index, None)
-
-
-class Scenario(BaseModel):
-    epic: str
-    feature_name: str
-    filename: str
-    scenario_tech_id: int
-    scenario_id: str
-    name: str
-    tags: str
-    steps: str
-
-    def __getitem__(self: "Scenario", index: str) -> str | int:
-        return self.model_dump().get(index, None)
-
-
-class TestFeature(BaseModel):
+class TestFeature(ExtendedBaseModel):
     epic_name: str
     feature_name: str
     project_name: str
@@ -36,11 +13,8 @@ class TestFeature(BaseModel):
     filename: str
     tags: str
 
-    def __getitem__(self: "TestFeature", index: str) -> str:
-        return self.model_dump().get(index, None)
 
-
-class TestScenario(BaseModel):
+class TestScenario(ExtendedBaseModel):
     filename: str
     project_name: str
     scenario_id: str
@@ -49,6 +23,5 @@ class TestScenario(BaseModel):
     description: str
     steps: str
     tags: str
-
-    def __getitem__(self: "TestScenario", index: str) -> str | bool:
-        return self.model_dump().get(index, None)
+    is_deleted: Optional[bool] = False
+    scenario_tech_id: Optional[int] = -1

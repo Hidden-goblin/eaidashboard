@@ -283,7 +283,7 @@ class TestRestCampaignWorkflow:
         # Test scenario
         scenario_internal_id: int = dpath.get(
             response.json(),
-            "*/internal_id",
+            "*/scenario_tech_id",
         )  # one scenario by design
         # Update status
         response = application.put(
@@ -370,7 +370,7 @@ class TestRestCampaignWorkflow:
         ), response.text
         response = application.get(
             f"api/v1/projects/{TestRestCampaignWorkflow.project_name}/bugs/"
-            f"{TestRestCampaignWorkflow.context.get_context("bugs/bug_id")}",
+            f"{TestRestCampaignWorkflow.context.get_context('bugs/bug_id')}",
             headers=header,
         )
         assert response.status_code == 200, response.text
@@ -475,10 +475,11 @@ class TestRestCampaignWorkflow:
 
         assert response.status_code == 200, response.text
         test_results = list(zip(response.json().get("element_id"), response.json().get("element_status")))
+        assert len(test_results) == 6, f"{test_results}"
         assert all(item[1] == "skipped" for index, item in enumerate(test_results) if index <= 2), test_results
         assert test_results[3][1] == simple_cast(
             TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[3][0]}")
-        ), TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[3][0]}")
+        ), f"{TestRestCampaignWorkflow.context}"
         assert test_results[4][1] == simple_cast(
             TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[4][0]}")
         ), TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[4][0]}")

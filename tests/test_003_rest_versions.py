@@ -32,7 +32,7 @@ class TestRestVersions:
             )
             assert response.status_code == 200
         response = application.get(
-            f"/api/v1/projects/{TestRestVersions.project_name}/" f"versions/{TestRestVersions.project_version}",
+            f"/api/v1/projects/{TestRestVersions.project_name}/versions/{TestRestVersions.project_version}",
             headers=logged,
         )
         if response.status_code == 404:
@@ -43,7 +43,7 @@ class TestRestVersions:
             )
             assert response.status_code == 200
         response = application.get(
-            f"/api/v1/projects/{TestRestVersions.project_name}/" f"versions/{TestRestVersions.project_new_version}",
+            f"/api/v1/projects/{TestRestVersions.project_name}/versions/{TestRestVersions.project_new_version}",
             headers=logged,
         )
         if response.status_code == 404:
@@ -212,7 +212,7 @@ class TestRestVersions:
     one_ticket_error_404 = [
         ("toto", "1.0.1", "ref-001", "'toto' is not registered"),
         ("test", "2.0.0", "ref-001", "Version '2.0.0' is not found"),
-        ("test", "1.0.1", "ref-002", "Ticket 'ref-002' does not exist" " in project 'test' version '1.0.1'"),
+        ("test", "1.0.1", "ref-002", "Ticket 'ref-002' does not exist in project 'test' version '1.0.1'"),
     ]
 
     @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)

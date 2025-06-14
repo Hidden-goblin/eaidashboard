@@ -7,6 +7,7 @@
         <th>Name</th>
            <th>Id</th>
            <th>Found in</th>
+           <th>Actions</th>
       </tr>
       </thead>
       <tbody>
@@ -17,6 +18,15 @@
         <td>{{scenario.name}}</td>
           <td>{{scenario.scenario_id}}</td>
           <td>{{scenario.filename}}</td>
+          <td>
+              <button class="btn btn-danger btn-sm"
+                      hx-delete="/front/v1/projects/{{project_name}}/repository/scenarios/{{scenario.scenario_tech_id}}?current_page={{current_page}}{{filter}}&epic_name={{scenario.epic}}&feature_name={{scenario.feature_name}}"
+                      hx-target="#repositoryTable"
+                      hx-swap="outerHTML"
+                      hx-confirm="Are you sure you want to delete this scenario?">
+                  Delete
+              </button>
+          </td>
       </tr>
       {% endfor %}
       </tbody>

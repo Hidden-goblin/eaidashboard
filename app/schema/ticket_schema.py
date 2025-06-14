@@ -9,6 +9,15 @@ from app.schema.status_enum import TicketType
 
 
 class Ticket(BaseModel):
+    """
+    Attributes:
+        status
+        reference
+        description
+        created
+        updated
+    """
+
     status: str
     reference: str
     description: str

@@ -1,15 +1,15 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-
 from typing import Optional
 
-from fastapi import APIRouter, File, Security, UploadFile
+from fastapi import APIRouter, File, Query, Security, UploadFile
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 from app.app_exception import MalformedCsvFile, front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
+from app.database.postgre.test_repository.scenarios_utils import db_get_scenario_from_partial, db_update_scenario
 from app.database.postgre.testrepository import db_project_scenarios
 from app.routers.front.front_projects import repository_dropdowns
 from app.routers.rest.project_repository import process_upload
@@ -56,6 +56,69 @@ async def front_project_repository(
                 "project_name": project_name,
                 "project_name_alias": provide(project_name),
             },
+        )
+    except Exception as exception:
+        log_error(repr(exception))
+        return front_error_message(templates, request, exception)
+
+
+@router.delete(
+    "/{project_name}/repository/scenarios/{scenario_tech_id}",
+    tags=["Front - Repository"],
+    include_in_schema=False,
+)
+async def delete_scenario(
+    project_name: str,
+    scenario_tech_id: str,
+    request: Request,
+    epic_name: str,
+    feature_name: str,
+    user: User = Security(front_authorize, scopes=["admin", "user"]),
+    current_page: int = Query(-1),
+    epic: Optional[str] = None,
+    feature: Optional[str] = None,
+) -> HTMLResponse:
+    if not isinstance(user, (User, UserLight)):
+        return user
+    try:
+        current_scenario = await db_get_scenario_from_partial(
+            project_name=project_name,
+            epic_name=epic_name,
+            feature_name=feature_name,
+            scenario_tech_id=int(scenario_tech_id),
+        )
+        if not current_scenario:
+            raise Exception(f"Scenario with tech_id {scenario_tech_id} not found.")
+
+        await db_update_scenario(project_name, current_scenario, is_deleted=True)
+
+        __, new_count = await db_project_scenarios(
+            project_name,
+            epic=epic,
+            feature=feature,
+            limit=1,  # Only need the count
+        )
+        limit = 10
+        if current_page == 1:
+            return await __get_scenarios(
+                project_name,
+                request,
+                10,
+                0,
+                epic,
+                feature,
+            )
+        else:
+            skip = max(0, current_page - 1) * limit
+            if new_count <= skip:
+                skip = max(0, current_page - 2) * limit
+        return await __get_scenarios(
+            project_name,
+            request,
+            limit,
+            skip,
+            epic,
+            feature,
         )
     except Exception as exception:
         log_error(repr(exception))
@@ -153,35 +216,54 @@ async def get_scenario(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        scenarios, count = await db_project_scenarios(
+        # TODO make a private function to call either from get_scenario or delete_scenario
+        return await __get_scenarios(
             project_name,
+            request,
+            limit,
+            skip,
             epic,
             feature,
-            limit=limit,
-            offset=skip,
-        )
-        pages, current_page = page_numbering(
-            count,
-            limit=limit,
-            skip=skip,
-        )
-        _filter = f"&epic={epic}&feature={feature}" if epic is not None and feature is not None else ""
-        return templates.TemplateResponse(
-            "tables/scenario_table.html",
-            {
-                "request": request,
-                "project_name": project_name,
-                "project_name_alias": provide(project_name),
-                "scenarios": scenarios,
-                "pages": pages,
-                "current_page": current_page,
-                "nav_bar": count > limit,
-                "filter": _filter,
-            },
         )
     except Exception as exception:
         log_error(repr(exception))
         return front_error_message(templates, request, exception)
+
+
+async def __get_scenarios(
+    project_name: str,
+    request: Request,
+    limit: int,
+    skip: int,
+    epic: Optional[str] = None,
+    feature: Optional[str] = None,
+) -> HTMLResponse:
+    scenarios, count = await db_project_scenarios(
+        project_name,
+        epic,
+        feature,
+        limit=limit,
+        offset=skip,
+    )
+    pages, current_page = page_numbering(
+        count,
+        limit=limit,
+        skip=skip,
+    )
+    _filter = f"&epic={epic}&feature={feature}" if epic is not None and feature is not None else ""
+    return templates.TemplateResponse(
+        "tables/scenario_table.html",
+        {
+            "request": request,
+            "project_name": project_name,
+            "project_name_alias": provide(project_name),
+            "scenarios": scenarios,
+            "pages": pages,
+            "current_page": current_page,
+            "nav_bar": count > limit,
+            "filter": _filter,
+        },
+    )
 
 
 @router.post(
@@ -198,27 +280,13 @@ async def filter_repository(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        scenarios, count = await db_project_scenarios(
+        return await __get_scenarios(
             project_name,
+            request,
+            10,
+            0,
             body["epic"],
             body["feature"],
-            limit=10,
-        )
-        pages, current_page = page_numbering(
-            count,
-            limit=10,
-            skip=0,
-        )
-        return templates.TemplateResponse(
-            "tables/scenario_table.html",
-            {
-                "request": request,
-                "scenarios": scenarios,
-                "pages": pages,
-                "current_page": current_page,
-                "nav_bar": count > 10,
-                "filter": f"&epic={body['epic']}&feature=" f"{body['feature']}",
-            },
         )
     except Exception as exception:
         log_error(repr(exception))

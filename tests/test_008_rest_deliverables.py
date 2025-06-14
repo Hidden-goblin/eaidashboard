@@ -54,19 +54,19 @@ class TestRestDeliverables:
         {
             "ticket_reference": "td-001",
             "scenario_id": "test_1",
-            "feature_id": "New Test feature",
+            "feature_name": "New Test feature",
             "status": "in progress",
         },
         {
             "ticket_reference": "td-001",
             "scenario_id": "test_2",
-            "feature_id": "New Test feature",
+            "feature_name": "New Test feature",
             "status": "waiting fix",
         },
         {
             "ticket_reference": "td-002",
             "scenario_id": "test_2",
-            "feature_id": "Test feature",
+            "feature_name": "Test feature",
             "status": "waiting answer",
         },
     ]
@@ -146,7 +146,7 @@ class TestRestDeliverables:
         campaign_occurrence: int,
     ) -> None:
         response = application.post(
-            f"/api/v1/projects/{project_name}/campaigns/{project_version}" f"/{campaign_occurrence}",
+            f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}",
             headers=logged,
         )
         assert response.status_code == 404, response.text
@@ -208,7 +208,7 @@ class TestRestDeliverables:
         campaign_occurrence: int,
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{project_name}/campaigns/{project_version}" f"/{campaign_occurrence}/deliverables",
+            f"/api/v1/projects/{project_name}/campaigns/{project_version}/{campaign_occurrence}/deliverables",
             headers=logged,
         )
         assert response.status_code == 404, response.text

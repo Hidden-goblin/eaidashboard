@@ -121,7 +121,7 @@ async def rest_export_results(  # noqa:ANN201
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
 ):
     try:
-        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:" f"{rendering}:{accept}"
+        file_key = f"file:{provide(project_name)}:{version}:{campaign_occurrence}:{category}:{rendering}:{accept}"
         if accept != "application/json":
             filename = rs_retrieve_file(file_key)
             if filename is not None:

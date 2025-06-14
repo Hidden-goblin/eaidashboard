@@ -8,9 +8,11 @@ from app.conf import BASE_DIR
 from app.database.postgre.pg_bugs import get_bugs
 from app.database.postgre.testcampaign import get_campaign_content
 from app.database.utils.combined_results import get_ticket_with_scenarios
-from app.schema.campaign_schema import CampaignFull, Scenario, ScenarioInternal, TicketScenario
+from app.schema.campaign.campaign_response_schema import CampaignFull
+from app.schema.campaign_schema import TicketScenario
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.postgres_enums import ScenarioStatusEnum, TestResultStatusEnum
+from app.schema.respository.scenario_schema import ScenarioExecution
 from app.schema.rest_enum import DeliverableTypeEnum
 from app.utils.project_alias import provide
 
@@ -19,7 +21,7 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Plan", 0)
     document.add_paragraph(
-        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        f"Campaign for {campaign.project_name} in version {campaign.version}",
         style="Subtitle",
     )
     document.add_page_break()
@@ -102,12 +104,12 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
             row_cells = table.add_row().cells
             row_cells[0].text = scenario.scenario_id
             row_cells[1].text = scenario.name
-            row_cells[2].text = scenario.feature_id
-            row_cells[3].text = scenario.epic_id
+            row_cells[2].text = scenario.feature_name
+            row_cells[3].text = scenario.epic
             row_cells[4].text = scenario.steps
 
     filename = (
-        BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_" f"{campaign.version}_{uuid.uuid4()}.docx"
+        BASE_DIR / "static" / f"Test_Plan_{provide(campaign.project_name)}_{campaign.version}_{uuid.uuid4()}.docx"
     )  # pragma:noqa
 
     document.save(filename)
@@ -115,7 +117,8 @@ async def test_plan_from_campaign(campaign: CampaignFull) -> str:
     return filename.name
 
 
-def _compute_status(scenarios: list[Scenario | ScenarioInternal] | None) -> TestResultStatusEnum:
+def _compute_status(scenarios: list[ScenarioExecution] | None) -> TestResultStatusEnum:
+    # TODO: Check signature as it might break with "None" is not iterable
     status = [scenario.status for scenario in scenarios]
     if ScenarioStatusEnum.waiting_fix in status or ScenarioStatusEnum.waiting_answer in status:
         return TestResultStatusEnum.failed
@@ -131,7 +134,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     document = Document()
     document.add_heading("Test Exit Report", 0)
     document.add_paragraph(
-        f"Campaign for {campaign.project_name} " f"in version {campaign.version}",
+        f"Campaign for {campaign.project_name} in version {campaign.version}",
         style="Subtitle",
     )
     document.add_page_break()
@@ -240,7 +243,7 @@ async def test_exit_report_from_campaign(campaign: CampaignFull) -> str:
     filename = (
         BASE_DIR
         / "static"
-        / (f"TER_{provide(campaign.project_name)}" f"_{campaign.version}_" f"{campaign.occurrence}{uuid.uuid4()}.docx")
+        / (f"TER_{provide(campaign.project_name)}_{campaign.version}_{campaign.occurrence}{uuid.uuid4()}.docx")
     )  # pragma:noqa
 
     document.save(filename)

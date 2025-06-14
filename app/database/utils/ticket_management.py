@@ -67,7 +67,7 @@ async def add_ticket_to_campaign(
         )
 
         result = connection.execute(
-            "select id from campaign_tickets " "where campaign_id = %s " "and ticket_reference = %s;",
+            "select id from campaign_tickets where campaign_id = %s and ticket_reference = %s;",
             (
                 campaign_id.result().campaign_id,
                 ticket_reference,

@@ -39,9 +39,10 @@ from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.database.utils.ticket_management import add_tickets_to_campaign
 from app.database.utils.what_strategy import REGISTERED_STRATEGY
-from app.schema.campaign_schema import CampaignPatch, Scenarios
+from app.schema.campaign_schema import CampaignPatch
 from app.schema.error_code import ApplicationError
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.respository.feature_schema import Feature
 from app.schema.rest_enum import (
     DeliverableTypeEnum,
     RestTestResultCategoryEnum,
@@ -385,9 +386,9 @@ async def front_get_campaign_ticket_add_scenario(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        epics = await db_project_epics(project_name)
+        epics, __ = await db_project_epics(project_name)
         if epics:
-            features = await db_project_features(
+            features, _count = await db_project_features(
                 project_name,
                 epics[0],
             )
@@ -469,7 +470,7 @@ async def front_get_campaign_ticket(
 
 
 @router.put(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -514,7 +515,7 @@ async def front_update_campaign_ticket_scenario_status(
 
 
 @router.get(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -559,7 +560,7 @@ async def front_update_campaign_ticket_scenario_update_form(
 
 
 @router.delete(
-    "/{project_name}/campaigns/{version}/{occurrence}/tickets/" "{ticket_reference}/scenarios/{scenario_internal_id}",
+    "/{project_name}/campaigns/{version}/{occurrence}/tickets/{ticket_reference}/scenarios/{scenario_internal_id}",
     tags=["Front - Campaign"],
     include_in_schema=False,
 )
@@ -605,25 +606,22 @@ async def add_scenarios_to_ticket(
     version: str,
     occurrence: str,
     ticket_reference: str,
-    element: dict,
+    element: Feature,
     request: Request,
     user: User = Security(front_authorize, scopes=["admin", "user"]),
 ) -> HTMLResponse:
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        valid = "scenario_ids" in element
-        if valid and not isinstance(element["scenario_ids"], list):
-            element["scenario_ids"] = [element["scenario_ids"]]
-
-        if valid:
-            await db_put_campaign_ticket_scenarios(
-                project_name,
-                version,
-                occurrence,
-                ticket_reference,
-                [Scenarios(**element)],
-            )
+        await db_put_campaign_ticket_scenarios(
+            project_name,
+            version,
+            occurrence,
+            ticket_reference,
+            [
+                element,
+            ],
+        )
         return templates.TemplateResponse(
             "void.html",
             {"request": request},
@@ -727,7 +725,7 @@ async def front_campaign_occurrence_status(
     if not isinstance(user, (User, UserLight)):
         return user
     try:
-        result = rs_retrieve_file(f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html")
+        result = rs_retrieve_file(f"file:{provide(project_name)}:{version}:{occurrence}:scenarios:map:text/html")
         if result is None:
             test_results = TestResults(
                 REGISTERED_STRATEGY[RestTestResultCategoryEnum.SCENARIOS][RestTestResultRenderingEnum.MAP],
@@ -739,7 +737,7 @@ async def front_campaign_occurrence_status(
                 occurrence,
             )
             rs_record_file(
-                f"file:{provide(project_name)}:{version}:" f"{occurrence}:scenarios:map:text/html",
+                f"file:{provide(project_name)}:{version}:{occurrence}:scenarios:map:text/html",
                 result,
             )
         return templates.TemplateResponse(
@@ -795,9 +793,9 @@ async def front_campaign_occurrence_snapshot_status(
             "back_message.html",
             {
                 "request": request,
-                "highlight": "Your request has been taken in " "account.",
+                "highlight": "Your request has been taken in account.",
                 "sequel": " The application is processing data.",
-                "advise": f"You might see the status for " f"{result.result_uuid}.",
+                "advise": f"You might see the status for {result.result_uuid}.",
             },
             headers={"HX-Retarget": "#messageBox"},
         )
@@ -824,7 +822,7 @@ async def front_campaign_occurrence_deliverables(
         return user
     try:
         if ticket_ref is not None:
-            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:" f"{deliverable_type.value}"
+            key = f"file:{project_name}:{version}:{occurrence}:{ticket_ref}:{deliverable_type.value}"
         else:
             key = f"file:{project_name}:{version}:{occurrence}:{deliverable_type.value}"
         filename = rs_retrieve_file(key)

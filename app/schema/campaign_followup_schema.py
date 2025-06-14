@@ -2,25 +2,24 @@
 # -*- Author: E.Aivayan -*-
 from typing import List
 
-from pydantic import BaseModel
-
-from app.schema.campaign_schema import Scenario
+from app.schema.base_schema import ExtendedBaseModel
 from app.schema.postgres_enums import CampaignStatusEnum
+from app.schema.respository.scenario_schema import ScenarioExecution
 
 
-class ComputeResultSchema(BaseModel):
+class ComputeResultSchema(ExtendedBaseModel):
     """Attributes
     - result_uuid: str
     - campaign_id: int
-    - scenarios: List[Scenario]
+    - scenarios: List[ScenarioExecution]
     """
 
     result_uuid: str
     campaign_id: int
-    scenarios: List[Scenario]
+    scenarios: List[ScenarioExecution]
 
 
-class CampaignIdStatus(BaseModel):
+class CampaignIdStatus(ExtendedBaseModel):
     """Attributes
     - campaign_id: int
     - status: CampaignStatusEnum

@@ -28,7 +28,7 @@ directory = "cov_html"
 
 [tool.pytest.ini_options]
 rootdir = "."
-testpaths = "tests"
+testpaths = ["tests"]
 addopts = "--order-dependencies"
 
 [project]

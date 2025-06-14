@@ -124,15 +124,14 @@ async def repository_dropdowns(
     feature: str,
 ) -> HTMLResponse:
     if epic is None and feature is None:
-        epics = await db_project_epics(project_name)
+        epics, __ = await db_project_epics(project_name)
         if epics:
-            features = {
-                feature["name"]
-                for feature in await db_project_features(
-                    project_name,
-                    epics[0],
-                )
-            }
+            _features, _count = await db_project_features(
+                project_name,
+                epics[0],
+            )
+            # Todo: iterate to get all
+            features = {feature.name for feature in _features}
         else:
             features = set()
         return templates.TemplateResponse(
@@ -146,7 +145,9 @@ async def repository_dropdowns(
             },
         )
     if epic is not None and feature is None:
-        features = {feature["name"] for feature in await db_project_features(project_name, epic)}
+        _features, count = await db_project_features(project_name, epic)
+        # TODO: iterate on count
+        features = {feature["name"] for feature in _features}
         return templates.TemplateResponse(
             "selectors/feature_label_selectors.html",
             {

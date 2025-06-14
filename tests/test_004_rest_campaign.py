@@ -57,7 +57,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == []
 
     def test_get_campaigns_errors_404(
@@ -70,7 +70,7 @@ class TestRestCampaign:
             "/api/v1/projects/toto/campaigns",
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "'toto' is not registered"
 
         # version not found
@@ -79,7 +79,7 @@ class TestRestCampaign:
             params={"version": "3.0.0"},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "Version '3.0.0' is not found"
 
     def test_get_campaigns_errors_500(
@@ -93,7 +93,7 @@ class TestRestCampaign:
                 f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_create_campaigns_errors_401(
@@ -104,7 +104,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns",
             json={"version": TestRestCampaign.current_version},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     def test_create_campaigns(
@@ -117,7 +117,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {
             "project_name": TestRestCampaign.project_name,
             "version": TestRestCampaign.current_version,
@@ -147,7 +147,7 @@ class TestRestCampaign:
             json=payload,
             headers=logged,
         )
-        assert response.status_code == 422
+        assert response.status_code == 422, response.text
         assert error_message_extraction(response.json()["detail"]) == message
 
     def test_create_campaigns_errors_404_project(
@@ -160,7 +160,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "'unknown_project' is not registered"
 
     def test_create_campaigns_errors_404_version(
@@ -173,7 +173,7 @@ class TestRestCampaign:
             json={"version": "1.1.1"},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == "Version '1.1.1' is not found"
 
     def test_create_campaigns_errors_500(
@@ -188,7 +188,7 @@ class TestRestCampaign:
                 json={"version": TestRestCampaign.current_version},
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_fill_campaign_errors_401(
@@ -196,10 +196,10 @@ class TestRestCampaign:
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"version": TestRestCampaign.current_version},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     def test_fill_campaign(
@@ -208,12 +208,17 @@ class TestRestCampaign:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
-        assert response.status_code == 200
-        assert response.json() == {"campaign_ticket_id": 1, "errors": []}
+        assert response.status_code == 200, response.text
+        assert response.json() == {
+            "acknowledged": True,
+            "message": "Ticket ref-001 has been linked to the occurrence 1 of the 1.0.0 campaign",
+            "raw_data": None,
+            "resource_id": 1,
+        }
 
     def test_fill_campaign_200_no_error_on_duplicate(
         self: "TestRestCampaign",
@@ -221,12 +226,17 @@ class TestRestCampaign:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns" f"/{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"ticket_reference": "ref-001"},
             headers=logged,
         )
-        assert response.status_code == 200
-        assert response.json() == {"campaign_ticket_id": 1, "errors": []}
+        assert response.status_code == 200, response.text
+        assert response.json() == {
+            "resource_id": 1,
+            "message": "Ticket ref-001 has been linked to the occurrence 1 of the 1.0.0 campaign",
+            "acknowledged": True,
+            "raw_data": None,
+        }
 
     campaign_error_404 = [
         (
@@ -271,11 +281,11 @@ class TestRestCampaign:
         message: str,
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{project}/campaigns" f"/{version}/{occurrence}",
+            f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
             json={"ticket_reference": ticket},
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == message
 
     def test_get_campaigns_with_version(
@@ -288,7 +298,7 @@ class TestRestCampaign:
             params={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -309,7 +319,7 @@ class TestRestCampaign:
             params={"status": "recorded"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -333,7 +343,7 @@ class TestRestCampaign:
             },
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == [
             {
                 "description": None,
@@ -354,7 +364,7 @@ class TestRestCampaign:
             params={"status": "in progress"},
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == []
 
     def test_get_campaigns_with_version_no_campaign(
@@ -405,7 +415,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.json() == {
             "description": None,
             "status": "recorded",
@@ -435,7 +445,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
             headers=logged,
         )
-        assert response.status_code == 404
+        assert response.status_code == 404, response.text
         assert response.json()["detail"] == message
 
     def test_get_campaign_errors_500(
@@ -446,10 +456,10 @@ class TestRestCampaign:
         with patch("app.routers.rest.project_campaigns.get_campaign_content") as rp:
             rp.side_effect = Exception("error")
             response = application.get(
-                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text
             assert response.json()["detail"] == "error"
 
     def test_patch_campaign_errors_401(
@@ -457,10 +467,10 @@ class TestRestCampaign:
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.patch(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json={"status": "in progress", "description": "wonderful"},
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, response.text
         assert response.json()["detail"] == "Not authenticated"
 
     patch_campaign_params = [
@@ -517,10 +527,10 @@ class TestRestCampaign:
             {"status": "progress", "description": "wonderful"},
             [
                 {
-                    "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or " "'paused'"},
+                    "ctx": {"expected": "'recorded', 'in progress', 'cancelled', 'done', 'closed' or 'paused'"},
                     "input": "progress",
                     "loc": ["body", "status"],
-                    "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' " "or 'paused'",
+                    "msg": "Input should be 'recorded', 'in progress', 'cancelled', 'done', 'closed' or 'paused'",
                     "type": "enum",
                 }
             ],
@@ -532,7 +542,7 @@ class TestRestCampaign:
                     "ctx": {"error": {}},
                     "input": {},
                     "loc": ["body"],
-                    "msg": "Value error, CampaignPatch must have at least one key of " "'('description', 'status')'",
+                    "msg": "Value error, CampaignPatch must have at least one key of '('description', 'status')'",
                     "type": "value_error",
                 }
             ],
@@ -548,7 +558,7 @@ class TestRestCampaign:
         result: list,
     ) -> None:
         response = application.patch(
-            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+            f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
             json=payload,
             headers=logged,
         )
@@ -585,8 +595,8 @@ class TestRestCampaign:
         with patch("app.routers.rest.project_campaigns.pg_update_campaign_occurrence") as rp:
             rp.return_value = ApplicationError(error=ApplicationErrorCode.database_no_update, message="No update")
             response = application.patch(
-                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/" f"{TestRestCampaign.current_version}/1",
+                f"/api/v1/projects/{TestRestCampaign.project_name}/campaigns/{TestRestCampaign.current_version}/1",
                 json={"status": "in progress", "description": "wonderful"},
                 headers=logged,
             )
-            assert response.status_code == 500
+            assert response.status_code == 500, response.text

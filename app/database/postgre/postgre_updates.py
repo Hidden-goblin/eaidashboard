@@ -30,7 +30,7 @@ POSTGRE_UPDATES = [
         "request": """alter table campaign_tickets_scenarios
          rename column ticket_name 
          to ticket_reference;""",
-        "description": "Rename column in campaign-tickets-scenarios from ticket_name" " to ticket_reference",
+        "description": "Rename column in campaign-tickets-scenarios from ticket_name to ticket_reference",
     },
     {
         "request": """alter table campaign_tickets_scenarios
@@ -367,6 +367,21 @@ POSTGRE_UPDATES = [
         ticket_reference,
         scenario_id);""",
         "description": "Add constraint on non-duplicate link",
+    },
+    {
+        "request": """alter table scenarios
+        add column is_deleted BOOLEAN default FALSE;""",
+        "description": "Add the soft delete tag 'is_deleted'",
+    },
+    {
+        "request": """Update scenarios
+        set is_deleted = FALSE;""",
+        "description": "All existing scenario are not deleted",
+    },
+    {
+        "request": """alter table scenarios 
+        add constraint chk_scenarios_isdeleted_not_null check (is_deleted IS NOT NULL); """,
+        "description": "Add constraint to is_deleted to be not null",
     },
     # Alter table users to use the first scope in the array to a json
     # alter table users

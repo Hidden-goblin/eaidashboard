@@ -15,7 +15,7 @@ def log_in(
     if response.status_code != 200:
         raise Exception(response.text)
 
-    return {"Authorization": f"Bearer {response.json()["access_token"]}"}
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
 # noinspection PyUnresolvedReferences

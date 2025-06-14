@@ -137,13 +137,7 @@ def db_bug_linked_scenario(
 ) -> List[CampaignTicketScenario | None]:
     if bug_internal_id is None:
         return []
-    query = (
-        "select occurrence,"
-        " ticket_reference,"
-        " scenario_id as scenario_tech_id"
-        " from bugs_issues"
-        " where bug_id = %s;"
-    )
+    query = "select occurrence, ticket_reference, scenario_id as scenario_tech_id from bugs_issues where bug_id = %s;"
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(
@@ -165,7 +159,7 @@ def __update_bug_status(
             BugStatusEnum.closed_not_a_defect: BugStatusEnum.closed.value,
         }
 
-        current_status_criticality = f"{open_close_collapse[current_bug.status]}_" f"{current_bug.criticality}"
+        current_status_criticality = f"{open_close_collapse[current_bug.status]}_{current_bug.criticality}"
         to_be_status_criticality = (
             f"{open_close_collapse[bug_ticket.to_dict().get('status', current_bug['status'])]}"
             f"_{bug_ticket.to_dict().get('criticality', current_bug['criticality'])}"
@@ -231,7 +225,7 @@ async def db_update_bugs(
     with pool.connection() as connection:
         connection.row_factory = dict_row
         row = connection.execute(
-            f"update bugs" f" set " f" {to_set}" f" where id = %s" f" returning id;",
+            f"update bugs set  {to_set} where id = %s returning id;",
             values,
         )
         logger.info(row.statusmessage)

@@ -6,8 +6,9 @@ from typing import List, Tuple
 
 from psycopg.rows import dict_row, tuple_row
 
+from app.schema.campaign.campaign_response_schema import CampaignLight
 from app.schema.campaign_followup_schema import CampaignIdStatus
-from app.schema.campaign_schema import CampaignLight, CampaignPatch
+from app.schema.campaign_schema import CampaignPatch
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
@@ -52,88 +53,54 @@ async def retrieve_campaign(
     limit: int = 10,
     skip: int = 0,
 ) -> Tuple[List[CampaignLight], int]:
-    """Get raw campaign with version, occurrence, description and status
-    TODO: check if dict could be replace with a model
+    """Get raw campaign with version, occurrence, description, and status
+    :return List[CampaignLight], <total result>
     """
+    base_query = """
+        select project_id as project_name,
+               version as version,
+               occurrence as occurrence,
+               description as description,
+               status as status
+          from campaigns
+    """
+
+    count_query = """
+        select count(*) as total
+          from campaigns
+    """
+
+    conditions = [
+        "project_id = %s",
+    ]
+    params = [
+        project_name,
+    ]
+
+    # Dynamically add conditions based on inputs
+    if version:
+        conditions.append("version = %s")
+        params.append(version)
+    if status:
+        conditions.append("status = %s")
+        params.append(status)
+
+    base_query = (
+        f"{base_query} where {' and '.join(conditions)} order by version desc, occurrence desc limit %s offset %s;"
+    )
+    count_query = f"{count_query} where {' and '.join(conditions)};"
+
+    params.extend([limit, skip])
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        if version is None and status is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    limit,
-                    skip,
-                ),
-            )
-        elif version is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s"
-                " and status = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    status,
-                    limit,
-                    skip,
-                ),
-            )
-        elif status is None:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                " and version = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    version,
-                    limit,
-                    skip,
-                ),
-            )
-        else:
-            conn = connection.execute(
-                "select project_id as project_name,"
-                " version as version, occurrence as occurrence,"
-                " description as description, "
-                " status as status "
-                "from campaigns "
-                "where project_id = %s "
-                " and version = %s"
-                " and status = %s "
-                "order by version desc, occurrence desc "
-                "limit %s offset %s;",
-                (
-                    project_name,
-                    version,
-                    status,
-                    limit,
-                    skip,
-                ),
-            )
-        count = connection.execute(
-            "select count(*) as total " "from campaigns " "where project_id = %s;",
-            (project_name,),
-        )
-        return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
+
+        # Execute queries
+        # Todo add async fetch
+        conn = connection.execute(base_query, tuple(params))
+        count = connection.execute(count_query, tuple(params[:-2]))
+
+    return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
 
 
 async def retrieve_campaign_id(
@@ -142,15 +109,10 @@ async def retrieve_campaign_id(
     occurrence: str,
 ) -> CampaignIdStatus | ApplicationError:
     """get campaign internal id and status"""
-    # ToDO: Add model response
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
-            "select id, status"
-            " from campaigns"
-            " where project_id = %s "
-            " and version = %s "
-            " and occurrence = %s;",
+            "select id, status from campaigns where project_id = %s  and version = %s  and occurrence = %s;",
             (
                 project_name,
                 version,
@@ -227,6 +189,7 @@ async def update_campaign_occurrence(
     occurrence: str,
     update_occurrence: CampaignPatch,
 ) -> PGResult | ApplicationError:
+    # Ensure the campaign exist
     campaign_id = await retrieve_campaign_id(
         project_name,
         version,
@@ -234,23 +197,25 @@ async def update_campaign_occurrence(
     )
     if isinstance(campaign_id, ApplicationError):
         return campaign_id
+
+    # Prepare request
+    query = []
+    values = []
+    if update_occurrence.status is not None:
+        query.append("status = %s")
+        values.append(
+            update_occurrence.status.value,
+        )
+    if update_occurrence.description is not None:
+        query.append("description = %s")
+        values.append(
+            update_occurrence.description,
+        )
+    values.append(campaign_id.campaign_id)
+    query_full = f"update campaigns set {', '.join(query)} where id = %s;"
+
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        query = []
-        values = []
-        if update_occurrence.status is not None:
-            query.append("status = %s")
-            values.append(
-                update_occurrence.status.value,
-            )
-        if update_occurrence.description is not None:
-            query.append("description = %s")
-            values.append(
-                update_occurrence.description,
-            )
-        values.append(campaign_id.campaign_id)
-        query_full = "update campaigns" f" set {', '.join(query)}" " where id = %s;"
-
         rows = connection.execute(
             query_full,
             values,
@@ -338,7 +303,7 @@ def campaign_failing_scenarios(
                 " where cts.scenario_id = %(scenario_id)s"
                 " and ct.ticket_reference = %(ticket_reference)s;"
             )
-            query_bug = "select scenario_id, ticket_reference" " from bugs_issues" " where bug_id = %s;"
+            query_bug = "select scenario_id, ticket_reference from bugs_issues where bug_id = %s;"
             rows = connection.execute(
                 query_bug,
                 (bug_internal_id,),
