@@ -46,8 +46,26 @@ A `frontend/src/setupTests.js` file is available for global test setup if needed
 Integration testing ensures that different parts of the application work together correctly, including interaction with the backend API. As automated E2E tests are not set up in this phase, manual integration testing is crucial.
 
 **Environment:**
-- A running instance of the backend API, configured to be accessible by the frontend (e.g., via the `VITE_API_BASE_URL` setting in `frontend/.env`).
+- A running instance of the backend API.
 - The frontend application served (e.g., using `npm run dev` for development or built assets on a server).
+
+**API URL Configuration for Testing:**
+The frontend determines the API base URL with the following precedence (see `DEPLOYMENT.md` for full details):
+1. `VITE_API_BASE_URL` (absolute, set at build time).
+2. `VITE_API_BASE_URL` (relative, set at build time).
+3. Dynamically: `[frontend_protocol]//[frontend_hostname]:8087` (at runtime if `VITE_API_BASE_URL` is not set or empty).
+4. Default fallback (e.g., `/api/v1`).
+
+*Ensure your test environment is configured accordingly:*
+- If you rely on the dynamic same-host URL (option 3), your backend API **must** be running on the same host as the frontend and accessible on port **8087** using the same protocol (HTTP/HTTPS).
+- Alternatively, for more control, set the `VITE_API_BASE_URL` environment variable to the correct API endpoint when building or serving the frontend for your test environment. For example:
+  ```bash
+  # For Vite dev server
+  VITE_API_BASE_URL=http://localhost:3000/api npm run dev
+  # For a test build
+  VITE_API_BASE_URL=https://test-api.example.com/v1 npm run build
+  ```
+This ensures the frontend targets the correct backend during tests.
 
 **Key Areas to Test:**
 
