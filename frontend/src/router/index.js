@@ -54,7 +54,7 @@ const authService = { getToken: () => localStorage.getItem('authToken') };
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
-  { path: '/', name: 'dashboard', component: DashboardView, beforeEnter: requireAuth },
+  { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/projects', name: 'projects', component: ProjectsView, beforeEnter: requireAuth },
   {
     path: '/projects/new',

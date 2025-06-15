@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+import os
 from contextlib import asynccontextmanager
 from logging import getLogger
 
@@ -9,7 +10,7 @@ from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redi
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, FileResponse
 
 from app.conf import APP_VERSION, config
 from app.database.postgre.pg_users import init_user
@@ -94,11 +95,13 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/assets", StaticFiles(directory="app/assets"), name="assets")
+app.mount("/front", StaticFiles(directory="app/front", html=True), name="front")
+app.mount("/fassets", StaticFiles(directory="app/front/fassets"), name="fassets")
 
 app.include_router(monitoring.router)
 app.include_router(projects.router)
 app.include_router(settings.router)
-app.include_router(front_dashboard.router)
+# app.include_router(front_dashboard.router)
 app.include_router(version.router)
 app.include_router(tickets.router)
 app.include_router(auth.router)
@@ -145,6 +148,12 @@ async def custom_swagger_ui_html() -> HTMLResponse:
         swagger_css_url="/assets/5_swagger-ui.css",
     )
 
+
+@app.get("/", include_in_schema=False)
+async def serve_front() -> FileResponse:
+    index_path = "app/front/index.html"
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
 async def swagger_ui_redirect() -> HTMLResponse:

@@ -10,5 +10,15 @@ export default defineConfig({
   },
   // Ensure other configurations like base are preserved if they existed
   // For this project, base was implicitly '/'
-  base: '/'
+  base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        // Redirige tous les assets vers le dossier "fassets"
+        assetFileNames: 'fassets/[name].[hash][extname]',
+        chunkFileNames: 'fassets/[name].[hash].js',
+        entryFileNames: 'fassets/[name].[hash].js',
+      }
+    }
+  }
 });

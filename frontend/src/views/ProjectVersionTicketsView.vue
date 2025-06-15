@@ -76,7 +76,7 @@
 
 <script setup>
 import { ref, onMounted, computed, reactive, watch } from 'vue';
-import { useProjectStore } from '../../stores/projectStore';
+import { useProjectStore } from '../stores/projectStore';
 import { useRoute } from 'vue-router';
 
 const projectStore = useProjectStore();
