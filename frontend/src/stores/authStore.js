@@ -1,105 +1,94 @@
-import { defineStore } from 'pinia';
-import authService from '../services/authService'; // Assuming authService handles token storage
+// src/stores/authStore.js
+import {defineStore} from "pinia";
+import {jwtDecode} from "jwt-decode";
+import {useApiBaseUrl} from "../composables/useApiBaseUrl.js";
+import {ref, computed} from "vue";
+import {useApi} from "../composables/useApi.js";
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null, // Example: { username: 'admin', isAdmin: true }
-    isAuthenticated: false,
-    isLoading: false, // To track login/auth check process
-    error: null,
-  }),
-  getters: {
-    isAdmin: (state) => state.user && state.user.isAdmin,
-    // getToken is already in authService, but if needed here:
-    // getToken: () => authService.getToken(),
-  },
-  actions: {
-    async login(credentials) {
-      this.isLoading = true;
-      this.error = null;
-      try {
-        // In a real app, authService.login would make an API call
-        // and return user data including roles and the token.
-        // const apiUserData = await authService.login(credentials);
+export const useAuthStore = defineStore("auth", () => {
+  // State
+  const token = ref( null);
+  const user = ref(JSON.parse(localStorage.getItem("user")) || null);
+  const allProjects = ref(JSON.parse(localStorage.getItem("allProjects")) || []);
+  const showLoginModal = ref(false);
+  const {retryRequests, fetchWithAuth} = useApi();
 
-        // Mocking a successful login based on username:
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-        let userDataFromApi;
-        if (credentials.username === 'admin' && credentials.password === 'admin') {
-          userDataFromApi = {
-            username: credentials.username,
-            isAdmin: true,
-            token: 'mock-admin-jwt-token' // This token should be real in a real app
-          };
-        } else if (credentials.username === 'user' && credentials.password === 'user') {
-          userDataFromApi = {
-            username: credentials.username,
-            isAdmin: false,
-            token: 'mock-user-jwt-token'
-          };
-        } else {
-          throw new Error('Invalid credentials');
-        }
+  // Getters
+  const isAuthenticated = computed(() => !!token.value);
+  const isSuperAdmin = computed(() => user.value?.scopes?.["*"] === "admin");
+  const getUserProjects = computed(() =>
+    Object.keys(user.value?.scopes || {}).filter((p) => p !== "*")
+  );
+  const isAdminForProject = (project) => user.value?.scopes?.[project] === "admin";
 
-        // Store token using authService (which should use localStorage)
-        authService.storeToken(userDataFromApi.token); // You'll need to add storeToken to authService.js
-                                                     // For now, directly use localStorage if authService is not updated.
-                                                     // localStorage.setItem('authToken', userDataFromApi.token);
+  const filteredProjects = computed(() =>
+    isSuperAdmin.value ? allProjects.value : getUserProjects.value
+  );
 
-
-        this.isAuthenticated = true;
-        this.user = { username: userDataFromApi.username, isAdmin: userDataFromApi.isAdmin };
-        this.error = null;
-      } catch (error) {
-        this.isAuthenticated = false;
-        this.user = null;
-        this.error = error.message || 'Failed to login';
-        // Don't throw error here if you want the component to handle UI based on store state
-        // throw error;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    logout() {
-      authService.logout(); // This should clear the token from localStorage
-      this.isAuthenticated = false;
-      this.user = null;
-      this.error = null;
-      // Potentially redirect to login page using router if needed globally
-    },
-
-    async checkAuth() {
-      this.isLoading = true;
-      const token = authService.getToken();
-      if (token) {
-        try {
-          // MOCK: In a real app, you'd verify token with backend (e.g. GET /users/me)
-          // and get user details including username and isAdmin.
-          // For this mock, we'll simulate based on the mock tokens.
-          await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API delay
-          let mockUser;
-          if (token === 'mock-admin-jwt-token') {
-            mockUser = { username: 'admin', isAdmin: true };
-          } else if (token === 'mock-user-jwt-token') {
-            mockUser = { username: 'user', isAdmin: false };
-          } else {
-            // If token is unknown or invalid in this mock setup
-            this.logout(); // Clears invalid token
-            this.isLoading = false;
-            return;
-          }
-          this.user = mockUser;
-          this.isAuthenticated = true;
-        } catch (e) {
-          console.error("checkAuth error:", e)
-          this.logout(); // Token validation failed or other error
-        }
-      } else {
-        this.isAuthenticated = false;
-        this.user = null;
-      }
-      this.isLoading = false;
-    }
+  // Actions
+  function login(newToken) {
+    token.value = newToken;
+    localStorage.setItem("jwtToken", newToken);
+    user.value = jwtDecode(newToken);
+    localStorage.setItem("user", JSON.stringify(user.value));
+    showLoginModal.value = false;
+    retryRequests(newToken);
   }
+
+  function logout() {
+    token.value = null;
+    user.value = null;
+    allProjects.value = [];
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("allProjects");
+  }
+
+  async function fetchProjects() {
+    const apiBaseUrl = useApiBaseUrl();
+    fetchWithAuth(`${apiBaseUrl}/api/v1/settings/projects`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            throw new Error(errorData.detail || "Error fetching projects");
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        allProjects.value = data;
+        localStorage.setItem("allProjects", JSON.stringify(data));
+      })
+      .catch((error) => {
+        console.error("Fetch projects failed:", error);
+        allProjects.value = [];
+      });
+  }
+
+  function decodeToken() {
+    user.value = token.value ? jwtDecode(token.value) : null;
+  }
+
+  return {
+    token,
+    user,
+    allProjects,
+    showLoginModal,
+    isAuthenticated,
+    isSuperAdmin,
+    getUserProjects,
+    filteredProjects,
+    isAdminForProject,
+    login,
+    logout,
+    fetchProjects,
+    decodeToken,
+  };
 });
+

@@ -9,11 +9,13 @@ from app.database.authorization import authorize_user
 from app.database.postgre.pg_projects import get_project, get_projects
 from app.database.postgre.pg_versions import dashboard
 from app.database.utils.object_existence import project_version_raise
+from app.schema.dashboard_schema import Dashboard
 from app.schema.error_code import ErrorMessage
-from app.schema.project_schema import Dashboard, Project, TicketProject
+from app.schema.project_schema import DashboardProject, Project, TicketProject
 from app.schema.users import UpdateUser
 
 router = APIRouter(prefix="/api/v1")
+routerv2 = APIRouter(prefix="/api/v2")
 
 
 @router.get(
@@ -24,13 +26,13 @@ router = APIRouter(prefix="/api/v1")
 versions under test.
             """,
     tags=["Dashboard"],
-    response_model=List[Dashboard],
+    response_model=List[DashboardProject],
 )
 async def api_dashboard(
     response: Response,
     skip: int = 0,
     limit: int = 10,
-) -> List[Dashboard]:
+) -> List[DashboardProject]:
     try:
         # TODO add total # of project in response header
         elements, count = await dashboard(
@@ -39,6 +41,33 @@ async def api_dashboard(
         )
         response.headers["X-total-count"] = str(count)
         return elements
+    except Exception as exp:
+        raise HTTPException(500, " ".join(exp.args)) from exp
+
+
+@routerv2.get(
+    "/dashboard",
+    description="""Summarize the projects' status on current testing.
+
+**Please note**: the x-total-count in the header represents the total count of projects not the different
+versions under test.
+            """,
+    tags=["Dashboard"],
+    response_model=Dashboard,
+)
+async def api_dashboard_v2(
+    response: Response,
+    skip: int = 0,
+    limit: int = 10,
+) -> Dashboard:
+    try:
+        # TODO add total # of project in response header
+        elements, count = await dashboard(
+            skip,
+            limit,
+        )
+        response.headers["X-total-count"] = str(count)
+        return Dashboard(projects=elements)
     except Exception as exp:
         raise HTTPException(500, " ".join(exp.args)) from exp
 

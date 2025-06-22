@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Any
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -53,3 +53,6 @@ class CreateUpdateModel(ExtendedBaseModel):
             acknowledged=self.acknowledged or other.acknowledged,
             raw_data=raw_data if raw_data else None,
         )
+
+class GenericListModel(ExtendedBaseModel):
+    data: List[str|int]

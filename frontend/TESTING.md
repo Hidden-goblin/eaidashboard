@@ -79,8 +79,8 @@ This ensures the frontend targets the correct backend during tests.
     *   [ ] User can successfully log out; session is cleared, and user is redirected to login.
     *   [ ] Session/token is managed correctly (e.g., on page refresh, user remains logged in if token is valid).
 
-2.  **Dashboard:**
-    *   [ ] Dashboard loads and displays project/version summaries correctly after login.
+2.  **DashboardProject:**
+    *   [ ] DashboardProject loads and displays project/version summaries correctly after login.
     *   [ ] Data displayed (mocked or from API) is accurate.
 
 3.  **Project Management:**

@@ -15,7 +15,8 @@ export const useDashboardStore = defineStore('dashboard', {
         // Use the actual API endpoint for dashboard data
         // This endpoint needs to be defined in the backend (e.g., app.routers.rest.*)
         // Assuming an endpoint like '/dashboard' or '/projects-summary'
-        const data = await apiService.get('/dashboard'); // Adjust endpoint as needed
+        const data = await apiService.get('/api/v2/dashboard'); // Adjust endpoint as needed
+        console.log(data);
         this.projects = data.projects; // Assuming the API returns { projects: [...] }
       } catch (e) {
         this.error = e.message || 'Failed to fetch dashboard data.';

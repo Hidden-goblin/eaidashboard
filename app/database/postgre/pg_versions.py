@@ -10,7 +10,7 @@ from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from app.schema.project_schema import Dashboard, Statistics
+from app.schema.project_schema import DashboardProject, Statistics
 from app.schema.status_enum import TicketType
 from app.schema.versions_schema import Version
 from app.utils.log_management import log_message
@@ -244,7 +244,7 @@ async def update_version_data(
 async def dashboard(
     skip: int = 0,
     limit: int = 10,
-) -> Tuple[List[Dashboard], int]:
+) -> Tuple[List[DashboardProject], int]:
     """TODO Fix potential defect where more than 10"""
     projects, count = await get_projects(
         skip,
@@ -264,7 +264,7 @@ async def dashboard(
             }
             for version in project_versions
         )
-    return [Dashboard(**res) for res in result], count
+    return [DashboardProject(**res) for res in result], count
 
 
 async def update_status_for_ticket_in_version(

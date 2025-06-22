@@ -1,19 +1,7 @@
 <template>
   <div class="layout">
     <header class="app-header">
-      <h1>My Application</h1>
-      <nav>
-        <router-link to="/">Dashboard</router-link>
-        <router-link to="/projects">Projects</router-link>
-        <router-link v-if="authStore.user && authStore.user.isAdmin" to="/users">Users</router-link>
-        <router-link to="/documentation">Documentation</router-link>
-        <!-- Login/Logout Links -->
-        <router-link v-if="!authStore.isAuthenticated" to="/login">Login</router-link>
-        <button v-if="authStore.isAuthenticated" @click="handleLogout" class="logout-button">Logout</button>
-      </nav>
-      <div v-if="authStore.isAuthenticated && authStore.user" class="user-info">
-        Logged in as: {{ authStore.user.username }} ({{ authStore.user.isAdmin ? 'Admin' : 'User' }})
-      </div>
+      <NavBar />
     </header>
     <main class="app-content">
       <router-view />
@@ -25,16 +13,8 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '../stores/authStore';
-import { useRouter } from 'vue-router';
+import  NavBar from './NavBar.vue';
 
-const authStore = useAuthStore();
-const router = useRouter();
-
-const handleLogout = () => {
-  authStore.logout();
-  router.push('/login'); // Redirect to login after logout
-};
 </script>
 
 <style scoped>

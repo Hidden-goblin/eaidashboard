@@ -3,14 +3,13 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
-
+from app.schema.base_schema import ExtendedBaseModel
 from app.schema.bugs_schema import Bugs
 from app.schema.project_schema import Statistics
 from app.schema.status_enum import StatusEnum
 
 
-class Version(BaseModel):
+class Version(ExtendedBaseModel):
     version: str
     created: datetime
     updated: datetime

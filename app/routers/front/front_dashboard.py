@@ -24,7 +24,7 @@ router = APIRouter()
 @router.get(
     "/",
     include_in_schema=False,
-    tags=["Front - Dashboard"],
+    tags=["Front - DashboardProject"],
 )
 async def dashboard(
     request: Request,

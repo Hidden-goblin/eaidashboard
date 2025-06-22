@@ -4,13 +4,14 @@ import os
 from contextlib import asynccontextmanager
 from logging import getLogger
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import HTMLResponse, FileResponse
+from starlette.requests import Request
+from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from app.conf import APP_VERSION, config
 from app.database.postgre.pg_users import init_user
@@ -36,7 +37,6 @@ from app.routers.rest import (
     project_repository,
     project_test_results,
     projects,
-    settings,
     tickets,
     users,
     version,
@@ -45,6 +45,10 @@ from app.routers.rest.repository import (
     rest_epics,
     rest_features,
     rest_scenarios,
+)
+from app.routers.rest.settings import (
+    project_workflow,
+    settings,
 )
 from app.utils.log_management import log_message
 from app.utils.openapi_tags import DESCRIPTION
@@ -100,7 +104,9 @@ app.mount("/fassets", StaticFiles(directory="app/front/fassets"), name="fassets"
 
 app.include_router(monitoring.router)
 app.include_router(projects.router)
+app.include_router(projects.routerv2)
 app.include_router(settings.router)
+app.include_router(project_workflow.router)
 # app.include_router(front_dashboard.router)
 app.include_router(version.router)
 app.include_router(tickets.router)
@@ -147,6 +153,28 @@ async def custom_swagger_ui_html() -> HTMLResponse:
         swagger_js_url="/assets/5_swagger-ui-bundle.js",
         swagger_css_url="/assets/5_swagger-ui.css",
     )
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: HTTPException) -> RedirectResponse:
+    """
+
+    Args:
+        request:
+        exc:
+
+    Returns:
+
+    """
+    path = request.url.path
+
+    if path.startswith("/api"):
+        # Laisse FastAPI gérer normalement les erreurs API
+        raise exc
+    else:
+        # Fallback vers le frontend index.html pour les autres routes
+        # index_path = os.path.join("dist", "index.html")
+        # return FileResponse(index_path)
+        return RedirectResponse("/")
 
 
 @app.get("/", include_in_schema=False)

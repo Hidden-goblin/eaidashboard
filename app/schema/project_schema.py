@@ -31,7 +31,7 @@ class Project(BaseModel):
         return self.model_dump().get(index, None)
 
 
-class Dashboard(BaseModel):
+class DashboardProject(BaseModel):
     name: str
     alias: str
     version: str

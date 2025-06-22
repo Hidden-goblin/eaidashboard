@@ -9,9 +9,16 @@
             "settings" : {
                 "projects": {
                     "get": "List of registered projects",
-                    "post": "Register a new project"
+                    "post": "Register a new project",
+                    "<project_name>": {
+                        "workflow": {
+                            "<state>": {
+                                "get": "Retrieve the available transitions"
+                            }
+                        }
                     }
-                },
+                }
+            },
             "dashboard": {
                 "get": "Synthetic view on projects"
             },
