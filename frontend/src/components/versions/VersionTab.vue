@@ -4,28 +4,28 @@
     <div class="header">
       <h2>Versions</h2>
       <div class="actions">
-        <select v-model="selectedType" @change="filterVersions">
+        <select v-model="selectedType" :class="styles.btnBase" @change="filterVersions">
           <option value="current">Current</option>
           <option value="future">Future</option>
           <option value="archived">Archived</option>
         </select>
-        <button @click="toggleNewVersionForm">Create New Version</button>
+        <BaseButton variant="create" @click="toggleNewVersionForm">Create New Version</BaseButton>
       </div>
     </div>
 
     <CreateVersionForm
-      v-if="showNewVersionForm"
-      :projectName="projectName"
-      @version-created="handleVersionCreated"
-      @close="toggleNewVersionForm"
+        v-if="showNewVersionForm"
+        :projectName="projectName"
+        @version-created="handleVersionCreated"
+        @close="toggleNewVersionForm"
     />
 
     <UpdateVersionForm
-      v-if="showUpdateVersionForm"
-      :projectName="projectName"
-      :activeVersionId="updateVersionId"
-      @version-updated="handleVersionUpdated"
-      @close="toggleUpdateVersionForm"
+        v-if="showUpdateVersionForm"
+        :projectName="projectName"
+        :activeVersionId="updateVersionId"
+        @version-updated="handleVersionUpdated"
+        @close="toggleUpdateVersionForm"
     />
 
     <div v-if="loading" class="loading">Loading versions...</div>
@@ -34,106 +34,96 @@
       <p v-if="displayedVersions.length === 0">No versions found.</p>
       <div class="version-list">
         <VersionCard
-          v-for="version in displayedVersions"
-          :key="version.version"
-          :version="version"
-          :isActive="activeVersionId === version.version"
-          @toggle-tickets="toggleTickets"
-          @toggle-update="toggleUpdateVersionForm"
+            v-for="version in displayedVersions"
+            :key="version.version"
+            :version="version"
+            :isActive="activeVersionId === version.version"
+            @toggle-tickets="toggleTickets"
+            @toggle-update="toggleUpdateVersionForm"
         />
       </div>
     </div>
 
     <VersionTickets
-      v-if="activeVersionId"
-      :projectName="projectName"
-      :versionId="activeVersionId"
-      @close="activeVersionId = null"
+        v-if="activeVersionId"
+        :projectName="projectName"
+        :versionId="activeVersionId"
+        @close="() => (activeVersionId = null)"
     />
   </div>
 </template>
 
-<script>
-import { ref, computed, watch, onMounted } from "vue";
-import { useVersionStore } from "../../stores/versionStore";
-import CreateVersionForm from "./CreateVersionForm.vue";
-import VersionTickets from "./VersionTickets.vue";
-import UpdateVersionForm from "./UpdateVersionForm.vue";
-import VersionCard from "./VersionCard.vue";
-import {storeToRefs} from "pinia";
+<script setup>
+import { ref, watch, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useVersionStore } from '../../stores/versionStore'
+import CreateVersionForm from './CreateVersionForm.vue'
+import UpdateVersionForm from './UpdateVersionForm.vue'
+import VersionTickets from './VersionTickets.vue'
+import VersionCard from './VersionCard.vue'
+import styles from '../../styles/buttons.module.css'
+import BaseButton from "../utils/BaseButton.vue";
 
-export default {
-  name: "VersionTab",
-  components: { VersionTickets, CreateVersionForm, UpdateVersionForm, VersionCard },
-  props: { projectName: { type: String, required: true } },
-  setup(props) {
-    const versionStore = useVersionStore();
-    const {selectedType, displayedVersions, loading} = storeToRefs(versionStore);
-    const showNewVersionForm = ref(false);
-    const showUpdateVersionForm = ref(false);
-    const activeVersionId = ref(null);
-    const updateVersionId = ref(null);
+// Props
+const props = defineProps({
+  projectName: {
+    type: String,
+    required: true
+  }
+})
 
-    watch(
-      () => selectedType.value,
-      () => {
-        versionStore.fetchVersions();
-      },
-      { immediate: true }
-    );
+// Stores
+const versionStore = useVersionStore()
+const { selectedType, displayedVersions, loading } = storeToRefs(versionStore)
 
-    watch(
-      () => props.projectName,
-      () => {
-        versionStore.resetVersions();
-        versionStore.fetchVersions();
-      },
-      { immediate: true }
-    );
+// Local State
+const showNewVersionForm = ref(false)
+const showUpdateVersionForm = ref(false)
+const activeVersionId = ref(null)
+const updateVersionId = ref(null)
 
-    onMounted(versionStore.fetchVersions);
+// Watchers
+watch(() => selectedType.value, () => {
+  versionStore.fetchVersions()
+}, { immediate: true })
 
-    const toggleTickets = (versionId) => {
-      activeVersionId.value = activeVersionId.value === versionId ? null : versionId;
-    };
+watch(() => props.projectName, () => {
+  versionStore.resetVersions()
+  versionStore.fetchVersions()
+}, { immediate: true })
 
-    const toggleNewVersionForm = () => {
-      showNewVersionForm.value = !showNewVersionForm.value;
-    };
+onMounted(versionStore.fetchVersions)
 
-    const toggleUpdateVersionForm = (versionId) => {
-      updateVersionId.value = updateVersionId.value === versionId ? null : versionId;
-      showUpdateVersionForm.value = !showUpdateVersionForm.value;
-    };
+// Methods
+const toggleTickets = (versionId) => {
+  activeVersionId.value = activeVersionId.value === versionId ? null : versionId
+}
 
-    const handleVersionCreated = (newVersion) => {
-      versionStore.addVersion(newVersion);
-      showNewVersionForm.value = false;
-    };
+const toggleNewVersionForm = () => {
+  showNewVersionForm.value = !showNewVersionForm.value
+}
 
-    const handleVersionUpdated = () => {
-      versionStore.resetVersions();
-      showUpdateVersionForm.value = false;
-      updateVersionId.value = null;
-      versionStore.fetchVersions();
-    };
+const toggleUpdateVersionForm = (versionId) => {
+  updateVersionId.value = updateVersionId.value === versionId ? null : versionId
+  showUpdateVersionForm.value = !showUpdateVersionForm.value
+}
 
-    return {
-      selectedType,
-      showNewVersionForm,
-      showUpdateVersionForm,
-      activeVersionId,
-      updateVersionId,
-      displayedVersions,
-      loading,
-      toggleTickets,
-      toggleNewVersionForm,
-      toggleUpdateVersionForm,
-      handleVersionCreated,
-      handleVersionUpdated,
-    };
-  },
-};
+const handleVersionCreated = (newVersion) => {
+  versionStore.addVersion(newVersion)
+  showNewVersionForm.value = false
+}
+
+const handleVersionUpdated = () => {
+  versionStore.resetVersions()
+  showUpdateVersionForm.value = false
+  updateVersionId.value = null
+  versionStore.fetchVersions()
+}
+
+// Optional: dummy function for filter trigger (select @change)
+const filterVersions = () => {
+  versionStore.fetchVersions()
+}
 </script>
 
 <style scoped>

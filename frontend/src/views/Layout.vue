@@ -7,13 +7,13 @@
       <router-view />
     </main>
     <footer class="app-footer">
-      <p>&copy; 2023 My Application</p>
+      <p>&copy; 2025 EAIDashboard</p>
     </footer>
   </div>
 </template>
 
 <script setup>
-import  NavBar from './NavBar.vue';
+import  NavBar from '../components/NavBar.vue';
 
 </script>
 

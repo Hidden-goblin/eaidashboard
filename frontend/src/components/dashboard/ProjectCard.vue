@@ -21,9 +21,7 @@
           </div>
         </div>
       </div>
-  
-      <!-- Bugs section -->
-      <!-- Bugs section -->
+
 <div class="section bugs">
   <h3>Bugs</h3>
   <div class="bug-row" v-for="type in ['blocking', 'major', 'minor']" :key="type">
@@ -84,13 +82,13 @@
   
   <style scoped>
   .card {
-    background: #d1d1d1;
+    background: #f4f4f4;
     border-radius: 10px;
     padding: 16px;
     font-family: sans-serif;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.432);
-    max-width: 600px;
-    margin: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.432);
+    max-width: 1000px;
+    margin: 1rem auto;
   }
   
   .header {

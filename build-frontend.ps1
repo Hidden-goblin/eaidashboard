@@ -6,7 +6,6 @@ $ErrorActionPreference = "Stop"
 # Variables
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dockerfilePath = Join-Path $projectRoot "docker-build-frontend\Dockerfile"
-$frontendPath = Join-Path $projectRoot "frontend"
 $outputPath = Join-Path $projectRoot "app\front"
 
 # 1. Build de l'image Docker

@@ -9,6 +9,7 @@
           <input
             type="email"
             id="username"
+            data-testid="username-input"
             v-model="username"
             required
             autocomplete="username"
@@ -19,6 +20,7 @@
           <input
             type="password"
             id="password"
+            data-testid="password-input"
             v-model="password"
             required
             autocomplete="current-password"
@@ -30,8 +32,8 @@
         </div>
 
         <div class="modal-actions">
-          <button type="submit">Connect</button>
-          <button type="button" @click="emit('close')">Cancel</button>
+          <BaseButton type="submit">Connect</BaseButton>
+          <BaseButton @click="emit('close')">Cancel</BaseButton>
         </div>
       </form>
     </div>
@@ -40,8 +42,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useAuthStore } from '../stores/authStore'
-import { useApiBaseUrl } from '../composables/useApiBaseUrl'
+import { useAuthStore } from '../../stores/authStore.js'
+import { useApiBaseUrl } from '../../composables/useApiBaseUrl.js'
+import BaseButton from "../utils/BaseButton.vue";
 
 // Props / Emits
 const emit = defineEmits(['close', 'login-success'])
@@ -57,34 +60,37 @@ const apiBaseUrl = useApiBaseUrl()
 
 // Methods
 const connect = async () => {
+  console.log('in connect', username.value, password.value)
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(username.value)) {
     errorMessage.value = 'Please enter a valid email address.'
     return
   }
-
+  console.log('fetching token from', `${apiBaseUrl}/api/v1/token`)
   try {
+    const formBody =
+        'username=' + encodeURIComponent(username.value) +
+        '&password=' + encodeURIComponent(password.value)
+
     const response = await fetch(`${apiBaseUrl}/api/v1/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({
-        username: username.value,
-        password: password.value
+      body:formBody
       })
-    })
 
     if (!response.ok) {
       const err = await response.json()
       throw new Error(err.detail || 'Error logging in')
     }
-
+    console.log('response ok')
     const data = await response.json()
     const token = data.access_token
 
     if (token) {
       authStore.login(token)
+      console.log('token', token)
       emit('login-success', token)
     }
   } catch (err) {
@@ -123,5 +129,34 @@ const connect = async () => {
 .error {
   color: red;
   margin-top: 10px;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+form > div {
+  display: flex;
+  align-items: center;
+}
+
+label {
+  width: 100px; /* or any fixed width that fits your labels */
+  text-align: left;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+input:focus {
+  outline: none;
+  border-color: #3490dc;
+  box-shadow: 0 0 0 2px rgba(52, 144, 220, 0.2);
 }
 </style>

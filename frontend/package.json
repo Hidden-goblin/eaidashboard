@@ -25,6 +25,11 @@
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^18.0.1",
     "vite": "^6.3.5",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^22.0.0",
+    "msw": "^2.10.3",
+    "@testing-library/vue": "^8.1.0",
+    "@pinia/testing": "^0.1.0"
   }
 }

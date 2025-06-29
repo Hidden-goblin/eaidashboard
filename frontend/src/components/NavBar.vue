@@ -1,120 +1,166 @@
 <template>
-    <nav class="navbar">
-      <div class="navbar-brand"><a href="/"> Dashboard</a></div>
-  
-      <div class="navbar-menu">
-        <!-- If not logged in, show login button -->
-        <div v-if="!authStore.isAuthenticated">
-          <button @click="showLoginModal = true">Login</button>
-        </div>
-  
-        <!-- If logged in, show project selector and admin button -->
-        <div v-else>
-          <div class="project-selector" v-if="authStore.allProjects.length > 0">
-            <select v-model="selectedProject" @change="goToProject">
-              <option disabled value="">Select a project</option>
-              <option
-                v-for="project in authStore.filteredProjects"
-                :key="project"
-                :value="project"
-              >
-                {{ project }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <button v-if="authStore.isSuperAdmin" @click="goToAdmin">
-              Administration
-            </button>
-            <button @click="handleLogout">Logout</button>
-          </div>
-        </div>
+  <nav class="navbar">
+    <!-- Brand & burger -->
+    <div class="navbar-left">
+
+      <button class="burger" @click="toggleMenu" aria-label="Toggle menu">☰</button>
+    </div>
+
+    <!-- Right-side Login/Logout buttons -->
+    <div class="navbar-right">
+      <template v-if="!authStore.isAuthenticated">
+        <BaseButton @click="showLoginModal = true" :icon="ArrowRightEndOnRectangleIcon">Login</BaseButton>
+      </template>
+      <template v-else>
+        <BaseButton :icon="ArrowRightStartOnRectangleIcon" @click="handleLogout">Logout</BaseButton>
+      </template>
+    </div>
+
+    <!-- Side menu -->
+    <div class="side-menu" :class="{ open: isMenuOpen }">
+      <BaseButton to="/" class="navbar-brand">Dashboard</BaseButton>
+      <div v-if="authStore.isAuthenticated && authStore.allProjects.length > 0" class="project-selector">
+        <select v-model="selectedProject" @change="goToProject" :class="styles.btnBase">
+          <option disabled value="">Select a project</option>
+          <option
+              v-for="project in authStore.filteredProjects"
+              :key="project"
+              :value="project"
+          >
+            {{ project }}
+          </option>
+        </select>
+        <BaseButton
+            variant="navigate"
+            :disabled="!selectedProject"
+            @click="goToProject"
+        >Go to project
+        </BaseButton>
+
+        <BaseButton
+            v-if="authStore.isSuperAdmin"
+            @click="goToAdmin"
+            variant="admin"
+        >Administration
+        </BaseButton>
       </div>
-  
-      <!-- Login Modal -->
-      <LoginModal
+    </div>
+
+    <!-- Login Modal -->
+    <LoginModal
         v-if="showLoginModal"
         @login-success="handleLogin"
         @close="showLoginModal = false"
-      />
-    </nav>
-  </template>
-  
-  <script setup>
-  import { watch } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { storeToRefs } from 'pinia';
-  
-  import { useAuthStore } from '../stores/authStore.js';
-  import { useVersionStore } from '../stores/versionStore.js';
-  import LoginModal from './LoginModal.vue';
-  
-  // Stores
-  const authStore = useAuthStore();
-  const versionStore = useVersionStore();
-  
-  // Router
-  const router = useRouter();
-  
-  // Refs from stores
-  const { showLoginModal } = storeToRefs(authStore);
-  const { selectedProject } = storeToRefs(versionStore);
-  
-  // Watch project selection change
-  watch(selectedProject, (newProject) => {
-    if (newProject) {
-      router.push(`/projects/${newProject}`);
-    }
-  });
-  
-  // Methods
-  const goToProject = () => {
-    if (selectedProject.value) {
-      router.push(`/projects/${selectedProject.value}`);
-    }
-  };
-  
-  const goToAdmin = () => {
-    router.push('/admin');
-  };
-  
-  const handleLogin = () => {
-    authStore.fetchProjects();
-    showLoginModal.value = false;
-  };
-  
-  const handleLogout = () => {
-    authStore.logout();
-    router.push('/');
-  };
-  </script>
-  
-  <style scoped>
-  .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: #eee;
+    />
+  </nav>
+</template>
+<script setup>
+import {ref, watch} from 'vue';
+import {useRouter} from 'vue-router';
+import {storeToRefs} from 'pinia';
+
+import {useAuthStore} from '../stores/authStore.js';
+import {useVersionStore} from '../stores/versionStore.js';
+import LoginModal from './access/LoginModal.vue';
+import BaseButton from "./utils/BaseButton.vue";
+import {ArrowRightStartOnRectangleIcon, ArrowRightEndOnRectangleIcon} from '@heroicons/vue/20/solid';
+import styles from '../styles/buttons.module.css';
+
+// Stores
+const authStore = useAuthStore();
+const versionStore = useVersionStore();
+
+// Router
+const router = useRouter();
+
+// State
+const isMenuOpen = ref(false);
+const {showLoginModal} = storeToRefs(authStore);
+const {selectedProject} = storeToRefs(versionStore);
+
+// Methods
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value;
+};
+
+const goToProject = () => {
+  if (selectedProject.value) {
+    router.push(`/projects/${selectedProject.value}`);
   }
-  
-  .navbar-brand {
-    font-weight: bold;
+};
+
+const goToAdmin = () => {
+  router.push('/admin');
+};
+
+const handleLogin = () => {
+  authStore.fetchProjects();
+  showLoginModal.value = false;
+};
+
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/');
+};
+
+watch(selectedProject, (newProject) => {
+  if (newProject) {
+    router.push(`/projects/${newProject}`);
   }
-  
-  .navbar-menu {
-    display: flex;
-    align-items: center;
-  }
-  
-  .project-selector {
-    margin-right: 10px;
-  }
-  
-  button {
-    margin-left: 10px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-  </style>
-  
+});
+</script>
+<style scoped>
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #eee;
+  padding: 10px;
+  position: relative;
+}
+
+/* Left section with brand and burger */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Burger button */
+.burger {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Right side (Login/Logout) */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Side menu styling */
+.side-menu {
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 15px;
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.side-menu.open {
+  display: flex;
+}
+
+.project-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+</style>

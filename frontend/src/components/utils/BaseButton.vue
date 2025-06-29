@@ -1,28 +1,49 @@
 <template>
-  <button :class="['btn', variantClass]"
-          v-on="$attrs">
+  <component
+      :is="to ? RouterLink : 'button'"
+      :to="to"
+      :class="[styles.btnBase, variantClass]"
+      v-on="$attrs"
+      v-bind="buttonAttrs"
+  >
     <span v-if="iconComponent" class="icon" aria-hidden="true">
       <component :is="iconComponent" />
     </span>
     <slot />
-  </button>
+  </component>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, TvIcon } from '@heroicons/vue/20/solid';
+import { computed, useAttrs } from 'vue';
+import { RouterLink } from 'vue-router';
+import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, TvIcon, GlobeAltIcon, AcademicCapIcon } from '@heroicons/vue/20/solid';
+import styles from '../../styles/buttons.module.css'
 
 const props = defineProps({
+  to: String,
   variant: {
     type: String,
-    default: 'create',
-    validator: (val) => ['create', 'update', 'delete', 'close', 'view'].includes(val),
+    default: 'clear',
+    validator: (val) => ['create', 'update', 'delete', 'close', 'view', 'navigate', 'admin', 'clear'].includes(val),
   },
   icon: {
     type: [Object, Function],
     default: null,
+  },
+  type: {
+    type: String,
+    default: 'button',
+    validator: (val) => ['button', 'submit', 'reset'].includes(val),
   }
 });
+
+const buttonAttrs = computed(() => {
+  const base = { ...useAttrs() }
+  if (!props.to) {
+    base.type = props.type
+  }
+  return base
+})
 
 const iconComponent = computed(() => {
   if (props.icon) return props.icon;
@@ -30,6 +51,8 @@ const iconComponent = computed(() => {
   if (props.variant === 'update') return PencilIcon;
   if (props.variant === 'delete') return TrashIcon;
   if (props.variant === 'close') return XMarkIcon;
+  if (props.variant === 'navigate') return GlobeAltIcon;
+  if (props.variant === 'admin') return AcademicCapIcon;
   if (props.variant === 'view') return TvIcon;
   return null;
 });
@@ -38,25 +61,14 @@ const variantClass = computed(() => `btn-${props.variant}`);
 </script>
 
 <style scoped>
-.btn {
-  padding: 10px 16px;
-  font-size: 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  min-width: 100px;
-  text-align: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.btn-create {
+.btn-create,
+.btn-navigate {
   background-color: #3490dc;
   color: white;
 }
-.btn-create:hover {
+.btn-create:hover,
+.btn-navigate:hover {
   background-color: #2779bd;
 }
 
@@ -90,6 +102,29 @@ const variantClass = computed(() => `btn-${props.variant}`);
 }
 .btn-view:hover {
   background-color: #8f8f8f;
+}
+
+.btn-admin {
+  background-color: #fbb869;
+  color: white;
+}
+
+.btn-admin:hover {
+  background-color: #936c3f;
+}
+
+.btn-clear {
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid #6c757d;
+}
+.btn-clear:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+a {
+  text-decoration: none;
 }
 
 .icon {

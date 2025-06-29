@@ -1,0 +1,14 @@
+.btnBase {
+    padding: 10px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    min-width: 100px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 1px;
+}
+

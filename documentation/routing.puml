@@ -20,7 +20,7 @@
                 }
             },
             "dashboard": {
-                "get": "Synthetic view on projects"
+                "get": "Synthetic view on projects (Deprecated)"
             },
             "projects": {
                 "get": "list of projects",
@@ -111,121 +111,12 @@
                     "put": "Update me"
                 }
             }
+        },
+      "v2": {
+        "dashboard": {
+            "get": "Retrieve projects"
         }
-      },
-      "front": {
-        "v1": {
-            "navigation": {
-                "get": "provide the navigation bar"
-            },
-            "dashboard": {
-                "get": "provide main dashboard",
-                "get + req = TABLE": "Dashboard table"
-            },
-            "projects": {
-                "get + req = FORM": "Create project form",
-                "post": "Create project action",
-                "<project_name>":{
-                    "get": "Project page (multi tab) + tab param",
-                    "versions": {
-                        "get": "Project's versions",
-                        "get + req = FORM": "Add version form",
-                        "post": "Add version action",
-                        "<version>":{
-                            "get": "update version modal",
-                            "get + req = FORM": "Add ticket form",
-                            "get + req = versionUpdate": "Dashboard version update form",
-                            "post": "Add ticket action",
-                            "put": "Update version action",
-                            "tickets": {
-                                "get": "Table of tickets",
-                                "<ticket_reference>": {
-                                    "get + req = FORM": "Updatable row form",
-                                    "get + req = row": "Single ticket as table row",
-                                    "put": "Update ticket action"
-                                }
-                            }
-                        }
-                    },
-                    "bugs": {
-                        "get + req = REDIRECT": "Redirect to bugs tab",
-                        "get": "Bugs tab",
-                        "get + req = FORM": "Add new bug form",
-                        "get + req = TABLE": "Bugs table",
-                        "post": "Create bug action",
-                        "<internal_id>": {
-                            "get": "View (editable) specific bug",
-                            "put": "Update bug action (via form)",
-                            "patch": "Update bug action (via button)"
-                        }
-                    },
-                    "repository": {
-                        "get": "Repository tab",
-                        "get + req = FORM": "Form to upload a repository",
-                        "post": "Create update repository",
-                        "epics-features": {
-                            "get": "epics and feature dropdowns"
-                        },
-                        "scenarios": {
-                            "get": "Paginated table of scenarios",
-                            "<scenario_ref>": {
-                                "delete": "Delete scenario"
-                            }
-                        }
-                    },
-                    "campaigns": {
-                        "get": "Campaigns tab",
-                        "get + req = TABLE": "Campaigns table",
-                        "get + req = FORM": "Add campaign form",
-                        "get + req = failed-scenarios": "Campaigns failed scenario selector",
-                        "post": "Create campaign action",
-                        "scenarios" : {
-                            "post": "Add scenario to campaign action"
-                        },
-                        "<version>": {
-                            "<occurrence>": {
-                                "get": "Campaign's occurrence board",
-                                "get + req = TABLE": "Campaign's occurrence table",
-                                "get + req = FORM": "Update campaign occurrence status form",
-                                "patch": "Update campaign occurrence status action",
-                                "tickets": {
-                                    "get + req = FORM": "Campaign's occurrence link ticket form",
-                                    "post": "Campaign's occurrence link ticket action",
-                                    "<ticket_reference>": {
-                                        "get": "Add scenarios to ticket form",
-                                        "put": "Add scenarios to ticket action",
-                                        "scenarios": {
-                                            "get + req = statistics": "Tickets scenarios status statistics",
-                                            "get": "Table of ticket's scenarios",
-                                            "<scenario_internal_id>": {
-                                                "get": "Update scenario status form",
-                                                "put": "Update scenario status action",
-                                                "delete": "Remove scenario from ticket action"
-                                            }
-                                        }
-                                    },
-                                    "results": {
-                                        "get": "Campaign's occurrence results graph",
-                                        "post": "Campaign's occurrence current status"
-                                    },
-                                    "deliverables": {
-                                        "get": "Campaign's occurrence documents Test Plan or Test evidence"
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-      },
-      "clear": {
-        "delete": "front clear target"},
-      "login": {
-        "get" : "login form",
-        "post": "login action",
-        "delete": "log out"
+      }
       },
       "documentation": {
         "get": "provide the html documentation source",

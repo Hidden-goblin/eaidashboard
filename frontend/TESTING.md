@@ -37,7 +37,7 @@ Unit tests are written using [Vitest](https://vitest.dev/) and [Vue Test Utils](
 ### Test File Location
 Test files are typically located in `__tests__` subdirectories alongside the files they test (e.g., `frontend/src/components/__tests__/MyComponent.spec.js` or `frontend/src/stores/__tests__/myStore.spec.js`). The example tests are in:
 - `frontend/src/views/__tests__/LoginView.spec.js`
-- `frontend/src/stores/__tests__/authStore.spec.js`
+- `frontend/src/stores/__tests__/authStore.spec.ts`
 
 A `frontend/src/setupTests.js` file is available for global test setup if needed.
 
