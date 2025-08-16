@@ -5,12 +5,12 @@ $ErrorActionPreference = "Stop"
 
 # Variables
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$dockerfilePath = Join-Path $projectRoot "docker-build-frontend\Dockerfile"
+$dockerfilePath = Join-Path $projectRoot "docker-build-frontend\DockerfileDev"
 $resultsPath = Join-Path $projectRoot "component_tests"
 $dockerImageName = "vue-frontend-tester"
 
 # 1. Build Docker image (réutilise celle du build ou une dédiée aux tests)
-docker build --file $dockerfilePath --tag $dockerImageName $projectRoot
+docker build --file $dockerfilePath --build-arg BUILD_TYPE=development --tag $dockerImageName $projectRoot
 
 # 2. Crée le dossier local de résultats s’il n’existe pas
 if (-Not (Test-Path -Path $resultsPath)) {

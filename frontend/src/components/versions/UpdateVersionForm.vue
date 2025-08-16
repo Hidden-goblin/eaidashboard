@@ -5,34 +5,38 @@
       <form @submit.prevent="updateVersion">
         <div class="form-group">
           <label for="versionStatus">Version Status:</label>
-          <select id="versionStatus" v-model="versionStatus">
+          <select id="versionStatus" data-testid="versionStatus" v-model="versionStatus">
             <option v-for="status in possibleStatuses" :key="status" :value="status">
               {{ status }}
             </option>
           </select>
 
-          <label for="versionStarted">Start Date:</label>
-          <input type="date" id="versionStarted" v-model="versionStarted" />
+          <label for="versionStartedInput">Start Date:</label>
+          <input type="date" id="versionStartedInput" data-testid="versionStartedInput" v-model="versionStarted" />
 
-          <label for="versionForecast">End Forecast:</label>
-          <input type="date" id="versionForecast" v-model="versionForecast" />
+          <label for="versionForecastInput">End Forecast:</label>
+          <input type="date" id="versionForecastInput" data-testid="versionForecastInput" v-model="versionForecast" />
         </div>
-        <div v-if="error" class="error">{{ error }}</div>
+        <div v-if="error" class="error" data-testid="versionErrorMessage">{{ error }}</div>
         <div class="actions">
-          <button type="submit">Update</button>
-          <button type="button" @click="closeModal">Cancel</button>
+          <BaseButton variant="update" type="submit" data-testid="versionSubmitButton">Update</BaseButton>
+          <BaseButton variant="close" @click="closeModal" data-testid="versionCancelButton">Cancel</BaseButton>
         </div>
       </form>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useApiBaseUrl } from '../../composables/useApiBaseUrl';
-import { useApi } from '../../composables/useApi';
-import { useEscapeToClose } from '../../composables/useEscapteToClose.js';
-import { useAuthStore } from '../../stores/authStore.js';
+import { useApiBaseUrl } from '@/composables/useApiBaseUrl';
+import { useApi } from '@/composables/useApi';
+import { useEscapeToClose } from '@/composables/useEscapteToClose';
+import { useAuthStore } from '@/stores/authStore';
+import { logger } from "@/composables/logger";
+import BaseButton from "@/components/utils/BaseButton.vue";
+import {useLoadingStore} from "@/stores/loadingStore";
+
 
 const { projectName, activeVersionId } = defineProps({
   projectName: { type: String, required: true },
@@ -44,6 +48,7 @@ const emit = defineEmits(['close', 'version-updated']);
 const apiBaseUrl = useApiBaseUrl();
 const { fetchWithAuth } = useApi();
 const authStore = useAuthStore();
+const loadingStore = useLoadingStore();
 
 const versionStatus = ref('');
 const versionStarted = ref('');
@@ -59,34 +64,30 @@ const fetchPossibleStatuses = async (currentStatus) => {
     const response = await fetchWithAuth(
       `${apiBaseUrl}/api/v1/settings/projects/${projectName}/workflow/${currentStatus}`,
       {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${authStore.token}` }
+        method: 'GET'
       }
     );
-
-    if (!response.ok) throw new Error('Error fetching status workflow');
 
     const data = await response.json();
     const statuses = data.data ?? [];
     statuses.unshift(currentStatus);
     possibleStatuses.value = statuses;
   } catch (err) {
-    console.error(err);
-    error.value = err.message;
+    logger.debug("In fetch statues");
+    logger.error(err);
+    throw new Error('Error fetching status workflow');
   }
 };
 
 const fetchVersionData = async () => {
+  loadingStore.startLoading();
   try {
     const response = await fetchWithAuth(
       `${apiBaseUrl}/api/v1/projects/${projectName}/versions/${activeVersionId}`,
       {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${authStore.token}` }
+        method: 'GET'
       }
     );
-
-    if (!response.ok) throw new Error('Error retrieving version data');
 
     const data = await response.json();
 
@@ -96,12 +97,16 @@ const fetchVersionData = async () => {
 
     await fetchPossibleStatuses(data.status);
   } catch (err) {
-    console.error(err);
+    logger.debug("In fetch data");
+    logger.error(err);
     error.value = err.message;
+  } finally {
+    loadingStore.stopLoading()
   }
 };
 
 const updateVersion = async () => {
+  loadingStore.startLoading();
   try {
     const bodyData = {
       started: versionStarted.value === '' ? null : versionStarted.value,
@@ -109,26 +114,26 @@ const updateVersion = async () => {
       status: versionStatus.value
     };
 
-    const response = await fetchWithAuth(
+    if (versionStarted.value && versionForecast.value && versionStarted.value > versionForecast.value) {
+      throw new Error( "Start date cannot be after end forecast");
+    }
+
+    await fetchWithAuth(
       `${apiBaseUrl}/api/v1/projects/${projectName}/versions/${activeVersionId}`,
       {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
         },
         body: JSON.stringify(bodyData)
       }
     );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Error updating version');
-    }
-
     emit('version-updated', 1);
   } catch (err) {
     error.value = err.message;
+  } finally {
+    loadingStore.stopLoading();
   }
 };
 
@@ -179,23 +184,6 @@ onMounted(fetchVersionData);
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
-}
-
-button {
-  padding: 8px 16px;
-  border: none;
-  background: #3498db;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button[type="button"] {
-  background: #ccc;
-}
-
-button:hover {
-  opacity: 0.9;
 }
 
 .error {

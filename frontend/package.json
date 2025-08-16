@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "generate:api": "npx openapi-typescript-codegen --input ./openapi.json --output src/api-old --client axios",
+    "generate:type": "npx openapi-typescript ./openapi.json --output src/openapi.d.ts"
   },
   "dependencies": {
     "marked": "^15.0.12",
@@ -30,6 +32,9 @@
     "jsdom": "^22.0.0",
     "msw": "^2.10.3",
     "@testing-library/vue": "^8.1.0",
-    "@pinia/testing": "^0.1.0"
+    "@pinia/testing": "^0.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "openapi-typescript-codegen": "^0.29.0",
+    "openapi-typescript": "^7.8.0"
   }
 }

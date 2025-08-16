@@ -1,11 +1,13 @@
 <template>
+  <GlobalLoading />
   <Layout />
 </template>
 
 <script setup>
 import Layout from './views/Layout.vue';
-import { useAuthStore } from './stores/authStore';
+import { useAuthStore } from './stores/authStore.js';
 import { onMounted } from 'vue';
+import GlobalLoading from "@/components/utils/GlobalLoading.vue";
 
 const authStore = useAuthStore();
 
@@ -13,7 +15,7 @@ onMounted(async () => {
   // Check authentication status when the app is mounted
   // This is crucial for restoring session if user previously logged in
   // and token is still valid/present.
-  await authStore.checkAuth();
+  await authStore.isAuthenticated;
 });
 </script>
 

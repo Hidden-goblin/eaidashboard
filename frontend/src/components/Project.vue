@@ -8,14 +8,14 @@
       <button :class="{ active: activeTab === 'Bugs' }" @click="activeTab = 'Bugs'">Bugs</button>
     </div>
     <div class="tab-content">
-      <component :is="currentTabComponent" :projectName="projectName" />
+      <component :is="currentTabComponent" :projectName="projectName"/>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import {ref, computed} from 'vue'
+import {useRoute} from 'vue-router'
 import VersionTab from './versions/VersionTab.vue'
 
 // Dummy placeholder tab components

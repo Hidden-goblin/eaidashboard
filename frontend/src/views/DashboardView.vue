@@ -1,31 +1,46 @@
 <template>
   <div class="dashboard">
-    <div v-if="dashboardStore.isLoading" class="loading">Loading dashboard data...</div>
+    <div v-if="dashboardStore.projects.length === 0 && dashboardStore.isLoading" class="loading">
+      Loading dashboard data...
+    </div>
+
     <div v-if="dashboardStore.error" class="error-message">{{ dashboardStore.error }}</div>
-    <div v-if="!dashboardStore.isLoading && !dashboardStore.error">
-      <div v-if="dashboardStore.projects.length === 0" class="no-data">
-        No projects to display.
-      </div>
-       <ProjectCard v-for="project in dashboardStore.projects"
-        :key="project.name-project.version"
-        :projectName = project.name
-        :projectVersion = project.version
-        :tickets = project.statistics
-        :bugs = project.bugs
+
+    <div v-if="!dashboardStore.error">
+      <ProjectCard
+          v-for="(project, index) in dashboardStore.projects"
+          :key="project.name + index"
+          :projectName="project.name"
+          :projectVersion="project.version"
+          :tickets="project.statistics"
+          :bugs="project.bugs"
+          :index="index"
       />
+
+      <div v-if="dashboardStore.isLoading" class="loading">Loading more projects...</div>
+      <div v-if="!dashboardStore.hasMore()" class="end-message">You’ve reached the end.</div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue';
-import { useDashboardStore } from '../stores/dashboardStore';
-import ProjectCard from '../components/dashboard/ProjectCard.vue';
+import {storeToRefs} from 'pinia';
+import { useDashboardStore } from '@/stores/dashboardStore';
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll';
+import ProjectCard from '@/components/dashboard/ProjectCard.vue';
 
 const dashboardStore = useDashboardStore();
+const {isLoading} = storeToRefs(useDashboardStore);
 
 onMounted(() => {
-  dashboardStore.fetchDashboardData();
+  dashboardStore.fetchDashboardData(true);
+});
+
+useInfiniteScroll(() => {
+  if (!isLoading && dashboardStore.hasMore()) {
+    dashboardStore.fetchDashboardData();
+  }
 });
 </script>
 
@@ -33,38 +48,20 @@ onMounted(() => {
 .dashboard {
   padding: 20px;
 }
-.loading, .error-message, .no-data {
+
+.loading,
+.error-message,
+.end-message {
   text-align: center;
   padding: 20px;
   font-size: 1.2em;
 }
+
 .error-message {
   color: red;
 }
-.project-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.project-card h3 {
-  margin-top: 0;
-  color: #333;
-}
-.versions-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-.versions-table th, .versions-table td {
-  border: 1px solid #eee;
-  padding: 8px;
-  text-align: left;
-}
-.versions-table th {
-  background-color: #f7f7f7;
-  font-weight: bold;
+
+.end-message {
+  color: #888;
 }
 </style>

@@ -1,7 +1,7 @@
 // Placeholder for authentication service
 export default {
   // login method would ideally be an API call that returns user data and token
-  // For this subtask, the login logic handling API calls is in authStore.js,
+  // For this subtask, the login logic handling API calls is in authStore.ts,
   // so this login method here might not be directly used by the store's login action.
   // However, if called directly, it should align with how the app expects login to work.
   async login(credentials) {
@@ -11,7 +11,7 @@ export default {
     // 2. If successful, the backend returns user data and a JWT.
     // 3. This service would then store the token and return user data.
     // Example:
-    // const response = await fetch('/api/v1/login', { method: 'POST', body: JSON.stringify(credentials), headers: {'Content-Type': 'application/json'}});
+    // const response = await fetch('/api-old/v1/login', { method: 'POST', body: JSON.stringify(credentials), headers: {'Content-Type': 'application/json'}});
     // if (!response.ok) throw new Error('Login failed');
     // const data = await response.json(); // { user: {...}, token: '...' }
     // this.storeToken(data.token);

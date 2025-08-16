@@ -1,50 +1,53 @@
 <!-- src/components/LoginModal.vue -->
 <template>
-  <div class="modal-overlay">
-    <div class="modal">
-      <h2>Login</h2>
-      <form @submit.prevent="connect">
-        <div>
-          <label for="username">Email:</label>
-          <input
-            type="email"
-            id="username"
-            data-testid="username-input"
-            v-model="username"
-            required
-            autocomplete="username"
-          />
-        </div>
-        <div>
-          <label for="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            data-testid="password-input"
-            v-model="password"
-            required
-            autocomplete="current-password"
-          />
-        </div>
+  <teleport to="body">
+    <div class="modal-overlay">
+      <div class="modal">
+        <h2>Login</h2>
+        <form @submit.prevent="connect">
+          <div>
+            <label for="username">Email:</label>
+            <input
+                type="email"
+                id="username"
+                data-testid="username-input"
+                v-model="username"
+                required
+                autocomplete="username"
+            />
+          </div>
+          <div>
+            <label for="password">Password:</label>
+            <input
+                type="password"
+                id="password"
+                data-testid="password-input"
+                v-model="password"
+                required
+                autocomplete="current-password"
+            />
+          </div>
 
-        <div v-if="errorMessage" class="error">
-          {{ errorMessage }}
-        </div>
+          <div v-if="errorMessage" class="error">
+            {{ errorMessage }}
+          </div>
 
-        <div class="modal-actions">
-          <BaseButton type="submit">Connect</BaseButton>
-          <BaseButton @click="emit('close')">Cancel</BaseButton>
-        </div>
-      </form>
+          <div class="modal-actions">
+            <BaseButton type="submit">Connect</BaseButton>
+            <BaseButton @click="emit('close')">Cancel</BaseButton>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </teleport>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useAuthStore } from '../../stores/authStore.js'
-import { useApiBaseUrl } from '../../composables/useApiBaseUrl.js'
-import BaseButton from "../utils/BaseButton.vue";
+<script setup lang="ts">
+import {ref} from 'vue'
+import {useAuthStore} from '@/stores/authStore'
+import {useApiBaseUrl} from '@/composables/useApiBaseUrl'
+import BaseButton from "@/components/utils/BaseButton.vue";
+import {logger} from "@/composables/logger";
 
 // Props / Emits
 const emit = defineEmits(['close', 'login-success'])
@@ -60,13 +63,13 @@ const apiBaseUrl = useApiBaseUrl()
 
 // Methods
 const connect = async () => {
-  console.log('in connect', username.value, password.value)
+  logger.debug('Connecting')
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(username.value)) {
     errorMessage.value = 'Please enter a valid email address.'
     return
   }
-  console.log('fetching token from', `${apiBaseUrl}/api/v1/token`)
+  logger.debug('fetching token from', `${apiBaseUrl}/api/v1/token`)
   try {
     const formBody =
         'username=' + encodeURIComponent(username.value) +
@@ -77,20 +80,18 @@ const connect = async () => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body:formBody
-      })
+      body: formBody
+    })
 
     if (!response.ok) {
       const err = await response.json()
       throw new Error(err.detail || 'Error logging in')
     }
-    console.log('response ok')
     const data = await response.json()
     const token = data.access_token
 
     if (token) {
       authStore.login(token)
-      console.log('token', token)
       emit('login-success', token)
     }
   } catch (err) {
@@ -110,6 +111,7 @@ const connect = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 9999;
 }
 
 .modal {
@@ -130,6 +132,7 @@ const connect = async () => {
   color: red;
   margin-top: 10px;
 }
+
 form {
   display: flex;
   flex-direction: column;
@@ -154,6 +157,7 @@ input {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
+
 input:focus {
   outline: none;
   border-color: #3490dc;

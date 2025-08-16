@@ -59,7 +59,7 @@ import {ref, watch} from 'vue';
 import {useRouter} from 'vue-router';
 import {storeToRefs} from 'pinia';
 
-import {useAuthStore} from '../stores/authStore.js';
+import {useAuthStore} from '../stores/authStore.ts';
 import {useVersionStore} from '../stores/versionStore.js';
 import LoginModal from './access/LoginModal.vue';
 import BaseButton from "./utils/BaseButton.vue";
@@ -84,6 +84,7 @@ const toggleMenu = () => {
 };
 
 const goToProject = () => {
+  toggleMenu();
   if (selectedProject.value) {
     router.push(`/projects/${selectedProject.value}`);
   }

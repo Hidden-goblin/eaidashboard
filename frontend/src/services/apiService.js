@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../stores/authStore.js';
 import { useApiBaseUrl } from '../composables/useApiBaseUrl'; // Import the new composable
 
 let determinedBaseUrl;
@@ -9,9 +9,9 @@ const viteApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 if (viteApiBaseUrl && (viteApiBaseUrl.startsWith('http://') || viteApiBaseUrl.startsWith('https://'))) {
   // 1. Use VITE_API_BASE_URL if it's an absolute URL
   determinedBaseUrl = viteApiBaseUrl;
-} else if (viteApiBaseUrl && viteApiBaseUrl.trim() !== '' && viteApiBaseUrl !== '/api') {
-  // 2. Use VITE_API_BASE_URL if it's a relative path (and not empty or the old default '/api')
-  //    The old default '/api' might be from a previous version of .env setup, so we want to prioritize useApiBaseUrl if VITE_API_BASE_URL is just '/api'
+} else if (viteApiBaseUrl && viteApiBaseUrl.trim() !== '' && viteApiBaseUrl !== '/api-old') {
+  // 2. Use VITE_API_BASE_URL if it's a relative path (and not empty or the old default '/api-old')
+  //    The old default '/api-old' might be from a previous version of .env setup, so we want to prioritize useApiBaseUrl if VITE_API_BASE_URL is just '/api-old'
   determinedBaseUrl = viteApiBaseUrl;
 } else {
   // 3. Fallback to dynamic same-host URL from composable
@@ -21,8 +21,8 @@ if (viteApiBaseUrl && (viteApiBaseUrl.startsWith('http://') || viteApiBaseUrl.st
     determinedBaseUrl = useApiBaseUrl();
   } catch (e) {
     // Fallback if useApiBaseUrl fails (e.g. window not defined in some test/SSR context without proper mocking)
-    console.error("Error using useApiBaseUrl, falling back to relative /api/v1. Ensure 'window' is defined or VITE_API_BASE_URL is set.", e);
-    determinedBaseUrl = '/api/v1'; // Default relative path if composable fails
+    console.error("Error using useApiBaseUrl, falling back to relative /api-old/v1. Ensure 'window' is defined or VITE_API_BASE_URL is set.", e);
+    determinedBaseUrl = '/api-old/v1'; // Default relative path if composable fails
   }
 }
 

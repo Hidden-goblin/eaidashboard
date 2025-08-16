@@ -135,7 +135,7 @@ describe('authStore', () => {
     it('fetchProjects handles API errors and clears allProjects', async () => {
 
         const store = useAuthStore()
-        store.token = 'bad.token'
+        store.token = 'not.allowed.token'
 
         await store.fetchProjects()
 
@@ -180,6 +180,6 @@ describe('authStore', () => {
             throw new Error('Invalid token')
         })
 
-        expect(() => store.login('bad.token')).toThrow('Invalid token')
+        expect(() => store.login('not.allowed.token')).toThrow('Invalid token')
     })
 })

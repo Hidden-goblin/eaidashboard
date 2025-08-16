@@ -53,16 +53,16 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useVersionStore } from '../../stores/versionStore'
+import { useVersionStore } from '@/stores/versionStore'
 import CreateVersionForm from './CreateVersionForm.vue'
 import UpdateVersionForm from './UpdateVersionForm.vue'
 import VersionTickets from './VersionTickets.vue'
 import VersionCard from './VersionCard.vue'
-import styles from '../../styles/buttons.module.css'
-import BaseButton from "../utils/BaseButton.vue";
+import styles from '@/styles/buttons.module.css'
+import BaseButton from "@/components/utils/BaseButton.vue";
 
 // Props
 const props = defineProps({

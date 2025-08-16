@@ -1,5 +1,5 @@
 import { createWebHistory, createRouter } from 'vue-router'
-import { useAuthStore } from '../stores/authStore.js'
+import { useAuthStore } from '../stores/authStore.ts'
 import DashboardView from '../views/DashboardView.vue'; // Assume a Home component exists.
 import Administration from '../components/Administration.vue';
 import Project from '../components/Project.vue';

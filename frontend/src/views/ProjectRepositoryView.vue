@@ -3,7 +3,7 @@
     <h4>Test Repository</h4>
 
     <!-- CSV Import Section -->
-    <div class="import-section card">
+    <div class="import-section projectCard">
       <h5>Import Scenarios from CSV</h5>
       <form @submit.prevent="handleCsvImport">
         <div class="form-group">
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Repository Browser Section -->
-    <div class="browser-section card">
+    <div class="browser-section projectCard">
       <h5>Browse Repository</h5>
       <div class="filters-row">
         <div class="form-group">
@@ -185,7 +185,7 @@ watch(() => projectStore.projectRepositoryEpics, () => {
 
 <style scoped>
 .project-repository-view { padding-top: 15px; }
-.card {
+.projectCard {
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -193,7 +193,7 @@ watch(() => projectStore.projectRepositoryEpics, () => {
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.card h5 { margin-top: 0; color: #333; font-size: 1.1em; margin-bottom: 15px;}
+.projectCard h5 { margin-top: 0; color: #333; font-size: 1.1em; margin-bottom: 15px;}
 .import-section .form-group { margin-bottom: 10px; }
 .import-section input[type="file"] { display: block; margin-top: 5px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;}
 .import-error { margin-top: 10px; color: red; font-size: 0.9em; }

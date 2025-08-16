@@ -6,11 +6,11 @@
       <form @submit.prevent="submitForm">
         <div>
           <label for="reference">Reference</label>
-          <input id="reference" v-model="ticket.reference" required />
+          <input id="reference" data-testId="reference" v-model="ticket.reference" required />
         </div>
         <div>
           <label for="description">Description</label>
-          <textarea id="description" v-model="ticket.description" required></textarea>
+          <textarea id="description" data-testId="description" v-model="ticket.description" required></textarea>
         </div>
         <div class="actions">
           <BaseButton variant="create" type="submit">
@@ -20,18 +20,19 @@
             Close
           </BaseButton>
         </div>
-        <div v-if="error" class="error">{{ error }}</div>
+        <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
       </form>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
-import { useApiBaseUrl } from '../../composables/useApiBaseUrl.js';
-import { useAuthStore } from '../../stores/authStore.js';
-import { useApi } from '../../composables/useApi.js';
-import BaseButton from "../utils/BaseButton.vue";
+import { useApiBaseUrl } from '@/composables/useApiBaseUrl';
+import { useAuthStore } from '@/stores/authStore';
+import { useApi } from '@/composables/useApi';
+import BaseButton from "@/components/utils/BaseButton.vue";
+import {logger} from "@/composables/logger";
 
 // Props
 const props = defineProps({
@@ -61,12 +62,17 @@ const ticket = ref({
   created: new Date().toISOString()
 });
 
-const error = ref('');
+const errorMessage = ref('');
 
 // Form submission
 const submitForm = async () => {
+
   const url = `${apiBaseUrl}/api/v1/projects/${props.projectName}/versions/${props.versionId}/tickets/`;
   try {
+    if (!ticket.value.reference || !ticket.value.description) {
+      logger.debug(ticket.value);
+      throw new Error("Mandatory fields are required");
+    }
     const response = await fetchWithAuth(url, {
       method: 'POST',
       headers: {
@@ -76,17 +82,14 @@ const submitForm = async () => {
       body: JSON.stringify(ticket.value)
     });
 
-    if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData.detail || 'Error creating ticket');
-    }
-
     const createdTicket = await response.json();
     emit('ticket-created', createdTicket);
     emit('close');
     resetForm();
   } catch (err) {
-    error.value = err.message;
+    logger.debug('message', err.message);
+    errorMessage.value = `${err?.message}` || 'Unkown error';
+    logger.debug('error status',errorMessage.value);
   }
 };
 
@@ -98,7 +101,7 @@ const resetForm = () => {
     status: 'open',
     created: new Date().toISOString()
   };
-  error.value = '';
+  errorMessage.value = '';
 };
 </script>
 
@@ -122,25 +125,6 @@ const resetForm = () => {
   border-radius: 8px;
   max-width: 400px;
   width: 90%;
-}
-
-.btn-primary {
-  background: #3490dc;
-  color: white;
-  padding: 10px;
-  border: none;
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  background: #e0e0e0;
-  color: #333;
-  padding: 10px;
-  border: none;
-  margin-top: 10px;
-  margin-left: 10px;
-  cursor: pointer;
 }
 
 .error {

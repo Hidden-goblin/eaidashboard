@@ -4,7 +4,7 @@ FROM node:24
 WORKDIR /frontend
 COPY ./documentation/openapi.json ./
 COPY ../frontend/package.json ./
-RUN npm install
+RUN npm install --include=dev
 
 ARG BUILD_TYPE=production
 ENV RUN_TYPE=$BUILD_TYPE

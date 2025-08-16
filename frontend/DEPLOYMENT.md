@@ -26,7 +26,7 @@ The application connects to a backend API. The base URL for this API is determin
 2.  **Relative Path via Environment Variable (Build Time):**
     If `VITE_API_BASE_URL` is set to a relative path (e.g., `/my/custom/api/prefix` or `/api/v1`) during the build process, this path will be used. Note that if `VITE_API_BASE_URL` is set to an empty string or a very generic value like `/api` (which might have been a previous default), the system might prioritize the dynamic URL (see next point).
     ```bash
-    VITE_API_BASE_URL=/my/custom/api/prefix npm run build
+    VITE_API_BASE_URL=/my/custom/api-old/prefix npm run build
     ```
     This is suitable for deployments where the API is served from the same domain as the frontend, possibly under a specific path managed by a reverse proxy.
 

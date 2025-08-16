@@ -12,7 +12,7 @@ export const useUserStore = defineStore('userManagement', {
       this.isLoading = true;
       this.error = null;
       try {
-        // Assuming API GET /api/v1/users
+        // Assuming API GET /api-old/v1/users
         const data = await apiService.get('/users');
         this.users = data.users || data; // Adjust based on API response structure
       } catch (e) {
@@ -27,7 +27,7 @@ export const useUserStore = defineStore('userManagement', {
       this.isLoading = true;
       this.error = null;
       try {
-        // API POST /api/v1/users
+        // API POST /api-old/v1/users
         const newUser = await apiService.post('/users', userData);
         this.users.push(newUser);
         return newUser;
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('userManagement', {
       this.isLoading = true;
       this.error = null;
       try {
-        // API PUT /api/v1/users/{userId}
+        // API PUT /api-old/v1/users/{userId}
         const updatedUser = await apiService.put(`/users/${userId}`, userData);
         const index = this.users.findIndex(u => u.id === userId);
         if (index !== -1) {
@@ -62,7 +62,7 @@ export const useUserStore = defineStore('userManagement', {
       this.isLoading = true;
       this.error = null;
       try {
-        // API DELETE /api/v1/users/{userId}
+        // API DELETE /api-old/v1/users/{userId}
         await apiService.delete(`/users/${userId}`);
         this.users = this.users.filter(u => u.id !== userId);
       } catch (e) {

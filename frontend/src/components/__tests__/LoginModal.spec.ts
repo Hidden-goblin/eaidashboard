@@ -1,4 +1,4 @@
-import { render, fireEvent, screen, waitFor } from '@testing-library/vue'
+import { render, fireEvent, screen } from '@testing-library/vue'
 import LoginModal from '@/components/access/LoginModal.vue'
 import { describe, it, beforeAll, afterAll, afterEach, vi, expect } from 'vitest'
 import { server } from '@/mocks/node'

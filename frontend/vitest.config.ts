@@ -7,7 +7,10 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'jsdom',
-
+        setupFiles: './vitest.setup.js',
+        assertions: {
+            globals: true,
+        },
         // Output directories for reports
         reporters: [
             'default', // Console output

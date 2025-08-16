@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import path from 'path';
 
 export default defineConfig({
   plugins: [vue()],
@@ -19,6 +20,11 @@ export default defineConfig({
         chunkFileNames: 'fassets/[name].[hash].js',
         entryFileNames: 'fassets/[name].[hash].js',
       }
+    }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src')
     }
   }
 });

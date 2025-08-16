@@ -3,21 +3,29 @@
       :is="to ? RouterLink : 'button'"
       :to="to"
       :class="[styles.btnBase, variantClass]"
-      v-on="$attrs"
-      v-bind="buttonAttrs"
+      v-on="listeners"
+      v-bind="attrsOnly"
   >
     <span v-if="iconComponent" class="icon" aria-hidden="true">
-      <component :is="iconComponent" />
+      <component :is="iconComponent"/>
     </span>
-    <slot />
+    <slot/>
   </component>
 </template>
 
 <script setup>
-import { computed, useAttrs } from 'vue';
-import { RouterLink } from 'vue-router';
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, TvIcon, GlobeAltIcon, AcademicCapIcon } from '@heroicons/vue/20/solid';
-import styles from '../../styles/buttons.module.css'
+import {computed, useAttrs} from 'vue';
+import {RouterLink} from 'vue-router';
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  XMarkIcon,
+  TvIcon,
+  GlobeAltIcon,
+  AcademicCapIcon
+} from '@heroicons/vue/20/solid';
+import styles from '@/styles/buttons.module.css'
 
 const props = defineProps({
   to: String,
@@ -37,13 +45,20 @@ const props = defineProps({
   }
 });
 
-const buttonAttrs = computed(() => {
-  const base = { ...useAttrs() }
+const rawAttrs = useAttrs();
+
+// separate listeners vs attributes
+const listeners = computed(() =>
+    Object.fromEntries(Object.entries(rawAttrs).filter(([key]) => key.startsWith('on')))
+);
+
+const attrsOnly = computed(() => {
+  const base = Object.fromEntries(Object.entries(rawAttrs).filter(([key]) => !key.startsWith('on')));
   if (!props.to) {
-    base.type = props.type
+    base.type = props.type;
   }
-  return base
-})
+  return base;
+});
 
 const iconComponent = computed(() => {
   if (props.icon) return props.icon;
@@ -67,6 +82,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   background-color: #3490dc;
   color: white;
 }
+
 .btn-create:hover,
 .btn-navigate:hover {
   background-color: #2779bd;
@@ -76,6 +92,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   background-color: #38c172;
   color: white;
 }
+
 .btn-update:hover {
   background-color: #1f9d55;
 }
@@ -84,6 +101,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   background-color: #e3342f;
   color: white;
 }
+
 .btn-delete:hover {
   background-color: #cc1f1a;
 }
@@ -92,6 +110,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   background-color: #e3342f;
   color: white;
 }
+
 .btn-close:hover {
   background-color: #cc1f1a;
 }
@@ -100,6 +119,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   background-color: #bdbdbd;
   color: white;
 }
+
 .btn-view:hover {
   background-color: #8f8f8f;
 }
@@ -118,6 +138,7 @@ const variantClass = computed(() => `btn-${props.variant}`);
   color: #6c757d;
   border: 1px solid #6c757d;
 }
+
 .btn-clear:hover {
   background-color: #f8f9fa;
   color: #495057;

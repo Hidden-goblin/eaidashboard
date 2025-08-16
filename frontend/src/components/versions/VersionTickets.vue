@@ -33,14 +33,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {ref, onMounted} from 'vue';
 import TicketForm from '../tickets/TicketForm.vue';
-import {useAuthStore} from '../../stores/authStore.js';
-import {useApi} from '../../composables/useApi.js';
-import {useApiBaseUrl} from '../../composables/useApiBaseUrl.js';
+import {useAuthStore} from '@/stores/authStore';
+import {useApi} from '@/composables/useApi';
+import {useApiBaseUrl} from '@/composables/useApiBaseUrl';
 import BaseButton from "../utils/BaseButton.vue";
-import { XMarkIcon } from '@heroicons/vue/20/solid';
+import {XMarkIcon} from '@heroicons/vue/20/solid';
 
 // Props & Emits
 const props = defineProps({
