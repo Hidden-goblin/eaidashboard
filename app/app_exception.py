@@ -19,7 +19,8 @@ class DuplicateVersion(Exception):
 
 
 class ProjectNotRegistered(Exception):
-    pass
+    def __init__(self:"ProjectNotRegistered", detail: str = None):
+        self.detail = detail
 
 
 class ProjectNameInvalid(Exception):

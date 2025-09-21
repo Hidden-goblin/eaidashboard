@@ -62,6 +62,7 @@ redis = "*"
 markdown = "*"
 prometheus-fastapi-instrumentator = "*"
 psutil = "*"
+prometheus-client = "*"
 
 [tool.poetry.group.dev.dependencies]
 pydeps = "*"

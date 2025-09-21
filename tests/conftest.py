@@ -8,6 +8,7 @@ from typing import Any, Generator, List
 import psycopg
 import pytest
 from pytest import fixture
+from starlette.responses import Response
 from starlette.testclient import TestClient
 
 
@@ -36,7 +37,7 @@ def application() -> Generator[TestClient, Any, None]:
         # Import your FastAPI application
         from app.api import app
 
-        yield TestClient(app)
+        yield TestClient(app, raise_server_exceptions=False)
         # teardown_stuff
         from app.utils.pgdb import pool
 
@@ -54,7 +55,7 @@ def application() -> Generator[TestClient, Any, None]:
         cur.execute("DROP DATABASE IF EXISTS test_db")
 
 
-@fixture(scope="function")
+@fixture(scope="session")
 def logged(application: Generator[TestClient, Any, None]) -> Generator[dict[str, str], Any, None]:
     response = application.post(
         "/api/v1/token",
@@ -83,3 +84,11 @@ def error_message_extraction(error_messages: List[dict] | dict) -> List[dict] | 
             error_message.pop("input")
         _result.append(error_message)
     return _result[0] if switch else _result
+
+
+def status_404_error_message_check(
+    response: Response,
+    expected_message: str,
+) -> None:
+    assert response.status_code == 404
+    assert response.json()["detail"] == expected_message

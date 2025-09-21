@@ -114,7 +114,7 @@ def _check_scopes(
 def get_user(
     username: str,
     is_light: bool = True,
-) -> User | UserLight | None:
+) -> User | UserLight | ApplicationError:
     with pool.connection() as connection:
         connection.row_factory = dict_row
         rows = connection.execute(
@@ -132,7 +132,8 @@ def get_user(
                     scopes=temp["scopes"],
                 )
                 if temp is not None
-                else None
+                else ApplicationError(error=ApplicationErrorCode.user_not_found,
+                                  message=f"User '{username}' is not found.")
             )
         return (
             User(
@@ -141,7 +142,8 @@ def get_user(
                 scopes=temp["scopes"],
             )
             if temp is not None
-            else None
+            else ApplicationError(error=ApplicationErrorCode.user_not_found,
+                                  message=f"User '{username}' is not found.")
         )
 
 

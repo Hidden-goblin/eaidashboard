@@ -85,12 +85,11 @@ async def projects(
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
 ) -> List[Project]:
     try:
-        # TODO add total # of project in response header
         elements, count = await get_projects(skip, limit)
         response.headers["X-total-count"] = str(count)
         return elements
     except Exception as exp:
-        raise HTTPException(500, " ".join(exp.args)) from exp
+        raise HTTPException(500, " ".join(exp.args))
 
 
 @router.get(

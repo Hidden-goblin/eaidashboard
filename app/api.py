@@ -11,8 +11,9 @@ from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
+from starlette.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
 
+from app.app_exception import ProjectNotRegistered
 from app.conf import APP_VERSION, config
 from app.database.postgre.pg_users import init_user
 from app.database.postgre.postgres import init_postgres, postgre_register, update_postgres
@@ -153,28 +154,34 @@ async def custom_swagger_ui_html() -> HTMLResponse:
         swagger_js_url="/assets/5_swagger-ui-bundle.js",
         swagger_css_url="/assets/5_swagger-ui.css",
     )
+@app.exception_handler(ProjectNotRegistered)
+async def project_not_registered_handler(request: Request, exc: ProjectNotRegistered) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.detail}
+    )
 
-@app.exception_handler(404)
-async def custom_404_handler(request: Request, exc: HTTPException) -> RedirectResponse:
-    """
-
-    Args:
-        request:
-        exc:
-
-    Returns:
-
-    """
-    path = request.url.path
-
-    if path.startswith("/api"):
-        # Laisse FastAPI gérer normalement les erreurs API
-        raise exc
-    else:
-        # Fallback vers le frontend index.html pour les autres routes
-        # index_path = os.path.join("dist", "index.html")
-        # return FileResponse(index_path)
-        return RedirectResponse("/")
+# @app.exception_handler(404)
+# async def custom_404_handler(request: Request, exc: HTTPException) -> RedirectResponse:
+#     """
+#
+#     Args:
+#         request:
+#         exc:
+#
+#     Returns:
+#
+#     """
+#     path = request.url.path
+#
+#     if path.startswith("/api"):
+#         # Laisse FastAPI gérer normalement les erreurs API
+#         raise exc
+#     else:
+#         # Fallback vers le frontend index.html pour les autres routes
+#         # index_path = os.path.join("dist", "index.html")
+#         # return FileResponse(index_path)
+#         return RedirectResponse("/")
 
 
 @app.get("/", include_in_schema=False)

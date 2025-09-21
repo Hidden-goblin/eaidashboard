@@ -78,14 +78,9 @@ async def one_user(
 ) -> UserLight:
     try:
         _user = get_user(username)
-        if _user is None:
-            raise UserNotFoundException(f"User '{username}' is not found.")
-        return _user
-    except UserNotFoundException as unfe:
-        raise HTTPException(404, ", ".join(unfe.args)) from unfe
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
-
+    return if_error_raise_http(_user)
 
 @router.put(
     "/users/me",

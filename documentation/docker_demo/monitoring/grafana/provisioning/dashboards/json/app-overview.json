@@ -1,0 +1,65 @@
+{
+  "id": null,
+  "title": "Application Overview",
+  "tags": ["app", "health"],
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "version": 1,
+  "panels": [
+    {
+      "type": "gauge",
+      "title": "CPU Usage (%)",
+      "targets": [
+        {
+          "expr": "app_cpu_percent",
+          "legendFormat": "CPU"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 }
+    },
+    {
+      "type": "gauge",
+      "title": "Memory Usage (%)",
+      "targets": [
+        {
+          "expr": "app_memory_percent",
+          "legendFormat": "Memory"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 }
+    },
+    {
+      "type": "stat",
+      "title": "Postgres Connections",
+      "targets": [
+        {
+          "expr": "pg_connections",
+          "legendFormat": "connections"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 6 }
+    },
+    {
+      "type": "stat",
+      "title": "Postgres Recovery Mode",
+      "targets": [
+        {
+          "expr": "pg_in_recovery",
+          "legendFormat": "recovery"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 6, "w": 6, "h": 6 }
+    },
+    {
+      "type": "stat",
+      "title": "Redis Ping",
+      "targets": [
+        {
+          "expr": "redis_ping",
+          "legendFormat": "ping"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 6, "w": 6, "h": 6 }
+    }
+  ]
+}

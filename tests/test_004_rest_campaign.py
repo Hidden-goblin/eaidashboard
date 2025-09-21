@@ -7,7 +7,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
-from tests.conftest import error_message_extraction
+from tests.conftest import error_message_extraction, status_404_error_message_check
 from tests.utils.project_setting import set_project, set_project_tickets, set_project_versions
 
 
@@ -20,7 +20,8 @@ class TestRestCampaign:
         {"version": current_version, "reference": "ref-002", "description": "Description 2"},
     ]
 
-    def test_setup(
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
         self: "TestRestCampaign",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -70,8 +71,7 @@ class TestRestCampaign:
             "/api/v1/projects/toto/campaigns",
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == "'toto' is not registered"
+        status_404_error_message_check(response, "'toto' is not registered")
 
         # version not found
         response = application.get(
@@ -79,8 +79,7 @@ class TestRestCampaign:
             params={"version": "3.0.0"},
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == "Version '3.0.0' is not found"
+        status_404_error_message_check(response,"Version '3.0.0' is not found")
 
     def test_get_campaigns_errors_500(
         self: "TestRestCampaign",
@@ -160,8 +159,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == "'unknown_project' is not registered"
+        status_404_error_message_check(response,"'unknown_project' is not registered")
 
     def test_create_campaigns_errors_404_version(
         self: "TestRestCampaign",
@@ -173,8 +171,7 @@ class TestRestCampaign:
             json={"version": "1.1.1"},
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == "Version '1.1.1' is not found"
+        status_404_error_message_check(response, "Version '1.1.1' is not found")
 
     def test_create_campaigns_errors_500(
         self: "TestRestCampaign",
@@ -285,8 +282,7 @@ class TestRestCampaign:
             json={"ticket_reference": ticket},
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == message
+        status_404_error_message_check(response, message)
 
     def test_get_campaigns_with_version(
         self: "TestRestCampaign",
@@ -445,8 +441,7 @@ class TestRestCampaign:
             f"/api/v1/projects/{project}/campaigns/{version}/{occurrence}",
             headers=logged,
         )
-        assert response.status_code == 404, response.text
-        assert response.json()["detail"] == message
+        status_404_error_message_check(response, message)
 
     def test_get_campaign_errors_500(
         self: "TestRestCampaign",

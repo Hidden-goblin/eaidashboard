@@ -127,7 +127,7 @@ class TestSettings:
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
-        with patch("app.routers.rest.settings.registered_projects") as rp:
+        with patch("app.routers.rest.settings.settings.registered_projects") as rp:
             rp.side_effect = Exception("error")
             response = application.get(
                 "/api/v1/settings/projects",
@@ -203,7 +203,7 @@ class TestSettings:
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
-        with patch("app.routers.rest.settings.register_project") as rp:
+        with patch("app.routers.rest.settings.settings.register_project") as rp:
             rp.side_effect = Exception("error")
             response = application.post(
                 "/api/v1/settings/projects",

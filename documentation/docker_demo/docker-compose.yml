@@ -1,0 +1,112 @@
+version: "3.10"
+
+services:
+  app:
+    image: hiddengob/eaidashboard:3.10-rc3
+    container_name: dashboard-app
+    command: ["python", "main.py"]
+    working_dir: /usr/src/dashboard
+    environment:
+      PG_PWD: root
+      PG_DB: testdash
+      ENABLE_METRICS: "true"
+      REDIS_URL: redis
+      PG_USR: root
+      PG_URL: db
+      TIMEDELTA: "10"
+      SESSION_KEY: poitezjkhfskjhkhazjhrhkhtkrejhk
+      REDIS_PORT: "6379"
+      PG_PORT: "5432"
+    ports:
+      - "8087:8081"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - dashboard
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "8087:443"   # HTTPS exposé sur port 8087
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+      - grafana
+      - prometheus
+    networks:
+      - dashboard
+
+  db:
+    image: postgres:16
+    container_name: eaidash_pg
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - dashboard
+
+  redis:
+    image: redis:7-alpine
+    container_name: eaidash_redis
+    expose:
+      - "6379"
+    networks:
+      - dashboard
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    expose:
+      - "3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - dashboard
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    expose:
+      - "9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - dashboard
+
+  promExporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    container_name: promExporter
+    ports:
+      - "9187:9187"
+    depends_on:
+      - db
+    networks:
+      - dashboard
+
+  redisExporter:
+    image: oliver006/redis_exporter
+    container_name: redisExporter
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - dashboard
+
+volumes:
+  pgdata:
+
+networks:
+  dashboard:
+    driver: bridge

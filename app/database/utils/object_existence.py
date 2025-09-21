@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
+from app.app_exception import ProjectNotRegistered
 from app.database.postgre.pg_versions import version_exists
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.utils.log_management import log_error
@@ -15,7 +16,7 @@ from app.utils.project_alias import provide
 async def project_version_exists(
     project_name: str,
     version: str = None,
-) -> ApplicationError:
+) -> ApplicationError | None:
     """:raise ProjectNotRegistered
     :raise VersionNotFound
     """
@@ -42,7 +43,7 @@ async def project_version_raise(
     )
     if result is not None:
         log_error(f"Code: {result.error}: {result.message}")
-        raise HTTPException(404, result.message)
+        raise ProjectNotRegistered(detail=result.message)
 
 
 T = TypeVar("T")

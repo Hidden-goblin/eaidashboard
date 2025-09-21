@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 import pytest
 from starlette.testclient import TestClient
+from fastapi import HTTPException
+from tests.conftest import status_404_error_message_check
 
 
 # noinspection PyUnresolvedReferences
@@ -153,12 +155,11 @@ class TestRestUsers:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.post(
-            "/api/v1/users",
-            json={"username": "test@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
-            headers=logged,
-        )
-        assert response.status_code == 404
-        assert response.json()["detail"] == "The projects 'unknown' are not registered."
+                "/api/v1/users",
+                json={"username": "test@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
+                headers=logged,
+            )
+        status_404_error_message_check(response,"The projects 'unknown' are not registered.")
 
     def test_create_user_error_400(
         self: "TestRestUsers",
@@ -239,8 +240,7 @@ class TestRestUsers:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get("/api/v1/users/unknown", headers=logged)
-        assert response.status_code == 404
-        assert response.json()["detail"] == "User 'unknown' is not found."
+        status_404_error_message_check(response, "User 'unknown' is not found.")
 
     def test_get_user(
         self: "TestRestUsers",

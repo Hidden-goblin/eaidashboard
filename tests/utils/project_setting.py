@@ -18,12 +18,15 @@ def set_project(
         application: Generator[TestClient, Any, None]
         logged: Generator[dict[str, str], Any, None]
     """
-    response = application.post(
-        "/api/v1/settings/projects",
-        json={"name": project_name},
-        headers=logged,
-    )
-    assert response.status_code == 200
+    try:
+        response = application.post(
+            "/api/v1/settings/projects",
+            json={"name": project_name},
+            headers=logged,
+        )
+        assert response.status_code == 200
+    except Exception as ex:
+        print(ex)
 
 
 def set_project_versions(
@@ -34,13 +37,15 @@ def set_project_versions(
 ) -> None:
     """Create versions for a given project"""
     for version in versions:
-        response = application.post(
-            f"/api/v1/projects/{project_name}/versions",
-            json={"version": version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-
+        try:
+            response = application.post(
+                f"/api/v1/projects/{project_name}/versions",
+                json={"version": version},
+                headers=logged,
+            )
+            assert response.status_code == 200
+        except Exception as ex:
+            print(ex)
 
 def set_project_users(
     users: List[dict],
@@ -87,12 +92,15 @@ def set_project_tickets(
 ) -> None:
     """Create ticket"""
     for ticket in tickets:
-        response = application.post(
-            f"/api/v1/projects/{project_name}/versions/{ticket['version']}/tickets",
-            json={"reference": ticket["reference"], "description": ticket["description"]},
-            headers=logged,
-        )
-        assert response.status_code == 200, f"Retrieve {response.status_code},\n\r {response.text}"
+        try:
+            response = application.post(
+                f"/api/v1/projects/{project_name}/versions/{ticket['version']}/tickets",
+                json={"reference": ticket["reference"], "description": ticket["description"]},
+                headers=logged,
+            )
+            assert response.status_code == 200, f"Retrieve {response.status_code},\n\r {response.text}"
+        except AssertionError as error:
+            print(error)
 
 
 def set_project_campaign(

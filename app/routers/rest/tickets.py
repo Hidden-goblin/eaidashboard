@@ -167,10 +167,13 @@ async def update_one_ticket(
     ticket: UpdatedTicket,
     user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
 ) -> str:
-    await project_version_raise(
-        project_name,
-        version,
-    )
+    try:
+        await project_version_raise(
+            project_name,
+            version,
+        )
+    except HTTPException as http_exp:
+        raise http_exp
     try:
         res = await update_ticket(
             project_name,

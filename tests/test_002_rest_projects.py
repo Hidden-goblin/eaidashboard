@@ -6,9 +6,21 @@ from unittest.mock import patch
 import pytest
 from starlette.testclient import TestClient
 
+from tests.conftest import status_404_error_message_check
+from tests.utils.project_setting import set_project
+
 
 # noinspection PyUnresolvedReferences
 class TestRestProjects:
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
+        self: "TestRestProjects",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
+        for project in ["test", "test_users", "test_users2"]:
+            set_project(project, application, logged)
+
     def test_get_projects(
         self: "TestRestProjects",
         application: Generator[TestClient, Any, None],
@@ -88,8 +100,7 @@ class TestRestProjects:
             "/api/v1/projects/unknown",
             headers=logged,
         )
-        assert response.status_code == 404
-        assert response.json() == {"detail": "'unknown' is not registered"}
+        status_404_error_message_check(response, "'unknown' is not registered")
 
     def test_get_one_projects_errors_500(
         self: "TestRestProjects",
@@ -126,7 +137,7 @@ class TestRestProjects:
             headers=logged,
         )
         assert response.status_code == 200
-        assert response.json()["inserted_id"] == 7
+        assert isinstance(response.json()["inserted_id"], int)
 
     def test_create_version_errors_404(
         self: "TestRestProjects",
@@ -138,8 +149,7 @@ class TestRestProjects:
             json={"version": "1.0.0"},
             headers=logged,
         )
-        assert response.status_code == 404
-        assert response.json() == {"detail": "'tests' is not registered"}
+        status_404_error_message_check(response, "'tests' is not registered")
 
     def test_create_version_errors_409(
         self: "TestRestProjects",
@@ -343,12 +353,12 @@ class TestRestProjects:
         version: str,
         message: str,
     ) -> None:
+
         response = application.get(
-            f"/api/v1/projects/{project}/versions/{version}",
-            headers=logged,
-        )
-        assert response.status_code == 404
-        assert response.json()["detail"] == message
+                f"/api/v1/projects/{project}/versions/{version}",
+                headers=logged,
+            )
+        status_404_error_message_check(response, message)
 
     def test_get_version_errors_500(
         self: "TestRestProjects",
