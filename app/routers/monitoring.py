@@ -42,7 +42,7 @@ redis_ping_gauge = Gauge("redis_ping", "Redis ping status (0=fail,1=ok)")
 
 
 @router.get("/metrics")
-def metrics():
+def metrics() -> Response:
     _pg_health = pg_health()
     # Update values
     cpu_gauge.set(psutil.cpu_percent(0.1))

@@ -4,16 +4,21 @@ from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
 from app.database.utils.object_existence import project_version_raise
-from app.database.utils.transitions import authorized_transition, bug_authorized_transition, \
-    ticket_authorized_transition
+from app.database.utils.transitions import (
+    authorized_transition,
+    bug_authorized_transition,
+    ticket_authorized_transition,
+)
 from app.schema.base_schema import GenericListModel
 from app.schema.error_code import ErrorMessage
-from app.schema.status_enum import StatusEnum, BugStatusEnum, TicketType
+from app.schema.status_enum import BugStatusEnum, StatusEnum, TicketType
 from app.schema.users import UpdateUser
 
 router = APIRouter(prefix="/api/v1/settings/projects/{project_name}")
 
-@router.get("/workflow/{state}",
+
+@router.get(
+    "/workflow/{state}",
     response_model=GenericListModel,
     tags=["Settings"],
     description="""Retrieve the next states for a project-version""",
@@ -24,7 +29,8 @@ router = APIRouter(prefix="/api/v1/settings/projects/{project_name}")
         },
         401: {"model": ErrorMessage, "description": "You are not authenticated"},
         500: {"model": ErrorMessage, "description": "Error during server computing"},
-    }      )
+    },
+)
 async def provide_next_states(
     project_name: str,
     state: str,
@@ -39,21 +45,23 @@ async def provide_next_states(
         else:
             return GenericListModel(data=authorized_transition[StatusEnum(state)])
     except ValueError as ve:
-        raise  HTTPException(400, detail=" ".join(ve.args)) from ve
+        raise HTTPException(400, detail=" ".join(ve.args)) from ve
 
-@router.get("/bugs/{state}",
-            response_model=GenericListModel,
-            tags=["Settings"],
-            description="""Retrieve the bug next states for a project""",
-            responses={
-                400: {
-                    "model": ErrorMessage,
-                    "description": "Project name is not a valid one. More than 63 characters or contains / \\ $ character",
-                },
-                401: {"model": ErrorMessage, "description": "You are not authenticated"},
-                500: {"model": ErrorMessage, "description": "Error during server computing"},
-            }
-            )
+
+@router.get(
+    "/bugs/{state}",
+    response_model=GenericListModel,
+    tags=["Settings"],
+    description="""Retrieve the bug next states for a project""",
+    responses={
+        400: {
+            "model": ErrorMessage,
+            "description": "Project name is not a valid one. More than 63 characters or contains / \\ $ character",
+        },
+        401: {"model": ErrorMessage, "description": "You are not authenticated"},
+        500: {"model": ErrorMessage, "description": "Error during server computing"},
+    },
+)
 async def provide_next_bug_states(
     project_name: str,
     state: str,
@@ -68,22 +76,23 @@ async def provide_next_bug_states(
         else:
             return GenericListModel(data=bug_authorized_transition[BugStatusEnum(state)])
     except ValueError as ve:
-        raise  HTTPException(400, detail=" ".join(ve.args)) from ve
+        raise HTTPException(400, detail=" ".join(ve.args)) from ve
 
 
-@router.get("/tickets/{state}",
-            response_model=GenericListModel,
-            tags=["Settings"],
-            description="""Retrieve the ticket next states for a project""",
-            responses={
-                400: {
-                    "model": ErrorMessage,
-                    "description": "Project name is not a valid one. More than 63 characters or contains / \\ $ character",
-                },
-                401: {"model": ErrorMessage, "description": "You are not authenticated"},
-                500: {"model": ErrorMessage, "description": "Error during server computing"},
-            }
-            )
+@router.get(
+    "/tickets/{state}",
+    response_model=GenericListModel,
+    tags=["Settings"],
+    description="""Retrieve the ticket next states for a project""",
+    responses={
+        400: {
+            "model": ErrorMessage,
+            "description": "Project name is not a valid one. More than 63 characters or contains / \\ $ character",
+        },
+        401: {"model": ErrorMessage, "description": "You are not authenticated"},
+        500: {"model": ErrorMessage, "description": "Error during server computing"},
+    },
+)
 async def provide_next_ticket_states(
     project_name: str,
     state: str,
@@ -98,4 +107,4 @@ async def provide_next_ticket_states(
         else:
             return GenericListModel(data=ticket_authorized_transition[TicketType(state)])
     except ValueError as ve:
-        raise  HTTPException(400, detail=" ".join(ve.args)) from ve
+        raise HTTPException(400, detail=" ".join(ve.args)) from ve

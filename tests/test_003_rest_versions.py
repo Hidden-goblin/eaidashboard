@@ -76,7 +76,6 @@ class TestRestVersions:
         version: str,
         message: str,
     ) -> None:
-
         response = application.post(
             f"/api/v1/projects/{project}/versions/{version}/tickets",
             json={"reference": "ref-002", "description": "Description"},
@@ -204,9 +203,24 @@ class TestRestVersions:
         assert response.json()["status"] == "open"
 
     one_ticket_error_404 = [
-        ("toto", project_version, "ref-001", "'toto' is not registered"),
-        (project_name, "2.0.0", "ref-001", "Version '2.0.0' is not found"),
-        (project_name, project_version, "ref-002", f"Ticket 'ref-002' does not exist in project '{project_name}' version '{project_version}'"),
+        (
+            "toto",
+            project_version,
+            "ref-001",
+            "'toto' is not registered",
+        ),
+        (
+            project_name,
+            "2.0.0",
+            "ref-001",
+            "Version '2.0.0' is not found",
+        ),
+        (
+            project_name,
+            project_version,
+            "ref-002",
+            f"Ticket 'ref-002' does not exist in project '{project_name}' version '{project_version}'",
+        ),
     ]
 
     @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
@@ -324,12 +338,18 @@ class TestRestVersions:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         # Set
-        set_project_tickets(TestRestVersions.project_name,
-                            [{"reference": "ref-001",
-                              "version": TestRestVersions.project_version,
-                              "description": "ref-001 description"}],
-                            application,
-                            logged)
+        set_project_tickets(
+            TestRestVersions.project_name,
+            [
+                {
+                    "reference": "ref-001",
+                    "version": TestRestVersions.project_version,
+                    "description": "ref-001 description",
+                }
+            ],
+            application,
+            logged,
+        )
         # Act
         response = application.put(
             f"/api/v1/projects/{TestRestVersions.project_name}/versions/1.0.1/tickets/ref-001",

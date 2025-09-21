@@ -4,14 +4,14 @@ import os
 from contextlib import asynccontextmanager
 from logging import getLogger
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse
 
 from app.app_exception import ProjectNotRegistered
 from app.conf import APP_VERSION, config
@@ -20,7 +20,6 @@ from app.database.postgre.postgres import init_postgres, postgre_register, updat
 from app.database.utils.password_management import generate_keys
 from app.routers import monitoring
 from app.routers.front import (
-    front_dashboard,
     front_documentation,
     front_project_version_tickets,
     front_projects,
@@ -154,12 +153,12 @@ async def custom_swagger_ui_html() -> HTMLResponse:
         swagger_js_url="/assets/5_swagger-ui-bundle.js",
         swagger_css_url="/assets/5_swagger-ui.css",
     )
+
+
 @app.exception_handler(ProjectNotRegistered)
 async def project_not_registered_handler(request: Request, exc: ProjectNotRegistered) -> JSONResponse:
-    return JSONResponse(
-        status_code=404,
-        content={"detail": exc.detail}
-    )
+    return JSONResponse(status_code=404, content={"detail": exc.detail})
+
 
 # @app.exception_handler(404)
 # async def custom_404_handler(request: Request, exc: HTTPException) -> RedirectResponse:
@@ -189,6 +188,7 @@ async def serve_front() -> FileResponse:
     index_path = "app/front/index.html"
     if os.path.exists(index_path):
         return FileResponse(index_path)
+
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
 async def swagger_ui_redirect() -> HTMLResponse:

@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Security
 from starlette.responses import Response
 
-from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered, UserNotFoundException
+from app.app_exception import IncorrectFieldsRequest, InvalidDeletion, ProjectNotRegistered
 from app.database.authentication import authenticate_user
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_users import (
@@ -81,6 +81,7 @@ async def one_user(
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
     return if_error_raise_http(_user)
+
 
 @router.put(
     "/users/me",

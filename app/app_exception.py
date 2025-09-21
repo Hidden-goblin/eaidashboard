@@ -19,7 +19,7 @@ class DuplicateVersion(Exception):
 
 
 class ProjectNotRegistered(Exception):
-    def __init__(self:"ProjectNotRegistered", detail: str = None):
+    def __init__(self: "ProjectNotRegistered", detail: str = None) -> None:
         self.detail = detail
 
 

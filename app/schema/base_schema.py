@@ -54,5 +54,6 @@ class CreateUpdateModel(ExtendedBaseModel):
             raw_data=raw_data if raw_data else None,
         )
 
+
 class GenericListModel(ExtendedBaseModel):
-    data: List[str|int]
+    data: List[str | int]

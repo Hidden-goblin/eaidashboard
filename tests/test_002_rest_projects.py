@@ -353,11 +353,10 @@ class TestRestProjects:
         version: str,
         message: str,
     ) -> None:
-
         response = application.get(
-                f"/api/v1/projects/{project}/versions/{version}",
-                headers=logged,
-            )
+            f"/api/v1/projects/{project}/versions/{version}",
+            headers=logged,
+        )
         status_404_error_message_check(response, message)
 
     def test_get_version_errors_500(

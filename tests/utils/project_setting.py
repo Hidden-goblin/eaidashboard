@@ -47,6 +47,7 @@ def set_project_versions(
         except Exception as ex:
             print(ex)
 
+
 def set_project_users(
     users: List[dict],
     application: Generator[TestClient, Any, None],

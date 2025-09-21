@@ -132,8 +132,9 @@ def get_user(
                     scopes=temp["scopes"],
                 )
                 if temp is not None
-                else ApplicationError(error=ApplicationErrorCode.user_not_found,
-                                  message=f"User '{username}' is not found.")
+                else ApplicationError(
+                    error=ApplicationErrorCode.user_not_found, message=f"User '{username}' is not found."
+                )
             )
         return (
             User(
@@ -142,8 +143,7 @@ def get_user(
                 scopes=temp["scopes"],
             )
             if temp is not None
-            else ApplicationError(error=ApplicationErrorCode.user_not_found,
-                                  message=f"User '{username}' is not found.")
+            else ApplicationError(error=ApplicationErrorCode.user_not_found, message=f"User '{username}' is not found.")
         )
 
 

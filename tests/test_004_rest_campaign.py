@@ -79,7 +79,7 @@ class TestRestCampaign:
             params={"version": "3.0.0"},
             headers=logged,
         )
-        status_404_error_message_check(response,"Version '3.0.0' is not found")
+        status_404_error_message_check(response, "Version '3.0.0' is not found")
 
     def test_get_campaigns_errors_500(
         self: "TestRestCampaign",
@@ -159,7 +159,7 @@ class TestRestCampaign:
             json={"version": TestRestCampaign.current_version},
             headers=logged,
         )
-        status_404_error_message_check(response,"'unknown_project' is not registered")
+        status_404_error_message_check(response, "'unknown_project' is not registered")
 
     def test_create_campaigns_errors_404_version(
         self: "TestRestCampaign",
