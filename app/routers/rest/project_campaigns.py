@@ -25,7 +25,7 @@ from app.database.redis.rs_file_management import rs_record_file, rs_retrieve_fi
 from app.database.utils.object_existence import if_error_raise_http, project_version_raise
 from app.database.utils.test_result_management import register_manual_campaign_result
 from app.schema.base_schema import CreateUpdateModel
-from app.schema.campaign.campaign_response_schema import CampaignFull, CampaignLight
+from app.schema.campaign.campaign_response_schema import CampaignFull, CampaignLight, CampaignLights
 from app.schema.campaign_followup_schema import ComputeResultSchema
 from app.schema.campaign_schema import (
     CampaignPatch,
@@ -43,6 +43,7 @@ from app.utils.log_management import log_error
 from app.utils.report_generator import campaign_deliverable
 
 router = APIRouter(prefix="/api/v1/projects")
+routerV2 = APIRouter(prefix="/api/v2/projects")
 
 log = logging.getLogger(__name__)
 
@@ -194,6 +195,63 @@ async def get_campaigns(
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
 
+@routerV2.get(
+    "/{project_name}/campaigns",
+    tags=["Campaign"],
+    response_model=CampaignLights,
+    description="""Retrieve campaign. Check before hand if project and version (if provided) exit.
+     X-total-count header contains the total number of matches""",
+    responses={
+        404: {
+            "model": ErrorMessage,
+            "description": "Project name is not registered (ignore case), the version does not exist",
+        },
+        401: {"model": ErrorMessage, "description": "You are not authenticated"},
+        500: {"model": ErrorMessage, "description": "Computation error"},
+    },
+)
+async def get_campaigns_v2(
+    project_name: str,
+    response: Response,
+    version: str = None,
+    status: CampaignStatusEnum = None,
+    limit: int = 10,
+    skip: int = 0,
+    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
+) -> CampaignLights:
+    """
+    Check project_name-version
+    Gather campaigns with the status
+
+    Args:
+        project_name:
+        response:
+        version:
+        status:
+        limit:
+        skip:
+        user:
+
+    Returns:
+
+    """
+    await project_version_raise(
+        project_name,
+        version,
+    )
+    try:
+        campaigns, count = await retrieve_campaign(
+            project_name,
+            version,
+            status,
+            limit=limit,
+            skip=skip,
+        )
+        response.headers["X-total-count"] = str(count)  # TODO check reason it doesn't work without cast
+        return CampaignLights(data=campaigns)
+    except Exception as exp:
+        log_error(repr(exp))
+        raise HTTPException(500, " ".join(exp.args)) from exp
 
 @router.patch(
     "/{project_name}/campaigns/{version}/{occurrence}",

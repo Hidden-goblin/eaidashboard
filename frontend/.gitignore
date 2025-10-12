@@ -23,3 +23,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Api clients - just using models
+src/api/api
+src/api/core
+src/api/models
+src/api/services
+src/api/index.ts

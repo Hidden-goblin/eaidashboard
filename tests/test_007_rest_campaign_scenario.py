@@ -42,7 +42,8 @@ class TestRestCampaignScenario:
     }
     scenario_id = None
 
-    def test_setup(
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
         self: "TestRestCampaignScenario",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -81,6 +82,31 @@ class TestRestCampaignScenario:
             application,
             logged,
         )
+
+    def test_validate_setup(self: "TestRestCampaignScenario",
+                            application: Generator[TestClient, Any, None],
+                            logged: Generator[dict[str, str], Any, None],) -> None:
+        response = application.get(
+            f"api/v1/projects/{TestRestCampaignScenario.project_name}",
+            headers=logged,
+        )
+        assert response.status_code == 200, response.text
+
+        response = application.get(
+            f"api/v1/projects/{TestRestCampaignScenario.project_name}/campaigns/"
+            f"{TestRestCampaignScenario.project_version}/{TestRestCampaignScenario.project_campaign_occurrence}",
+            headers=logged,
+        )
+        assert response.status_code == 200, response.text
+        print(response.text)
+
+        response = application.get(
+            f"api/v1/projects/{TestRestCampaignScenario.project_name}/repository",
+            params={"elements": "scenarios"},
+            headers=logged,
+        )
+        assert response.status_code == 200, response.text
+        print(response.text)
 
     def test_link_scenario_to_campaign_ticket(
         self: "TestRestCampaignScenario",

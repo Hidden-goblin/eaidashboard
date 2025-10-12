@@ -115,6 +115,13 @@
       "v2": {
         "dashboard": {
             "get": "Retrieve projects"
+        },
+        "projects":{
+            "<project_name>": {
+                "campaigns" : {
+                    "get": "Retrieve campaigns per version CampaignLights"
+                }
+            }
         }
       }
       },

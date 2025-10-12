@@ -1,0 +1,32 @@
+@startwbs
+'https://plantuml.com/wbs-diagram
+
+* Dashboard decoupled database or lazy coupling
+** Project service
+*** Version
+*** Delivery/Planing
+*** Feature/Non-functional
+** User service
+*** CRUD
+*** Project permission
+** Campaign service
+*** Execution/Occurrence
+*** Planing
+*** Subset feature validation
+** Feature Service
+*** Epic
+**** Use case
+**** Criticality
+*** Feature
+**** Description
+**** Workflows
+*** Scenario
+**** Step by step
+**** Gherkin
+**** Non-functional
+** Reporting service
+*** Dashboard - Project
+*** Dashboard - User
+*** Dashboard - Campaign
+*** Dashboard - Planing
+@endwbs

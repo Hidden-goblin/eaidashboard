@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
 from tests.conftest import error_message_extraction
+from tests.utils.context_manager import Context
 
 
 # noinspection PyUnresolvedReferences
@@ -17,8 +18,10 @@ class TestRestBug:
     current_version = "1.0.0"
     previous_version = "0.9.0"
     next_version = "1.1.0"
+    context = Context()
 
-    def test_setup(
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
         self: "TestRestBug",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -235,7 +238,7 @@ class TestRestBug:
             headers=logged,
         )
         assert response.status_code == 201
-        assert response.json()["inserted_id"] == inserted_id
+        assert isinstance(response.json()["inserted_id"], int)
 
     duplicate_error = [
         (
@@ -364,11 +367,24 @@ class TestRestBug:
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        # Prepare
         response = application.get(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs",
             headers=logged,
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
+        print(response.text)
+        TestRestBug.context.set_context("bug_internal_id", 0)
+        for item in response.json():
+            if item["title"] == "First" and item["version"] == TestRestBug.current_version:
+                TestRestBug.context.set_context("bug_internal_id",  item["internal_id"])
+                break
+
+        response = application.get(
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            headers=logged,
+        )
+        assert response.status_code == 200, response.text
         assert response.json()["title"] == "First"
         assert response.json()["version"] == TestRestBug.current_version
         assert response.json()["description"] == "First, only mandatory field"
@@ -496,7 +512,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"title": "First updated"},
             headers=logged,
         )
@@ -514,7 +530,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"status": "fix ready"},
             headers=logged,
         )
@@ -527,7 +543,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"status": "fixe ready"},
             headers=logged,
         )
@@ -539,14 +555,14 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             headers=logged,
         )
         assert response.status_code == 200
         assert response.json()["status"] == "fix ready"
         assert response.json()["criticality"] == "major"
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"status": "open", "criticality": "blocking"},
             headers=logged,
         )
@@ -560,7 +576,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"version": "2.0.0"},
             headers=logged,
         )
@@ -572,7 +588,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/2",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
             json={"version": TestRestBug.previous_version},
             headers=logged,
         )

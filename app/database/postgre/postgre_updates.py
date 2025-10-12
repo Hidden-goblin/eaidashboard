@@ -383,6 +383,46 @@ POSTGRE_UPDATES = [
         add constraint chk_scenarios_isdeleted_not_null check (is_deleted IS NOT NULL); """,
         "description": "Add constraint to is_deleted to be not null",
     },
+    {
+        "request": """alter table campaigns 
+        add column project_id_new integer;""",
+        "description": "Add new integer column for the relation"
+    },
+    {
+        "request": """update campaigns c
+        set project_id_new = p.id 
+        from projects p 
+        where c.project_id = p.name; 
+        """,
+        "description": """Populate project_id_new using the current string project_id"""
+    },
+    {
+        "request": """alter table campaigns 
+        add constraint campaigns_project_fk 
+        foreign key (project_id_new) references projects(id);""",
+        "description": "Add foreign key constraint on project_id_new"
+    },
+    {
+        "request": """alter table campaigns 
+        alter column project_id_new set not null;""",
+        "description": "project_id_new cannot be null"
+    },
+    {
+        "request": """alter table campaigns 
+        drop column project_id;""",
+        "description": "Drop previous column"
+    },
+    {
+        "request": """alter table campaigns 
+                   rename column project_id_new to project_id;""",
+        "description": "Rename project_id_new to project_id"
+    },
+    {
+        "request": """alter table campaigns 
+        add constraint campaigns_project_id_version_occurrence_key 
+        unique (project_id, version, occurrence);""",
+        "description": "Recreate unique constraint project_id-version-occurrence"
+    }
     # Alter table users to use the first scope in the array to a json
     # alter table users
     #   alter column scopes type json using to_json('{"*":"' || scopes[1] ||'"}')

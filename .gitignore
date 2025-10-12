@@ -134,3 +134,10 @@ dmypy.json
 # PyCharm
 .idea
 /component_tests/
+
+# Front asset develop
+/app/front/
+/app/static/
+
+# Demo certificate
+/documentation/docker_demo/ngnix/certs/*

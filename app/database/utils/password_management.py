@@ -1,6 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import timedelta
+from typing import Tuple
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -11,17 +12,22 @@ from app import conf
 from app.conf import config
 
 ACCESS_TOKEN_EXPIRE_MINUTES = timedelta(minutes=int(config["TIMEDELTA"]))
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256","bcrypt"], default="bcrypt_sha256", deprecated=["bcrypt"])
 
 
 def verify_password(
     plain_password: str,
     hashed_password: str,
-) -> bool:
+) -> Tuple[bool, str|None]:
+    scheme = pwd_context.identify(hashed_password)
+
+    if scheme and scheme.casefold() == "bcrypt":
+        return pwd_context.verify_and_update(plain_password, hashed_password)
+
     return pwd_context.verify(
-        plain_password,
+            plain_password,
         hashed_password,
-    )
+    ), None
 
 
 def get_password_hash(

@@ -1,6 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-from typing import Optional
+from typing import List, Optional
 
 from app.schema.base_schema import ExtendedBaseModel
 from app.schema.campaign_schema import TicketScenario
@@ -24,6 +24,13 @@ class CampaignLight(ExtendedBaseModel):
     description: Optional[str] = ""
     status: CampaignStatusEnum
 
+
+class CampaignLights(ExtendedBaseModel):
+    """
+    Attributes
+        - data: List[CampaignLight]
+    """
+    data: List[CampaignLight]
 
 class CampaignFull(CampaignLight):
     """

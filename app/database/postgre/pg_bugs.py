@@ -269,7 +269,8 @@ async def make_link_to_scenario(
         " join campaign_tickets as ct on ct.id = cts.campaign_ticket_id"
         " join campaigns as ca on ca.id = ct.campaign_id"
         " join scenarios as sc on sc.id = cts.scenario_id"
-        " where ca.project_id = %(project_name)s"
+        " join projects as pr on ca.project_id = pr.id"
+        " where pr.alias = %(project_name)s"
         " and ca.version = %(version)s"
         " and ca.occurrence = %(occurrence)s"
         " and ct.ticket_reference = %(ticket_reference)s::varchar"
@@ -280,7 +281,7 @@ async def make_link_to_scenario(
     data = [
         {
             "bug_id": bug_id,
-            "project_name": project_name,
+            "project_name": provide(project_name),
             "version": version,
             "occurrence": elem.occurrence,
             "ticket_reference": str(elem.ticket_reference),

@@ -4,8 +4,6 @@ services:
   app:
     image: hiddengob/eaidashboard:3.10-rc3
     container_name: dashboard-app
-    command: ["python", "main.py"]
-    working_dir: /usr/src/dashboard
     environment:
       PG_PWD: root
       PG_DB: testdash

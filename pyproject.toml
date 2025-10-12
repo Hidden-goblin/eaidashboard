@@ -27,7 +27,7 @@ show_missing = "true"
 directory = "cov_html"
 
 [tool.pytest.ini_options]
-rootdir = "."
+#rootdir = "."
 testpaths = ["tests"]
 addopts = "--order-dependencies"
 
@@ -43,7 +43,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.14"
 fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
@@ -51,7 +51,7 @@ jinja2 = "*"
 dpath = "*"
 python-multipart = "*"
 passlib = "*"
-bcrypt = "*"
+bcrypt = "4.3.0"
 itsdangerous = "*"
 bokeh = "*"
 pydantic = {extras = ["email"], version = "*"}

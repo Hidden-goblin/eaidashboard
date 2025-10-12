@@ -4,6 +4,7 @@ from random import choice
 from typing import Any, Generator
 
 import dpath
+import pytest
 from starlette.testclient import TestClient
 
 from tests.utils.api_model import (
@@ -148,7 +149,8 @@ class TestRestCampaignWorkflow:
     current_campaign_occurrence = None
     context: Context = Context()
 
-    def test_setup(
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
         self: "TestRestCampaignWorkflow",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],

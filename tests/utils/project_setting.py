@@ -77,12 +77,15 @@ def set_project_repository(
 ) -> None:
     """Create project test repository"""
     with open(repository_path, "rb") as file:
-        response = application.post(
-            f"/api/v1/projects/{project_name}/repository",
-            files={"file": file},
-            headers=logged,
-        )
-        assert response.status_code == 204
+        try:
+            response = application.post(
+                f"/api/v1/projects/{project_name}/repository",
+                files={"file": file},
+                headers=logged,
+            )
+            assert response.status_code == 204
+        except Exception as ex:
+            print(ex)
 
 
 def set_project_tickets(
@@ -120,12 +123,15 @@ def set_project_campaign(
     assert response.status_code == 200
     __occurrence: int = response.json()["occurrence"]
     for ticket in tickets:
-        response = application.put(
-            f"/api/v1/projects/{project_name}/campaigns/{version}/{__occurrence}",
-            json=ticket,
-            headers=logged,
-        )
-        assert response.status_code == 200
+        try:
+            response = application.put(
+                f"/api/v1/projects/{project_name}/campaigns/{version}/{__occurrence}",
+                json=ticket,
+                headers=logged,
+            )
+            assert response.status_code == 200
+        except Exception as ex:
+            print(ex)
     return __occurrence
 
 

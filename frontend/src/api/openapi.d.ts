@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Metrics
+         * @description Endpoint that serves Prometheus metrics.
+         */
+        get: operations["metrics_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard": {
         parameters: {
             query?: never;
@@ -720,6 +740,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/projects/{project_name}/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Campaigns V2
+         * @description Retrieve campaign. Check before hand if project and version (if provided) exit.
+         *          X-total-count header contains the total number of matches
+         */
+        get: operations["get_campaigns_v2_api_v2_projects__project_name__campaigns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_name}/epics/": {
         parameters: {
             query?: never;
@@ -825,26 +866,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Metrics
-         * @description Endpoint that serves Prometheus metrics.
-         */
-        get: operations["metrics_metrics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -936,13 +957,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-07-20T14:00:30.547422
+             * @default 2025-09-28T21:19:19.254302
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-07-20T14:00:30.547422
+             * @default 2025-09-28T21:19:19.254302
              */
             updated: string;
             /**
@@ -971,13 +992,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-07-20T14:00:30.547422
+             * @default 2025-09-28T21:19:19.254302
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-07-20T14:00:30.547422
+             * @default 2025-09-28T21:19:19.254302
              */
             updated: string;
             /**
@@ -1114,6 +1135,15 @@ export interface components {
              */
             description: string | null;
             status: components["schemas"]["CampaignStatusEnum"];
+        };
+        /**
+         * CampaignLights
+         * @description Attributes
+         *         - data: List[CampaignLight]
+         */
+        CampaignLights: {
+            /** Data */
+            data: components["schemas"]["CampaignLight"][];
         };
         /**
          * CampaignPatch
@@ -1613,13 +1643,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-07-20T14:00:30.572500
+             * @default 2025-09-28T21:19:19.276156
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-07-20T14:00:30.572500
+             * @default 2025-09-28T21:19:19.276156
              */
             updated: string;
         };
@@ -1644,7 +1674,7 @@ export interface components {
             /**
              * Updated
              * Format: date-time
-             * @default 2025-07-20T14:00:30.559319
+             * @default 2025-09-28T21:19:19.264899
              */
             updated: string;
             /** Url */
@@ -1701,7 +1731,7 @@ export interface components {
             /**
              * Updated
              * Format: date-time
-             * @default 2025-07-20T14:00:30.574027
+             * @default 2025-09-28T21:19:19.278188
              */
             updated: string;
         };
@@ -1768,6 +1798,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthCheck"];
+                };
+            };
+        };
+    };
+    metrics_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -3928,6 +3978,69 @@ export interface operations {
             };
         };
     };
+    get_campaigns_v2_api_v2_projects__project_name__campaigns_get: {
+        parameters: {
+            query?: {
+                version?: string;
+                status?: components["schemas"]["CampaignStatusEnum"];
+                limit?: number;
+                skip?: number;
+            };
+            header?: never;
+            path: {
+                project_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignLights"];
+                };
+            };
+            /** @description You are not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Project name is not registered (ignore case), the version does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Computation error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+        };
+    };
     get_epics_api_v1_projects__project_name__epics__get: {
         parameters: {
             query?: never;
@@ -4232,26 +4345,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    metrics_metrics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };

@@ -1,0 +1,44 @@
+[
+{
+      "username": "admin@admin.fr",
+      "password": "admin",
+      "scopes": {
+        "*": "admin"
+      }
+    },
+{
+      "username": "paul.abbot@test.fr",
+      "password": "padmin",
+      "scopes": {
+        "*": "user",
+        "test": "admin",
+        "new way": "admin"
+      }
+    },
+ {
+      "username": "fileas.utter@test.fr",
+      "password": "test",
+      "scopes": {
+        "*": "user",
+        "test is the new way": "user"
+      }
+    },
+    {
+      "username": "sorcha.upbringer@test.fr",
+      "password": "test1",
+      "scopes": {
+        "*": "user",
+        "test": "user",
+        "test is the new way": "user"
+      }
+    },
+    {
+      "username": "monica.upwarder@test.fr",
+      "password": "test2",
+      "scopes": {
+        "*": "user",
+        "new way": "user",
+        "test is the new way": "admin"
+      }
+    }
+]

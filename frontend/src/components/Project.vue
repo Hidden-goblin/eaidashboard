@@ -17,11 +17,9 @@
 import {ref, computed} from 'vue'
 import {useRoute} from 'vue-router'
 import VersionTab from './versions/VersionTab.vue'
-
+import CampaignTab from "@/views/CampaignTab.vue";
 // Dummy placeholder tab components
-const CampaignsTab = {
-  template: '<div><h2>Campaigns</h2><p>Under Construction</p></div>'
-}
+
 const RepositoryTab = {
   template: '<div><h2>Repository</h2><p>Under Construction</p></div>'
 }
@@ -40,7 +38,7 @@ const currentTabComponent = computed(() => {
     case 'Version':
       return VersionTab
     case 'Campaigns':
-      return CampaignsTab
+      return CampaignTab
     case 'Repository':
       return RepositoryTab
     case 'Bugs':

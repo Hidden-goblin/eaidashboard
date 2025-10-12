@@ -1,19 +1,17 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 import importlib
+import json
 import os
 import time
 from typing import Any, Generator, List
+from xml.etree import ElementTree
 
 import psycopg
 import pytest
 from pytest import fixture
 from starlette.responses import Response
 from starlette.testclient import TestClient
-
-
-def pytest_configure(config) -> None:  # noqa: ANN001
-    os.environ["PG_DB"] = "test_db"
 
 
 def pytest_unconfigure(config) -> None:  # noqa: ANN001
@@ -92,3 +90,131 @@ def status_404_error_message_check(
 ) -> None:
     assert response.status_code == 404
     assert response.json()["detail"] == expected_message
+
+
+def pytest_addoption(parser):
+    """Add CLI options for marker-to-property mapping."""
+    group = parser.getgroup("metadata-plugin")
+    group.addoption(
+        "--metadata-mapping",
+        action="store",
+        metavar="MAPPING",
+        default="description:description,path:path,tags:tags,testcase:testcase,test_steps:test_steps",
+        help=(
+            "Comma-separated list of marker:property mappings, e.g. "
+            "'description:desc,path:reqPath,tags:labels,testcase:testKey'"
+        ),
+    )
+
+
+def pytest_configure(config):
+    print("Setting environment data")
+    os.environ["PG_DB"] = "test_db"
+
+    """Register markers and parse mapping."""
+    config.addinivalue_line("markers", "description(desc): add human-readable description")
+    config.addinivalue_line("markers", "path(path): logical test path or requirement mapping")
+    config.addinivalue_line("markers", "tags(*names): add one or more tags")
+    config.addinivalue_line("markers", "testcase(id): external test case ID")
+    config.addinivalue_line("markers", "test_steps(*names): add step")
+
+    # Parse mapping string into dict
+    mapping_str = config.getoption("--metadata-mapping")
+    mapping = {}
+    for entry in mapping_str.split(","):
+        if ":" in entry:
+            marker, prop = entry.split(":", 1)
+            mapping[marker.strip()] = prop.strip()
+    config._metadata_mapping = mapping
+
+
+def _collect_metadata(item, report):
+    """Collect metadata based on configured mapping."""
+    config = item.config
+    metadata = {
+        "name": item.name,
+        "nodeid": item.nodeid,
+        "outcome": report.outcome,
+    }
+
+    for marker_name, prop_name in config._metadata_mapping.items():
+        marker = item.get_closest_marker(marker_name)
+        if marker:
+            if len(marker.args) == 1:
+                metadata[prop_name] = marker.args[0]
+            else:
+                metadata[prop_name] = list(marker.args)
+
+    return metadata
+
+_OUTCOME_ORDER = {"failed": 2, "skipped": 1, "passed": 0}
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+
+    metadata = _collect_metadata(item, report)
+
+    # If this is the first phase, just store metadata
+    if not hasattr(item, "test_metadata"):
+        item.test_metadata = metadata
+    else:
+        # Merge outcomes: keep the "worst" one
+        current = item.test_metadata["outcome"]
+        if _OUTCOME_ORDER[metadata["outcome"]] > _OUTCOME_ORDER[current]:
+            item.test_metadata["outcome"] = metadata["outcome"]
+
+        # Also update duration if this phase has it
+        if metadata.get("duration"):
+            item.test_metadata["duration"] = metadata["duration"]
+
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Export results to JSON at the end of session."""
+    results = []
+    for item in session.items:
+        if hasattr(item, "test_metadata"):
+            results.append(item.test_metadata)
+
+    with open("pytest_metadata.json", "w") as f:
+        json.dump(results, f, indent=2)
+
+
+def pytest_runtest_logreport(report):
+    """Inject metadata into JUnit XML <properties>."""
+    config = report.keywords
+    if not hasattr(config, "_xml") or not hasattr(report, "test_metadata"):
+        return
+
+    xml = config._xml
+    for suite in xml.node.findall("testsuite"):
+        for case in suite.findall("testcase"):
+            if case.attrib.get("name") == report.nodeid.split("::")[-1]:
+                props = case.find("properties")
+                if props is None:
+                    props = ElementTree.SubElement(case, "properties")
+
+                for key, value in report.test_metadata.items():
+                    prop = ElementTree.SubElement(props, "property")
+                    prop.set("name", key)
+                    prop.set("value", str(value))
+                return
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_junitxml_add_properties(nodeid, report, properties):
+    """Inject our metadata into JUnit XML <properties>."""
+    if not hasattr(report, "test_metadata"):
+        return
+
+    md = report.test_metadata
+    for key, value in md.items():
+        if value is None:
+            continue
+        if isinstance(value, list):
+            for idx, step in enumerate(value, start=1):
+                properties.append((f"{key}[{idx}]", str(step)))
+        else:
+            properties.append((key, str(value)))

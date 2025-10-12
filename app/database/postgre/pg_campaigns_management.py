@@ -14,6 +14,7 @@ from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
+from app.utils.project_alias import provide
 
 logger = getLogger(__name__)
 
@@ -24,21 +25,38 @@ async def create_campaign(
     status: str = "recorded",
 ) -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
+    # Todo fix project_id to be the real project ID
     with pool.connection() as connection:
         connection.row_factory = dict_row
         conn = connection.execute(
-            "insert into campaigns (project_id, version, status, occurrence) "
-            "select %s, %s, %s, coalesce(max(occurrence), 0) +1 "
-            "from campaigns where project_id = %s and version = %s "
-            "returning project_id as project_name, "
-            "version as version, occurrence as occurrence, "
-            "description as description, status as status;",
+            """WITH inserted AS (
+        INSERT INTO campaigns (project_id, version, status, occurrence)
+        SELECT p.id,
+               %s,
+               %s,
+               COALESCE(
+                   (SELECT MAX(c2.occurrence)
+                    FROM campaigns c2
+                    WHERE c2.project_id = p.id
+                      AND c2.version = %s),
+                   0
+               ) + 1
+        FROM projects p
+        WHERE p.alias = %s
+        RETURNING project_id, version, occurrence, description, status
+    )
+    SELECT pr.alias AS project_name,
+           i.version,
+           i.occurrence,
+           i.description,
+           i.status
+    FROM inserted i
+    JOIN projects pr ON pr.id = i.project_id;""",
             (
-                project_name.casefold(),
                 version,
                 CampaignStatusEnum(status),
-                project_name.casefold(),
                 version,
+                project_name.casefold(),
             ),
         ).fetchone()
 
@@ -53,28 +71,31 @@ async def retrieve_campaign(
     limit: int = 10,
     skip: int = 0,
 ) -> Tuple[List[CampaignLight], int]:
-    """Get raw campaign with version, occurrence, description, and status
+    """
+    Get raw campaign with version, occurrence, description, and status
     :return List[CampaignLight], <total result>
     """
     base_query = """
-        select project_id as project_name,
+        select p.name as project_name,
                version as version,
                occurrence as occurrence,
                description as description,
                status as status
-          from campaigns
+          from campaigns c
+          join projects p on p.id = c.project_id
     """
 
     count_query = """
-        select count(*) as total
-          from campaigns
+        select count(c.id) as total
+          from campaigns c
+          join projects p on p.id = c.project_id
     """
 
     conditions = [
-        "project_id = %s",
+        "p.alias = %s",
     ]
     params = [
-        project_name,
+        provide(project_name),
     ]
 
     # Dynamically add conditions based on inputs
@@ -82,7 +103,7 @@ async def retrieve_campaign(
         conditions.append("version = %s")
         params.append(version)
     if status:
-        conditions.append("status = %s")
+        conditions.append("c.status = %s")
         params.append(status)
 
     base_query = (
@@ -103,6 +124,26 @@ async def retrieve_campaign(
     return [CampaignLight(**elem) for elem in conn.fetchall()], count.fetchone()["total"]
 
 
+async def retrieve_campaigns_basics(
+    project_name: str, include_archived: bool = False, limit: int = 10, skip: int = 0
+) -> Tuple[List[dict], int]:
+    """
+    Retrieve the campaigns for a specific project.
+    Ordered by creation date
+    Args:
+        project_name: the project name to look for
+        include_archived:  default to False, include past campaigns if true
+        limit: default to 10
+        skip: default to 0
+    """
+    base_query = """select version, count(occurrence) as occurrences from campaigns"""
+    conditions = ["project_id = %s"]
+    params = [project_name]
+
+    if include_archived:
+        pass
+
+
 async def retrieve_campaign_id(
     project_name: str,
     version: str,
@@ -112,9 +153,12 @@ async def retrieve_campaign_id(
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
-            "select id, status from campaigns where project_id = %s  and version = %s  and occurrence = %s;",
+            """select c.id, c.status 
+            from campaigns c
+            join projects p on p.id = c.project_id
+            where p.alias = %s  and c.version = %s  and c.occurrence = %s;""",
             (
-                project_name,
+                provide(project_name),
                 version,
                 occurrence,
             ),
@@ -159,14 +203,15 @@ async def enrich_tickets_with_campaigns(
             rows = connection.execute(
                 "select cp.occurrence as occurrence "
                 "from campaigns as cp "
+                "join projects as p on p.id = cp.project_id "
                 "inner join campaign_tickets as cpt "
                 " on cpt.campaign_id = cp.id "
                 " where cp.version = %s "
-                " and cp.project_id = %s "
+                " and p.alias = %s "
                 " and cpt.ticket_reference = %s",
                 (
                     version,
-                    project_name,
+                    provide(project_name),
                     ticket.reference,
                 ),
             )
@@ -258,6 +303,7 @@ def campaign_failing_scenarios(
     """Retrieve failing scenarios for a campaign
     If bug_internal_id is set then add as 'selected' already scenarios attached to the bug
     TODO add this mechanism /!\\ WARNING on future link (version might differ)
+    TODO update project_id from project_name
     """
     query = (
         "select scenarios.name,"

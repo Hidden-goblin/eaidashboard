@@ -69,7 +69,7 @@ features ||--o{ scenarios
 entity campaigns {
 id: int autoincrement
 --
-project_id: text
+project_id: in <<FK projects.id>>
 version: text
 occurrence: int
 description: text
@@ -82,7 +82,7 @@ unique (project_id, version, occurrence)
 entity campaign_tickets{
 id: autoincrement
 ---
-campaign_id: int FK
+campaign_id: int <<FK campaigns.id>>
 ticket_reference: text
 ticket_id: int
 ---
@@ -182,7 +182,7 @@ alias: string
 entity versions {
 id: int autoincrement
 ---
-project_id: int
+project_id: int <<FK projects.id>>
 version: string
 created: datetime
 updated: datetime
