@@ -9,6 +9,11 @@ from xml.etree import ElementTree
 
 import psycopg
 import pytest
+from _pytest.config import Config, ExitCode, Parser
+from _pytest.main import Session
+from _pytest.nodes import Item
+from _pytest.reports import TestReport
+from _pytest.runner import CallInfo
 from pytest import fixture
 from starlette.responses import Response
 from starlette.testclient import TestClient
@@ -92,7 +97,7 @@ def status_404_error_message_check(
     assert response.json()["detail"] == expected_message
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: Parser) -> None:
     """Add CLI options for marker-to-property mapping."""
     group = parser.getgroup("metadata-plugin")
     group.addoption(
@@ -107,7 +112,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: Config) -> None:
     print("Setting environment data")
     os.environ["PG_DB"] = "test_db"
 
@@ -128,7 +133,7 @@ def pytest_configure(config):
     config._metadata_mapping = mapping
 
 
-def _collect_metadata(item, report):
+def _collect_metadata(item: Item, report: TestReport) -> dict:
     """Collect metadata based on configured mapping."""
     config = item.config
     metadata = {
@@ -147,10 +152,12 @@ def _collect_metadata(item, report):
 
     return metadata
 
+
 _OUTCOME_ORDER = {"failed": 2, "skipped": 1, "passed": 0}
 
+
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item: Item, call: CallInfo) -> None:
     outcome = yield
     report = outcome.get_result()
 
@@ -170,8 +177,7 @@ def pytest_runtest_makereport(item, call):
             item.test_metadata["duration"] = metadata["duration"]
 
 
-
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session: Session, exitstatus: ExitCode) -> None:
     """Export results to JSON at the end of session."""
     results = []
     for item in session.items:
@@ -182,7 +188,7 @@ def pytest_sessionfinish(session, exitstatus):
         json.dump(results, f, indent=2)
 
 
-def pytest_runtest_logreport(report):
+def pytest_runtest_logreport(report: TestReport) -> None:
     """Inject metadata into JUnit XML <properties>."""
     config = report.keywords
     if not hasattr(config, "_xml") or not hasattr(report, "test_metadata"):
@@ -203,18 +209,18 @@ def pytest_runtest_logreport(report):
                 return
 
 
-@pytest.hookimpl(optionalhook=True)
-def pytest_junitxml_add_properties(nodeid, report, properties):
-    """Inject our metadata into JUnit XML <properties>."""
-    if not hasattr(report, "test_metadata"):
-        return
-
-    md = report.test_metadata
-    for key, value in md.items():
-        if value is None:
-            continue
-        if isinstance(value, list):
-            for idx, step in enumerate(value, start=1):
-                properties.append((f"{key}[{idx}]", str(step)))
-        else:
-            properties.append((key, str(value)))
+# @pytest.hookimpl(optionalhook=True)
+# def pytest_junitxml_add_properties(nodeid, report, properties):
+#     """Inject our metadata into JUnit XML <properties>."""
+#     if not hasattr(report, "test_metadata"):
+#         return
+#
+#     md = report.test_metadata
+#     for key, value in md.items():
+#         if value is None:
+#             continue
+#         if isinstance(value, list):
+#             for idx, step in enumerate(value, start=1):
+#                 properties.append((f"{key}[{idx}]", str(step)))
+#         else:
+#             properties.append((key, str(value)))

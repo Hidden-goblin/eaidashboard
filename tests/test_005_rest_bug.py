@@ -377,11 +377,11 @@ class TestRestBug:
         TestRestBug.context.set_context("bug_internal_id", 0)
         for item in response.json():
             if item["title"] == "First" and item["version"] == TestRestBug.current_version:
-                TestRestBug.context.set_context("bug_internal_id",  item["internal_id"])
+                TestRestBug.context.set_context("bug_internal_id", item["internal_id"])
                 break
 
         response = application.get(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             headers=logged,
         )
         assert response.status_code == 200, response.text
@@ -512,7 +512,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"title": "First updated"},
             headers=logged,
         )
@@ -530,7 +530,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"status": "fix ready"},
             headers=logged,
         )
@@ -543,7 +543,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"status": "fixe ready"},
             headers=logged,
         )
@@ -555,14 +555,14 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             headers=logged,
         )
         assert response.status_code == 200
         assert response.json()["status"] == "fix ready"
         assert response.json()["criticality"] == "major"
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"status": "open", "criticality": "blocking"},
             headers=logged,
         )
@@ -576,7 +576,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"version": "2.0.0"},
             headers=logged,
         )
@@ -588,7 +588,7 @@ class TestRestBug:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.put(
-            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context("bug_internal_id")}",
+            f"/api/v1/projects/{TestRestBug.project_name}/bugs/{TestRestBug.context.get_context('bug_internal_id')}",
             json={"version": TestRestBug.previous_version},
             headers=logged,
         )

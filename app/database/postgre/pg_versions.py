@@ -12,7 +12,7 @@ from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_enum import ProjectProjections
 from app.schema.project_schema import DashboardProject, Statistics
-from app.schema.status_enum import TicketType, StatusEnum
+from app.schema.status_enum import StatusEnum, TicketType
 from app.schema.versions_schema import Version, VersionProjections
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
@@ -121,7 +121,6 @@ async def get_project_versions(
     project_name: str,
     exclude_archived: bool = False,
 ) -> List[Version]:
-    result = []
     with pool.connection() as connection:
         connection.row_factory = dict_row
         if exclude_archived:

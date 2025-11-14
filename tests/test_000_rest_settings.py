@@ -12,9 +12,9 @@ from starlette.testclient import TestClient
 class TestSettings:
     @pytest.mark.path("/authentication")
     @pytest.mark.tags("authentication", "error", "422", "401")
-    @pytest.mark.test_steps("Given 'test' user doesn't exist",
-                       "When 'test' logs in",
-                       "Then 'test' user get a 401 error")
+    @pytest.mark.test_steps(
+        "Given 'test' user doesn't exist", "When 'test' logs in", "Then 'test' user get a 401 error"
+    )
     @pytest.mark.description("Check log bad request and unauthorized")
     def test_log_in_errors(
         self: "TestSettings",
@@ -32,9 +32,7 @@ class TestSettings:
     @pytest.mark.path("/authentication")
     @pytest.mark.tags("authentication", "mandatory")
     @pytest.mark.test_steps(
-        "Given 'admin' user doe exist",
-        "When 'admin' logs in",
-        "Then 'admin' user get a 200 response"
+        "Given 'admin' user doe exist", "When 'admin' logs in", "Then 'admin' user get a 200 response"
     )
     @pytest.mark.description("Unupdated admin can log in")
     def test_log_in_success(
@@ -55,7 +53,7 @@ class TestSettings:
         "Given 'admin' user is logged in",
         "Given 'admin' user doesn't provide its token",
         "When 'admin' logs off",
-        "Then 'admin' user get a 401 error"
+        "Then 'admin' user get a 401 error",
     )
     @pytest.mark.description("Cannot log off without token")
     def test_log_out_error(
@@ -86,7 +84,7 @@ class TestSettings:
         "Given 'admin' user does exist",
         "Given 'admin' user is logged in",
         "When 'admin' logs off",
-        "Then 'admin' request is returning 204"
+        "Then 'admin' request is returning 204",
     )
     @pytest.mark.description("Check success logg out request")
     def test_log_out_success(
@@ -109,7 +107,6 @@ class TestSettings:
         # Assert
         assert response.status_code == 204, response.text
 
-
     def test_registered_projects_200(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -123,7 +120,7 @@ class TestSettings:
 
         # Assert
         assert response.status_code == 200
-        assert response.json() == [] # Weak assertion - doesn't work if played elsewhere from the start
+        assert response.json() == []  # Weak assertion - doesn't work if played elsewhere from the start
 
     def test_authorization_error_no_email(
         self: "TestSettings",

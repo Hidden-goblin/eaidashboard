@@ -5,12 +5,15 @@ from enum import Enum, StrEnum
 
 class DashCollection(Enum):
     """The enum for the various project states"""
+
     CURRENT = "current"
     FUTURE = "future"
     ARCHIVED = "archived"
 
+
 class ProjectProjections(StrEnum):
     """The enum for the various projections"""
+
     VERSIONS = "versions"
     CAMPAIGNS = "campaigns"
     FUTURE_VERSIONS = "future_versions"

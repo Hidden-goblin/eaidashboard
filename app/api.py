@@ -3,7 +3,6 @@
 import os
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import Any, Coroutine
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -189,7 +188,7 @@ async def custom_404_handler(request: Request, exc: HTTPException) -> JSONRespon
 
 
 @app.get("/", include_in_schema=False)
-async def serve_front() -> FileResponse:
+async def serve_front() -> FileResponse | None:
     index_path = "app/front/index.html"
     if os.path.exists(index_path):
         return FileResponse(index_path)

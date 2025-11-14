@@ -133,5 +133,6 @@ class CampaignProjections(ExtendedBaseModel):
         - count: int the total count of versions with campaign
         - data: list of CampaignProjection
     """
+
     count: int
     data: List[CampaignProjection]

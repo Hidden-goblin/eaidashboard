@@ -12,20 +12,20 @@ from app import conf
 from app.conf import config
 
 ACCESS_TOKEN_EXPIRE_MINUTES = timedelta(minutes=int(config["TIMEDELTA"]))
-pwd_context = CryptContext(schemes=["bcrypt_sha256","bcrypt"], default="bcrypt_sha256", deprecated=["bcrypt"])
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], default="bcrypt_sha256", deprecated=["bcrypt"])
 
 
 def verify_password(
     plain_password: str,
     hashed_password: str,
-) -> Tuple[bool, str|None]:
+) -> Tuple[bool, str | None]:
     scheme = pwd_context.identify(hashed_password)
 
     if scheme and scheme.casefold() == "bcrypt":
         return pwd_context.verify_and_update(plain_password, hashed_password)
 
     return pwd_context.verify(
-            plain_password,
+        plain_password,
         hashed_password,
     ), None
 

@@ -9,7 +9,7 @@ from app.database.postgre.pg_users import get_user, update_user_password
 from app.database.redis.token_management import register_connection, revoke
 from app.database.utils.password_management import generate_keys, verify_password
 from app.schema.authentication import TokenData
-from app.schema.users import User, UpdateUser
+from app.schema.users import UpdateUser, User
 
 
 def authenticate_user(username: str, password: str) -> User | None:
@@ -23,6 +23,7 @@ def authenticate_user(username: str, password: str) -> User | None:
         log = logging.getLogger("uvicorn.access")
         log.warning(msg=" ".join(exception.args))
         return None
+
 
 def maybe_update_password_hash(user: User, new_hash: str | None, password: str) -> User:
     if new_hash is None:

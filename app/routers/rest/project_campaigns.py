@@ -195,6 +195,7 @@ async def get_campaigns(
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
 
+
 @routerV2.get(
     "/{project_name}/campaigns",
     tags=["Campaign"],
@@ -252,6 +253,7 @@ async def get_campaigns_v2(
     except Exception as exp:
         log_error(repr(exp))
         raise HTTPException(500, " ".join(exp.args)) from exp
+
 
 @router.patch(
     "/{project_name}/campaigns/{version}/{occurrence}",

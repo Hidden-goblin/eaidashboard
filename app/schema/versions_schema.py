@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
 from app.schema.base_schema import ExtendedBaseModel
 from app.schema.bugs_schema import Bugs
@@ -21,6 +21,7 @@ class Version(ExtendedBaseModel):
 
     def __getitem__(self: "Version", index: str) -> str | datetime | StatusEnum | Statistics | Bugs:
         return self.model_dump().get(index, None)
+
 
 class VersionProjections(ExtendedBaseModel):
     count: int

@@ -30,7 +30,9 @@ class CampaignLights(ExtendedBaseModel):
     Attributes
         - data: List[CampaignLight]
     """
+
     data: List[CampaignLight]
+
 
 class CampaignFull(CampaignLight):
     """

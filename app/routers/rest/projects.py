@@ -10,7 +10,6 @@ from app.database.postgre.pg_campaigns_management import retrieve_campaigns
 from app.database.postgre.pg_projects import get_project, get_projects
 from app.database.postgre.pg_versions import dashboard, get_project_versions_v2
 from app.database.utils.object_existence import project_version_raise
-from app.routers.rest.project_campaigns import get_campaigns_v2
 from app.schema.campaign_schema import CampaignProjections
 from app.schema.dashboard_schema import Dashboard
 from app.schema.error_code import ErrorMessage
@@ -131,7 +130,7 @@ async def one_project(
     responses={404: {"model": ErrorMessage, "description": "Project name is not registered (ignore case)"}},
     tags=["Projects"],
     description="""Retrieve a projection of the projects.
-    
+
     Projects contain several aspect. Here, you retrieve one of the aspect - versions or campaigns.
     """,
 )

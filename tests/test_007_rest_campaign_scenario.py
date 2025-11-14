@@ -83,9 +83,11 @@ class TestRestCampaignScenario:
             logged,
         )
 
-    def test_validate_setup(self: "TestRestCampaignScenario",
-                            application: Generator[TestClient, Any, None],
-                            logged: Generator[dict[str, str], Any, None],) -> None:
+    def test_validate_setup(
+        self: "TestRestCampaignScenario",
+        application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
+    ) -> None:
         response = application.get(
             f"api/v1/projects/{TestRestCampaignScenario.project_name}",
             headers=logged,

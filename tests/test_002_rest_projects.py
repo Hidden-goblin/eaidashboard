@@ -153,9 +153,11 @@ class TestRestProjects:
 
     @pytest.mark.tags("error", "unique_constraint")
     @pytest.mark.path("projects/versions")
-    @pytest.mark.test_steps("Given projects 'test' has a version '1.0.0'",
-                       "When admin adds a version '1.0.0'",
-                       "Then admin gets a 409 error")
+    @pytest.mark.test_steps(
+        "Given projects 'test' has a version '1.0.0'",
+        "When admin adds a version '1.0.0'",
+        "Then admin gets a 409 error",
+    )
     def test_create_version_errors_409(
         self: "TestRestProjects",
         application: Generator[TestClient, Any, None],

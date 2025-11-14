@@ -90,7 +90,7 @@ async def retrieve_campaigns(
            AND c.version = v.version
     """
     where_clause: list[str] = ["p.alias = %s"]
-    params: list[str |int | None] = [
+    params: list[str | int | None] = [
         provide(project_name),
     ]
     group_order_clauses = """
@@ -205,9 +205,9 @@ async def retrieve_campaigns_basics(
         limit: default to 10
         skip: default to 0
     """
-    base_query = """select version, count(occurrence) as occurrences from campaigns"""
-    conditions = ["project_id = %s"]
-    params = [project_name]
+    # base_query = """select version, count(occurrence) as occurrences from campaigns"""
+    # conditions = ["project_id = %s"]
+    # params = [project_name]
 
     pass
 
@@ -221,8 +221,8 @@ async def retrieve_campaign_id(
     with pool.connection() as connection:
         connection.row_factory = tuple_row
         row = connection.execute(
-            """select c.id, c.status 
-            from campaigns c
+            """select c.id, c.status
+             from campaigns c
             join projects p on p.id = c.project_id
             where p.alias = %s  and c.version = %s  and c.occurrence = %s;""",
             (
