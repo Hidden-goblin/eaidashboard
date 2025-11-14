@@ -8,10 +8,12 @@ from psycopg.rows import dict_row, tuple_row
 
 from app.schema.campaign.campaign_response_schema import CampaignLight
 from app.schema.campaign_followup_schema import CampaignIdStatus
-from app.schema.campaign_schema import CampaignPatch
+from app.schema.campaign_schema import CampaignPatch, CampaignProjection, CampaignProjections, OccurrenceStatus
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.pg_schema import PGResult
 from app.schema.postgres_enums import CampaignStatusEnum, ScenarioStatusEnum
+from app.schema.project_enum import ProjectProjections
+from app.schema.status_enum import StatusEnum
 from app.schema.ticket_schema import EnrichedTicket, Ticket
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
@@ -25,11 +27,10 @@ async def create_campaign(
     status: str = "recorded",
 ) -> CampaignLight:
     """Insert into campaign a new empty occurrence"""
-    # Todo fix project_id to be the real project ID
     with pool.connection() as connection:
         connection.row_factory = dict_row
         conn = connection.execute(
-            """WITH inserted AS (
+            """
         INSERT INTO campaigns (project_id, version, status, occurrence)
         SELECT p.id,
                %s,
@@ -43,25 +44,90 @@ async def create_campaign(
                ) + 1
         FROM projects p
         WHERE p.alias = %s
-        RETURNING project_id, version, occurrence, description, status
-    )
-    SELECT pr.alias AS project_name,
-           i.version,
-           i.occurrence,
-           i.description,
-           i.status
-    FROM inserted i
-    JOIN projects pr ON pr.id = i.project_id;""",
+        RETURNING version, occurrence, description, status;""",
             (
                 version,
                 CampaignStatusEnum(status),
                 version,
-                project_name.casefold(),
+                provide(project_name),
             ),
         ).fetchone()
 
         connection.commit()
-        return CampaignLight(**conn)
+        return CampaignLight(
+            **{
+                "project_name": project_name,
+                **conn,
+            }
+        )
+
+
+async def retrieve_campaigns(
+    project_name: str,
+    projection: ProjectProjections,
+    limit: int = 10,
+    skip: int = 0,
+) -> CampaignProjections:
+    """retrieve basic campaigns data i.e. version, status and list of occurrences"""
+    query = """SELECT
+            v.version,
+            JSON_AGG(JSON_BUILD_OBJECT(
+      'occurrence', c.occurrence,
+      'status', c.status
+    ) ORDER BY c.occurrence) AS occurrences,
+            v.status
+        FROM projects p
+        JOIN versions v ON v.project_id = p.id
+        JOIN campaigns c ON c.project_id = p.id AND c.version = v.version"""
+    query_count = """
+    SELECT
+            count(distinct v.version) as total
+        FROM projects p
+        JOIN versions v
+            ON v.project_id = p.id
+        JOIN campaigns c
+            ON c.project_id = p.id
+           AND c.version = v.version
+    """
+    where_clause: list[str] = ["p.alias = %s"]
+    params: list[str |int | None] = [
+        provide(project_name),
+    ]
+    group_order_clauses = """
+    GROUP BY v.version, v.status, v.created
+ORDER BY v.created DESC
+    """
+    if projection == ProjectProjections.ARCHIVED_CAMPAIGNS:
+        where_clause.append("v.status = %s")
+        params.append(StatusEnum.ARCHIVED.value)
+    else:
+        where_clause.append("v.status != %s")
+        params.append(StatusEnum.ARCHIVED.value)
+
+        params.extend([limit, skip])
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        conn = connection.execute(
+            f"""
+        {query} where {" and ".join(where_clause)} {group_order_clauses}
+         LIMIT %s OFFSET %s;""",
+            params,
+        ).fetchall()
+        conn_count = connection.execute(
+            f"""{query_count} where {" and ".join(where_clause)};""", params[:-2]
+        ).fetchone()
+
+    return CampaignProjections(
+        count=conn_count["total"],
+        data=[
+            CampaignProjection(
+                version=elem["version"],
+                occurrences=[OccurrenceStatus(**item) for item in elem["occurrences"]],
+                status=elem["status"],
+            )
+            for elem in conn
+        ],
+    )
 
 
 async def retrieve_campaign(
@@ -125,14 +191,17 @@ async def retrieve_campaign(
 
 
 async def retrieve_campaigns_basics(
-    project_name: str, include_archived: bool = False, limit: int = 10, skip: int = 0
+    project_name: str,
+    campaign_projection: ProjectProjections = ProjectProjections.CAMPAIGNS,
+    limit: int = 10,
+    skip: int = 0,
 ) -> Tuple[List[dict], int]:
     """
     Retrieve the campaigns for a specific project.
     Ordered by creation date
     Args:
         project_name: the project name to look for
-        include_archived:  default to False, include past campaigns if true
+        campaign_projection:  default to "campaigns"
         limit: default to 10
         skip: default to 0
     """
@@ -140,8 +209,7 @@ async def retrieve_campaigns_basics(
     conditions = ["project_id = %s"]
     params = [project_name]
 
-    if include_archived:
-        pass
+    pass
 
 
 async def retrieve_campaign_id(

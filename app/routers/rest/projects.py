@@ -6,13 +6,18 @@ from typing import List, Union
 from fastapi import APIRouter, HTTPException, Query, Response, Security
 
 from app.database.authorization import authorize_user
+from app.database.postgre.pg_campaigns_management import retrieve_campaigns
 from app.database.postgre.pg_projects import get_project, get_projects
-from app.database.postgre.pg_versions import dashboard
+from app.database.postgre.pg_versions import dashboard, get_project_versions_v2
 from app.database.utils.object_existence import project_version_raise
+from app.routers.rest.project_campaigns import get_campaigns_v2
+from app.schema.campaign_schema import CampaignProjections
 from app.schema.dashboard_schema import Dashboard
 from app.schema.error_code import ErrorMessage
+from app.schema.project_enum import ProjectProjections
 from app.schema.project_schema import DashboardProject, Project, TicketProject
 from app.schema.users import UpdateUser
+from app.schema.versions_schema import VersionProjections
 
 router = APIRouter(prefix="/api/v1")
 routerv2 = APIRouter(prefix="/api/v2")
@@ -116,5 +121,37 @@ async def one_project(
     await project_version_raise(project_name)
     try:
         return await get_project(project_name.casefold(), sections)
+    except Exception as exp:
+        raise HTTPException(500, detail=" ".join(exp.args)) from exp
+
+
+@routerv2.get(
+    "/projects/{project_name}",
+    response_model=Union[CampaignProjections, VersionProjections],
+    responses={404: {"model": ErrorMessage, "description": "Project name is not registered (ignore case)"}},
+    tags=["Projects"],
+    description="""Retrieve a projection of the projects.
+    
+    Projects contain several aspect. Here, you retrieve one of the aspect - versions or campaigns.
+    """,
+)
+async def project(
+    project_name: str,
+    projection: ProjectProjections = ProjectProjections.VERSIONS,
+    limit: int = 10,
+    skip: int = 0,
+    user: UpdateUser = Security(authorize_user, scopes=["admin", "user"]),
+) -> CampaignProjections | VersionProjections:
+    await project_version_raise(project_name)
+    try:
+        _options = {
+            ProjectProjections.VERSIONS: get_project_versions_v2,
+            ProjectProjections.FUTURE_VERSIONS: get_project_versions_v2,
+            ProjectProjections.ARCHIVED_VERSIONS: get_project_versions_v2,
+            ProjectProjections.CAMPAIGNS: retrieve_campaigns,
+            ProjectProjections.ARCHIVED_CAMPAIGNS: retrieve_campaigns,
+        }
+
+        return await _options[projection](project_name, projection, limit, skip)
     except Exception as exp:
         raise HTTPException(500, detail=" ".join(exp.args)) from exp

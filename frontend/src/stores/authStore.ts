@@ -20,7 +20,7 @@ interface User {
 // -----------------------------
 export const useAuthStore = defineStore('auth', () => {
     // State
-    const token = ref<string | null>(null)
+    const token = ref<string | null>(localStorage.getItem('jwtToken') || 'null')
     const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'))
     const allProjects = ref<string[]>(JSON.parse(localStorage.getItem('allProjects') || '[]'))
     const showLoginModal = ref(false)

@@ -1,0 +1,42 @@
+@startuml
+title useAuthStore Lifecycle - Token, User, and Projects Flow
+
+start
+
+:App starts;
+if (LocalStorage has jwtToken?) then (yes)
+    :Load token from localStorage;
+    :Decode token -> user;
+else (no)
+    :token = null;
+    :user = null;
+endif
+
+if (User logs in?) then (yes)
+    :Receive newToken;
+    :token = newToken;
+    :Decode newToken -> user;
+    :Save token & user to localStorage;
+    :retryRequests(newToken);
+    :showLoginModal = false;
+endif
+
+if (fetchProjects() called?) then (yes)
+    :GET /api/v1/settings/projects;
+    if (Response OK?) then (yes)
+        :Update allProjects;
+        :Save allProjects to localStorage;
+    else (no)
+        :Log error;
+        :allProjects = [];
+    endif
+endif
+
+if (User logs out?) then (yes)
+    :Clear token, user, allProjects;
+    :Remove items from localStorage;
+endif
+
+stop
+
+@enduml

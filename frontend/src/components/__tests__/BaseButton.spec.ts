@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {mount} from '@vue/test-utils';
 import BaseButton from '@/components/utils/BaseButton.vue';
 import {RouterLinkStub} from '@vue/test-utils';
+import {testWithMeta} from "@/test/utils/withMeta";
 
 // Dummy icon to simulate a passed-in prop
 const DummyIcon = {
@@ -10,7 +11,7 @@ const DummyIcon = {
 
 describe('BaseButton', () => {
     // 1. Render as a <button> when `to` is not provided
-    it('renders as a <button> when "to" prop is not set', () => {
+    testWithMeta('renders as a <button> when "to" prop is not set', {testKey: "btn-001"},() => {
         const wrapper = mount(BaseButton, {
             slots: {default: 'Click me'}
         });

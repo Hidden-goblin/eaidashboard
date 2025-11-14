@@ -1,32 +1,23 @@
 <script setup lang="ts">
 import CampaignsAccess  from "@/components/campaigns/CampaignsAccess.vue";
 import CampaignDetails from "@/components/campaigns/CampaignDetails.vue";
+
 const props = defineProps({
   projectName: {
     type: String,
     required: true
   }
 })
-const version = ref<string | null>(null);
-const occurrence = ref<number | null>(null);
-
-function onVersionOccurrenceSelected(versionOccurrence: Object){
-  version.value = versionOccurrence.version;
-  occurrence.value = versionOccurrence.occurrence
-}
 
 </script>
 
 <template>
   <div class="container">
-    <CampaignsAccess :project-name="projectName"
-                     class="access"
-                     @selectVersionOccurrence="onVersionOccurrenceSelected" ></CampaignsAccess>
+    <CampaignsAccess :projectName="projectName"
+                     class="access" ></CampaignsAccess>
 
     <CampaignDetails class="details"
-                     :project-name="projectName"
-                     :version="version"
-                     :occurrence="occurrence"></CampaignDetails>
+                     ></CampaignDetails>
   </div>
 </template>
 

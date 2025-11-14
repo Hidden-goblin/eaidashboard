@@ -138,6 +138,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/projects/{project_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Project
+         * @description Retrieve a projection of the projects
+         */
+        get: operations["project_api_v2_projects__project_name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/projects": {
         parameters: {
             query?: never;
@@ -894,7 +914,10 @@ export interface components {
             grant_type?: string | null;
             /** Username */
             username: string;
-            /** Password */
+            /**
+             * Password
+             * Format: password
+             */
             password: string;
             /**
              * Scope
@@ -903,7 +926,10 @@ export interface components {
             scope: string;
             /** Client Id */
             client_id?: string | null;
-            /** Client Secret */
+            /**
+             * Client Secret
+             * Format: password
+             */
             client_secret?: string | null;
         };
         /** Body_rest_import_test_results_api_v1_projects__project_name__testResults_post */
@@ -957,13 +983,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-09-28T21:19:19.254302
+             * @default 2025-10-13T13:46:27.804642
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-09-28T21:19:19.254302
+             * @default 2025-10-13T13:46:27.804692
              */
             updated: string;
             /**
@@ -979,7 +1005,9 @@ export interface components {
              * Related To
              * @default []
              */
-            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | Record<string, never> | null)[] | string | null;
+            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | {
+                [key: string]: unknown;
+            } | null)[] | string | null;
         };
         /** BugTicketFull */
         BugTicketFull: {
@@ -992,13 +1020,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-09-28T21:19:19.254302
+             * @default 2025-10-13T13:46:27.804642
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-09-28T21:19:19.254302
+             * @default 2025-10-13T13:46:27.804692
              */
             updated: string;
             /**
@@ -1014,7 +1042,9 @@ export interface components {
              * Related To
              * @default []
              */
-            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | Record<string, never> | null)[] | string | null;
+            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | {
+                [key: string]: unknown;
+            } | null)[] | string | null;
             /** Internal Id */
             internal_id: number;
         };
@@ -1157,6 +1187,34 @@ export interface components {
             description?: string | null;
         };
         /**
+         * CampaignProjection
+         * @description Projection for a project on Campaign for a version
+         *     Attributes
+         *         - version: str
+         *         - occurrences: List[int]
+         *         - status: StatusEnum
+         */
+        CampaignProjection: {
+            /** Version */
+            version: string;
+            /** Occurrences */
+            occurrences: components["schemas"]["OccurrenceStatus"][];
+            status: components["schemas"]["StatusEnum"];
+        };
+        /**
+         * CampaignProjections
+         * @description Container of projections
+         *     Attributes:
+         *         - count: int the total count of versions with campaign
+         *         - data: list of CampaignProjection
+         */
+        CampaignProjections: {
+            /** Count */
+            count: number;
+            /** Data */
+            data: components["schemas"]["CampaignProjection"][];
+        };
+        /**
          * CampaignStatusEnum
          * @enum {string}
          */
@@ -1182,7 +1240,9 @@ export interface components {
              */
             acknowledged: boolean;
             /** Raw Data */
-            raw_data?: Record<string, never> | null;
+            raw_data?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** Dashboard */
         Dashboard: {
@@ -1363,6 +1423,18 @@ export interface components {
             /** Redis Ping */
             redis_ping: boolean;
         };
+        /**
+         * OccurrenceStatus
+         * @description Simple object linking occurrence and status
+         *     Attributes
+         *         - occurrence: int
+         *         - status: CampaignStatusEnum
+         */
+        OccurrenceStatus: {
+            /** Occurrence */
+            occurrence: number;
+            status: components["schemas"]["CampaignStatusEnum"];
+        };
         /** Project */
         Project: {
             /** Name */
@@ -1383,6 +1455,12 @@ export interface components {
              */
             archived: number | null;
         };
+        /**
+         * ProjectProjections
+         * @description The enum for the various projections
+         * @enum {string}
+         */
+        ProjectProjections: "versions" | "campaigns" | "future_versions" | "archived_versions" | "archived_campaigns";
         /** RegisterProject */
         RegisterProject: {
             /** Name */
@@ -1643,13 +1721,13 @@ export interface components {
             /**
              * Created
              * Format: date-time
-             * @default 2025-09-28T21:19:19.276156
+             * @default 2025-10-13T13:46:27.860220
              */
             created: string;
             /**
              * Updated
              * Format: date-time
-             * @default 2025-09-28T21:19:19.276156
+             * @default 2025-10-13T13:46:27.860229
              */
             updated: string;
         };
@@ -1674,7 +1752,7 @@ export interface components {
             /**
              * Updated
              * Format: date-time
-             * @default 2025-09-28T21:19:19.264899
+             * @default 2025-10-13T13:46:27.824583
              */
             updated: string;
             /** Url */
@@ -1685,12 +1763,16 @@ export interface components {
              * Related To
              * @default []
              */
-            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | Record<string, never> | null)[] | string | null;
+            related_to: (components["schemas"]["CampaignTicketScenario"] | string | number | {
+                [key: string]: unknown;
+            } | null)[] | string | null;
             /**
              * Unlink Scenario
              * @default []
              */
-            unlink_scenario: (components["schemas"]["CampaignTicketScenario"] | string | number | Record<string, never> | null)[] | string | null;
+            unlink_scenario: (components["schemas"]["CampaignTicketScenario"] | string | number | {
+                [key: string]: unknown;
+            } | null)[] | string | null;
         };
         /** UpdateMe */
         UpdateMe: {
@@ -1709,7 +1791,9 @@ export interface components {
              * Scopes
              * @default {}
              */
-            scopes: Record<string, never> | null;
+            scopes: {
+                [key: string]: unknown;
+            } | null;
         };
         /** UpdateVersion */
         UpdateVersion: {
@@ -1731,7 +1815,7 @@ export interface components {
             /**
              * Updated
              * Format: date-time
-             * @default 2025-09-28T21:19:19.278188
+             * @default 2025-10-13T13:46:27.862862
              */
             updated: string;
         };
@@ -1740,7 +1824,9 @@ export interface components {
             /** Username */
             username: string;
             /** Scopes */
-            scopes: Record<string, never> | string;
+            scopes: {
+                [key: string]: unknown;
+            } | string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1772,6 +1858,13 @@ export interface components {
             status: components["schemas"]["StatusEnum"];
             statistics: components["schemas"]["Statistics"];
             bugs: components["schemas"]["Bugs"];
+        };
+        /** VersionProjections */
+        VersionProjections: {
+            /** Count */
+            count: number;
+            /** Data */
+            data: components["schemas"]["Version"][];
         };
     };
     responses: never;
@@ -1947,6 +2040,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    project_api_v2_projects__project_name__get: {
+        parameters: {
+            query?: {
+                projection?: components["schemas"]["ProjectProjections"];
+                limit?: number;
+                skip?: number;
+            };
+            header?: never;
+            path: {
+                project_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignProjections"] | components["schemas"]["VersionProjections"];
+                };
+            };
+            /** @description Project name is not registered (ignore case) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
                 };
             };
             /** @description Validation Error */
@@ -3855,7 +3992,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Cannot find a campaign matching project, version, occurrence or scenario */
@@ -3910,7 +4049,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Cannot find a campaign matching project, version, occurrence or scenario */
@@ -4335,7 +4476,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

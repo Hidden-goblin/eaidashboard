@@ -88,7 +88,7 @@ def status_404_error_message_check(
     response: Response,
     expected_message: str,
 ) -> None:
-    assert response.status_code == 404
+    assert response.status_code == 404, response.text
     assert response.json()["detail"] == expected_message
 
 

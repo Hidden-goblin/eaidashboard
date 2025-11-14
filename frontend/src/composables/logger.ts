@@ -2,9 +2,10 @@
 const levels = ['debug', 'info', 'warn', 'error']
 const maxLevelPerBuildTpe = {'development': 'debug', 'production': 'warn'};
 
-const buildType = import.meta.env.RUN_TYPE || 'production'
+const buildType = import.meta.env.VITE_RUN_TYPE || import.meta.env.RUN_TYPE || 'production'
 console.warn('Running build type', buildType)
 const levelIndex = levels.indexOf(maxLevelPerBuildTpe[buildType])
+console.warn('index' + levelIndex);
 
 function shouldLog(level) {
     return levels.indexOf(level) >= levelIndex

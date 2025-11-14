@@ -17,7 +17,8 @@ class TestRestUsers:
     previous_version = "0.9.0"
     next_version = "1.1.0"
 
-    def test_setup(
+    @pytest.fixture(scope="class", autouse=True)
+    def _setup(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
@@ -159,6 +160,7 @@ class TestRestUsers:
             json={"username": "test@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
             headers=logged,
         )
+        assert response.status_code == 404, response.text
         status_404_error_message_check(response, "The projects 'unknown' are not registered.")
 
     def test_create_user_error_400(

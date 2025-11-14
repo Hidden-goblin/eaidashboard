@@ -6,8 +6,10 @@ COPY ./documentation/openapi.json ./
 COPY ../frontend/package.json ./
 RUN npm install --include=dev
 
-ARG BUILD_TYPE=production
+ARG BUILD_TYPE=development
 ENV RUN_TYPE=$BUILD_TYPE
+ENV VITE_RUN_TYPE=$BUILD_TYPE
 
 COPY ../frontend/ ./
-RUN npm run build -- --mode $BUILD_TYPE
+RUN echo "Building frontend with mode=$BUILD_TYPE" && echo "VITE_RUN_TYPE=$VITE_RUN_TYPE" >> .env\
+ && npm run build -- --mode $BUILD_TYPE

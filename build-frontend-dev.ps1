@@ -5,11 +5,11 @@ $ErrorActionPreference = "Stop"
 
 # Variables
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$dockerfilePath = Join-Path $projectRoot "docker-build-frontend\Dockerfile"
+$dockerfilePath = Join-Path $projectRoot "docker-build-frontend\DockerfileDev"
 $outputPath = Join-Path $projectRoot "app\front"
 
 # 1. Build de l'image Docker
-docker build --file $dockerfilePath --tag vue-frontend-builder-prod $projectRoot
+docker build --file $dockerfilePath --tag vue-frontend-builder-dev $projectRoot
 
 # 2. Création du dossier de sortie si nécessaire
 if (-Not (Test-Path -Path $outputPath)) {
@@ -17,5 +17,5 @@ if (-Not (Test-Path -Path $outputPath)) {
 }
 
 # 3. Exécution d’un conteneur temporaire pour copier les fichiers buildés
-docker run --rm -v "${outputPath}:/output" vue-frontend-builder-prod `
+docker run --rm -v "${outputPath}:/output" vue-frontend-builder-dev `
     sh -c "cp -r /frontend/dist/* /output/"

@@ -8,7 +8,7 @@ from app.schema.base_schema import ExtendedBaseModel
 from app.schema.postgres_enums import CampaignStatusEnum
 from app.schema.respository.feature_schema import Feature
 from app.schema.respository.scenario_schema import BaseScenario, ScenarioExecution
-from app.schema.status_enum import TicketType
+from app.schema.status_enum import StatusEnum, TicketType
 
 
 class ToBeCampaign(ExtendedBaseModel, extra="forbid"):
@@ -99,3 +99,39 @@ class CampaignPatch(ExtendedBaseModel):
         if all(ticket.get(key) is None for key in keys):
             raise ValueError(f"CampaignPatch must have at least one key of '{keys}'")
         return ticket
+
+
+class OccurrenceStatus(ExtendedBaseModel):
+    """
+    Simple object linking occurrence and status
+    Attributes
+        - occurrence: int
+        - status: CampaignStatusEnum
+    """
+
+    occurrence: int
+    status: CampaignStatusEnum
+
+
+class CampaignProjection(ExtendedBaseModel):
+    """
+    Projection for a project on Campaign for a version
+    Attributes
+        - version: str
+        - occurrences: List[int]
+        - status: StatusEnum
+    """
+
+    version: str
+    occurrences: List[OccurrenceStatus]
+    status: StatusEnum
+
+
+class CampaignProjections(ExtendedBaseModel):
+    """Container of projections
+    Attributes:
+        - count: int the total count of versions with campaign
+        - data: list of CampaignProjection
+    """
+    count: int
+    data: List[CampaignProjection]

@@ -3,15 +3,16 @@
 import os
 from contextlib import asynccontextmanager
 from logging import getLogger
+from typing import Any, Coroutine
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, HTMLResponse, JSONResponse
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 from app.app_exception import ProjectNotRegistered
 from app.conf import APP_VERSION, config
@@ -161,27 +162,30 @@ async def project_not_registered_handler(request: Request, exc: ProjectNotRegist
     return JSONResponse(status_code=404, content={"detail": exc.detail})
 
 
-# @app.exception_handler(404)
-# async def custom_404_handler(request: Request, exc: HTTPException) -> RedirectResponse:
-#     """
-#
-#     Args:
-#         request:
-#         exc:
-#
-#     Returns:
-#
-#     """
-#     path = request.url.path
-#
-#     if path.startswith("/api"):
-#         # Laisse FastAPI gérer normalement les erreurs API
-#         raise exc
-#     else:
-#         # Fallback vers le frontend index.html pour les autres routes
-#         # index_path = os.path.join("dist", "index.html")
-#         # return FileResponse(index_path)
-#         return RedirectResponse("/")
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: HTTPException) -> JSONResponse | RedirectResponse:
+    """
+
+    Args:
+        request:
+        exc:
+
+    Returns:
+
+    """
+    path = request.url.path
+
+    if path.startswith("/api"):
+        # Laisse FastAPI gérer normalement les erreurs API et fix les erreurs de tests avec nested 404
+        return JSONResponse(
+            status_code=404,
+            content={"detail": exc.detail or "Not Found"},
+        )
+    else:
+        # Fallback vers le frontend index.html pour les autres routes
+        # index_path = os.path.join("dist", "index.html")
+        # return FileResponse(index_path)
+        return RedirectResponse("/")
 
 
 @app.get("/", include_in_schema=False)

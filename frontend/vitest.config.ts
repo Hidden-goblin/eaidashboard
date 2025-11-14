@@ -20,7 +20,8 @@ export default defineConfig({
             ['html', {
                 outputFolder: 'test-results/html',     // HTML report
                 open: false                            // Don't open browser after run
-            }]
+            }],
+            ['./src/test/utils/custom-json-reporter.ts', { output: 'test-results/tests.json' }],
         ],
 
         // Directory where snapshots and coverage live

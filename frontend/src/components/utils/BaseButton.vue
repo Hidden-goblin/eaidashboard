@@ -2,7 +2,7 @@
   <component
       :is="to ? RouterLink : 'button'"
       :to="to"
-      :class="[styles.btnBase, variantClass]"
+      :class="[styles.btnBase, variantClass, { 'btn-icon-only': iconOnly }]"
       v-on="listeners"
       v-bind="attrsOnly"
   >
@@ -37,6 +37,10 @@ const props = defineProps({
   icon: {
     type: [Object, Function],
     default: null,
+  },
+  iconOnly:{
+    type: Boolean,
+    default: false,
   },
   type: {
     type: String,
@@ -156,5 +160,20 @@ a {
 .icon :deep(svg) {
   width: 18px;
   height: 18px;
+}
+
+.btn-icon-only {
+  padding: 0;
+  border: none;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-only .icon :deep(svg) {
+  width: 20px;
+  height: 20px;
 }
 </style>

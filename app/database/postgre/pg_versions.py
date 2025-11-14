@@ -10,9 +10,10 @@ from app.database.postgre.pg_projects import get_projects
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
+from app.schema.project_enum import ProjectProjections
 from app.schema.project_schema import DashboardProject, Statistics
-from app.schema.status_enum import TicketType
-from app.schema.versions_schema import Version
+from app.schema.status_enum import TicketType, StatusEnum
+from app.schema.versions_schema import Version, VersionProjections
 from app.utils.log_management import log_message
 from app.utils.pgdb import pool
 from app.utils.project_alias import provide
@@ -137,34 +138,79 @@ async def get_project_versions(
                 "select *  from versions as ve join projects as pjt on pjt.id = ve.project_id  where pjt.alias = %s ;",
                 (provide(project_name),),
             ).fetchall()
-        for row in rows:
-            stats = Statistics(
-                open=row["open"],
-                cancelled=row["cancelled"],
-                blocked=row["blocked"],
-                in_progress=row["in_progress"],
-                done=row["done"],
+        return _row_to_list_version(rows)
+
+
+async def get_project_versions_v2(
+    project_name: str,
+    projection: ProjectProjections,
+    limit: int = 10,
+    skip: int = 0,
+) -> VersionProjections:
+    query = "select *  from versions as ve join projects as pjt on pjt.id = ve.project_id"
+    where_clause = [
+        "pjt.alias = %s",
+    ]
+    params = [
+        provide(project_name),
+    ]
+    query_count = "select count(ve.id) as total from versions as ve join projects as pjt on pjt.id = ve.project_id"
+
+    if projection == ProjectProjections.VERSIONS:
+        where_clause.append("ve.status != %s")
+        params.append(StatusEnum.ARCHIVED.value)
+    if projection == ProjectProjections.FUTURE_VERSIONS:
+        where_clause.append("ve.status = %s")
+        params.append(StatusEnum.RECORDED.value)
+    if projection == ProjectProjections.ARCHIVED_VERSIONS:
+        where_clause.append("ve.status = %s")
+        params.append(StatusEnum.ARCHIVED.value)
+
+    params.extend([limit, skip])
+    with pool.connection() as connection:
+        connection.row_factory = dict_row
+        conn = connection.execute(
+            f"{query} where {' and '.join(where_clause)} order by ve.created desc  limit %s offset %s;",
+            params,
+        ).fetchall()
+        conn_count = connection.execute(
+            f"{query_count} where {' and '.join(where_clause)};",
+            params[:-2],
+        ).fetchone()
+
+        return VersionProjections(count=conn_count["total"], data=_row_to_list_version(conn))
+
+
+def _row_to_list_version(rows: list) -> List[Version]:
+    result = []
+    for row in rows:
+        stats = Statistics(
+            open=row["open"],
+            cancelled=row["cancelled"],
+            blocked=row["blocked"],
+            in_progress=row["in_progress"],
+            done=row["done"],
+        )
+        bugs = Bugs(
+            open_blocking=row["open_blocking"],
+            open_major=row["open_major"],
+            open_minor=row["open_minor"],
+            closed_blocking=row["closed_blocking"],
+            closed_major=row["closed_major"],
+            closed_minor=row["closed_minor"],
+        )
+        result.append(
+            Version(
+                version=row["version"],
+                created=row["created"],
+                updated=row["updated"],
+                started=row["started"],
+                end_forecast=row["end_forecast"],
+                status=row["status"],
+                statistics=stats,
+                bugs=bugs,
             )
-            bugs = Bugs(
-                open_blocking=row["open_blocking"],
-                open_major=row["open_major"],
-                open_minor=row["open_minor"],
-                closed_blocking=row["closed_blocking"],
-                closed_major=row["closed_major"],
-                closed_minor=row["closed_minor"],
-            )
-            result.append(
-                Version(
-                    version=row["version"],
-                    created=row["created"],
-                    updated=row["updated"],
-                    started=row["started"],
-                    end_forecast=row["end_forecast"],
-                    status=row["status"],
-                    statistics=stats,
-                    bugs=bugs,
-                )
-            )
+        )
     return result
 
 

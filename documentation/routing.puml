@@ -15,6 +15,21 @@
                             "<state>": {
                                 "get": "Retrieve the available transitions"
                             }
+                        },
+                        "bugs": {
+                            "<state>": {
+                                "get": "Retrieve the available transitions"
+                            }
+                        },
+                        "tickets": {
+                            "<state>": {
+                                "get": "Retrieve the available transitions"
+                            }
+                        },
+                        "campaigns":{
+                            "<state>": {
+                                "get": "Retrieve the available transitions"
+                            }
                         }
                     }
                 }
