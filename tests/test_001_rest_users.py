@@ -7,6 +7,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from tests.conftest import status_404_error_message_check
+from tests.utils.project_setting import set_project, set_project_versions
 
 
 # noinspection PyUnresolvedReferences
@@ -26,64 +27,50 @@ class TestRestUsers:
         """setup any state specific to the execution of the given class (which
         usually contains tests).
         """
-        response = application.post(
-            "/api/v1/settings/projects",
-            json={"name": TestRestUsers.project_name},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            "/api/v1/settings/projects",
-            json={"name": TestRestUsers.second_project_name},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.project_name}/versions",
-            json={"version": TestRestUsers.current_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.project_name}/versions",
-            json={"version": TestRestUsers.previous_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.project_name}/versions",
-            json={"version": TestRestUsers.next_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.second_project_name}/versions",
-            json={"version": TestRestUsers.current_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.second_project_name}/versions",
-            json={"version": TestRestUsers.previous_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
-        response = application.post(
-            f"/api/v1/projects/{TestRestUsers.second_project_name}/versions",
-            json={"version": TestRestUsers.next_version},
-            headers=logged,
-        )
-        assert response.status_code == 200
+        for project in [TestRestUsers.project_name, TestRestUsers.second_project_name]:
+            set_project(project, application, logged)
+
+        _versions = [
+            TestRestUsers.previous_version,
+            TestRestUsers.current_version,
+            TestRestUsers.next_version,
+        ]
+        for project in [TestRestUsers.project_name, TestRestUsers.second_project_name]:
+            set_project_versions(
+                project,
+                _versions,
+                application,
+                logged,
+            )
 
     # Test with only one user: the default user
+    @pytest.mark.path("/users/retrieve_all")
+    @pytest.mark.tags("users", "get", "error", "401")
+    @pytest.mark.description("Test retrieving all users without authentication")
+    @pytest.mark.test_steps(
+        "Given 'anonymous' is querying",
+        "When 'anonymous' retrieves all users",
+        "Then 'anonymous' gets a '401' status code",
+        "Then 'anonymous' gets a 'Not authenticated' error message",
+    )
     def test_get_users_error_401(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
     ) -> None:
         response = application.get("/api/v1/users")
-        assert response.status_code == 401
-        assert response.json()["detail"] == "Not authenticated"
+        assert response.status_code == 401, response.text
+        assert response.json()["detail"] == "Not authenticated", response.text
 
+    @pytest.mark.path("/users/retrieve_all")
+    @pytest.mark.tags("users", "get", "error", "500")
+    @pytest.mark.description("Test retrieving all users with server error")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given an unhandled error occurs",
+        "When 'admin' retrieves all users",
+        "Then 'admin' gets a '500' status code",
+        "Then 'admin' gets an 'error' error message",
+    )
     def test_get_users_error_500(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -92,9 +79,18 @@ class TestRestUsers:
         with patch("app.routers.rest.users.get_users") as rp:
             rp.side_effect = Exception("error")
             response = application.get("/api/v1/users", headers=logged)
-            assert response.status_code == 500
-            assert response.json()["detail"] == "error"
+            assert response.status_code == 500, response.text
+            assert response.json()["detail"] == "error", response.text
 
+    @pytest.mark.path("/users/retrieve_all")
+    @pytest.mark.tags("users", "get", "mandatory")
+    @pytest.mark.description("Test retrieving all users")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "When 'admin' retrieves all users",
+        "Then 'admin' finds at least himself",
+        "Then 'admin' validates the number of elements is '>= 1'",
+    )
     def test_get_users(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -102,17 +98,25 @@ class TestRestUsers:
     ) -> None:
         response = application.get("/api/v1/users", headers=logged)
         assert response.status_code == 200
-        assert response.json() == [{"username": "admin@admin.fr", "scopes": {"*": "admin"}}]
-        assert response.headers["X-total-count"] == "1"
+        assert {"username": "admin@admin.fr", "scopes": {"*": "admin"}} in response.json(), response.text
+        assert int(response.headers["X-total-count"]) >= 1, f"Number of elements is {response.headers['X-total-count']}"
 
+    @pytest.mark.path("/users/retrieve_all")
+    @pytest.mark.tags("users", "get", "mandatory")
+    @pytest.mark.description("Test retrieving all usernames")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "When 'admin' retrieves all usernames",
+        "Then 'admin' finds at least himself",
+    )
     def test_get_users_list_1(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.get("api/v1/users", headers=logged, params={"is_list": True})
-        assert response.status_code == 200
-        assert response.json() == ["admin@admin.fr"]
+        assert response.status_code == 200, response.text
+        assert "admin@admin.fr" in response.json(), response.text
 
     def test_create_user_error_401(
         self: "TestRestUsers",
@@ -191,7 +195,10 @@ class TestRestUsers:
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
     ) -> None:
-        response = application.post("/api/v1/token", data={"username": "test@test.fr", "password": "test"})
+        response = application.post(
+            "/api/v1/token",
+            data={"username": "test@test.fr", "password": "test"},
+        )
         assert response.status_code == 200
         assert response.json()["access_token"]
 

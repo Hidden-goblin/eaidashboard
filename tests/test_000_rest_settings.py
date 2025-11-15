@@ -44,7 +44,7 @@ class TestSettings:
             "/api/v1/token",
             data={"username": "admin@admin.fr", "password": "admin"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
 
     @pytest.mark.path("/authentication")
     @pytest.mark.tags("authentication", "error", "401")
@@ -109,9 +109,8 @@ class TestSettings:
 
     @pytest.mark.path("/projects/management")
     @pytest.mark.test_steps(
-        "Given 'admin' is logged in",
-        "When 'admin' requests the project list",
-        "Then 'admin' retrieve a list")
+        "Given 'admin' is logged in", "When 'admin' requests the project list", "Then 'admin' retrieve a list"
+    )
     @pytest.mark.tags("projects", "mandatory")
     @pytest.mark.description("Simple setting route validation, no content validation")
     def test_registered_projects_200(
@@ -134,7 +133,7 @@ class TestSettings:
     @pytest.mark.test_steps(
         "Given 'admin' provides a token without username",
         "When 'admin' requests the project list",
-        "Then 'admin' get '401' status code"
+        "Then 'admin' get '401' status code",
     )
     def test_authorization_error_no_email(
         self: "TestSettings",
@@ -155,9 +154,9 @@ class TestSettings:
         "Given 'admin' provides a token",
         "Given 'admin' user doesn't exist",
         "When 'admin' requests the project list",
-        "Then 'admin' gets '401' status code"
+        "Then 'admin' gets '401' status code",
     )
-    #TODO: review this case as it doesn't make sense for admin
+    # TODO: review this case as it doesn't make sense for admin
     def test_authorization_error_user_not_found(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -176,7 +175,8 @@ class TestSettings:
         "Given 'admin' is logged in",
         "Given 'admin' waits for too long",
         "when 'admin' requests the project list",
-        "Then 'admin' gets '401' status code" )
+        "Then 'admin' gets '401' status code",
+    )
     @pytest.mark.tags("error", "401", "projects", "authorization")
     def test_authorization_error_signature_error(
         self: "TestSettings",
@@ -196,7 +196,7 @@ class TestSettings:
         "Given 'admin' is logged in",
         "Given an unhandled error occurs",
         "When 'admin' requests the project list",
-        "Then 'admin' gets '500' status code"
+        "Then 'admin' gets '500' status code",
     )
     @pytest.mark.tags("projects", "error", "500")
     def test_registered_projects_errors_500(
@@ -218,7 +218,7 @@ class TestSettings:
         "Given 'admin' is logged in",
         "Given 'test' project does not exits",
         "When 'admin' creates 'test' projects",
-        "Then 'admin' gets 'test' in the project list"
+        "Then 'admin' gets 'test' in the project list",
     )
     @pytest.mark.description("Register a new empty project. We add randomness seed to avoid test collision")
     def test_create_projects(
@@ -227,6 +227,7 @@ class TestSettings:
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         import random
+
         project_name: str = f"test-{random.randrange(1000)}"
 
         response = application.get(
@@ -250,13 +251,65 @@ class TestSettings:
         assert project_name in response.json(), response.text
 
     fail_projects = [
-        pytest.param("te/st",marks=pytest.mark.test_steps("one")),
-        "te\\st",
-        "te$st",
-        "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong",
-        "*",
+        pytest.param(
+            "te/st",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "When 'admin' creates 'te/st' project",
+                    "Then 'admin' gets '400' status code",
+                ),
+                pytest.mark.description("Validate that '/' character is not allowed"),
+            ],
+        ),
+        pytest.param(
+            "te\\st",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "When 'admin' creates 'te\\st' project",
+                    "Then 'admin' gets '400' status code",
+                ),
+                pytest.mark.description("Validate that '\\' character is not allowed"),
+            ],
+        ),
+        pytest.param(
+            "te$st",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "When 'admin' creates 'te$st' project",
+                    "Then 'admin' gets '400' status code",
+                ),
+                pytest.mark.description("Validate that '$' character is not allowed"),
+            ],
+        ),
+        pytest.param(
+            "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "When 'admin' creates 'longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong' project",
+                    "Then 'admin' gets '400' status code",
+                ),
+                pytest.mark.description("Validate that project name cannot be more than 63 characters"),
+            ],
+        ),
+        pytest.param(
+            "*",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "When 'admin' creates '*' project",
+                    "Then 'admin' gets '400' status code",
+                ),
+                pytest.mark.description("Validate that '*' project name is not allowed"),
+            ],
+        ),
     ]
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "create", "error", "400")
     @pytest.mark.parametrize("project_name", fail_projects)
     def test_create_projects_errors_400(
         self: "TestSettings",
@@ -271,6 +324,13 @@ class TestSettings:
         )
         assert response.status_code == 400
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "creation", "error", "401")
+    @pytest.mark.test_steps(
+        "Given 'anonymous' is querying",
+        "When 'anonymous' creates 'test' project",
+        "Then 'anonymous' gets '401' status code",
+    )
     def test_create_projects_errors_401(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -282,11 +342,30 @@ class TestSettings:
         )
         assert response.status_code == 401
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "creation", "error", "409")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'test' project exists",
+        "When 'admin' creates 'test' project",
+        "Then 'admin' gets '409' status code",
+    )
     def test_create_projects_errors_409(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        response = application.get(
+            "/api/v1/settings/projects",
+            headers=logged,
+        )
+        if "test" not in response.json():
+            application.post(
+                "/api/v1/settings/projects",
+                json={"name": "test"},
+                headers=logged,
+            )
+
         response = application.post(
             "/api/v1/settings/projects",
             json={"name": "test"},
@@ -294,6 +373,14 @@ class TestSettings:
         )
         assert response.status_code == 409
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "creation", "error", "500")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given an unhandled error occurs",
+        "When 'admin' creates 'test' project",
+        "Then 'admin' gets '500' status code",
+    )
     def test_create_projects_errors_500(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
