@@ -107,6 +107,13 @@ class TestSettings:
         # Assert
         assert response.status_code == 204, response.text
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "When 'admin' requests the project list",
+        "Then 'admin' retrieve a list")
+    @pytest.mark.tags("projects", "mandatory")
+    @pytest.mark.description("Simple setting route validation, no content validation")
     def test_registered_projects_200(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -120,8 +127,15 @@ class TestSettings:
 
         # Assert
         assert response.status_code == 200
-        assert response.json() == []  # Weak assertion - doesn't work if played elsewhere from the start
+        assert isinstance(response.json(), list)
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "authorization", "error", "401")
+    @pytest.mark.test_steps(
+        "Given 'admin' provides a token without username",
+        "When 'admin' requests the project list",
+        "Then 'admin' get '401' status code"
+    )
     def test_authorization_error_no_email(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -135,6 +149,15 @@ class TestSettings:
             )
             assert response.status_code == 401, response.text
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "authorization", "error", "401")
+    @pytest.mark.test_steps(
+        "Given 'admin' provides a token",
+        "Given 'admin' user doesn't exist",
+        "When 'admin' requests the project list",
+        "Then 'admin' gets '401' status code"
+    )
+    #TODO: review this case as it doesn't make sense for admin
     def test_authorization_error_user_not_found(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -148,6 +171,13 @@ class TestSettings:
             )
             assert response.status_code == 401, response.text
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'admin' waits for too long",
+        "when 'admin' requests the project list",
+        "Then 'admin' gets '401' status code" )
+    @pytest.mark.tags("error", "401", "projects", "authorization")
     def test_authorization_error_signature_error(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -161,6 +191,14 @@ class TestSettings:
             )
             assert response.status_code == 401, response.text
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given an unhandled error occurs",
+        "When 'admin' requests the project list",
+        "Then 'admin' gets '500' status code"
+    )
+    @pytest.mark.tags("projects", "error", "500")
     def test_registered_projects_errors_500(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
@@ -174,14 +212,33 @@ class TestSettings:
             )
             assert response.status_code == 500
 
+    @pytest.mark.path("/projects/management")
+    @pytest.mark.tags("projects", "create", "mandatory")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'test' project does not exits",
+        "When 'admin' creates 'test' projects",
+        "Then 'admin' gets 'test' in the project list"
+    )
+    @pytest.mark.description("Register a new empty project. We add randomness seed to avoid test collision")
     def test_create_projects(
         self: "TestSettings",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        import random
+        project_name: str = f"test-{random.randrange(1000)}"
+
+        response = application.get(
+            "/api/v1/settings/projects",
+            headers=logged,
+        )
+        if project_name in response.json():
+            pytest.skip(t"{project_name} to be created already exists in database")
+
         response = application.post(
             "/api/v1/settings/projects",
-            json={"name": "test"},
+            json={"name": project_name},
             headers=logged,
         )
         assert response.status_code == 200
@@ -190,10 +247,10 @@ class TestSettings:
             headers=logged,
         )
         assert response.status_code == 200
-        assert response.json() == ["test"]
+        assert project_name in response.json(), response.text
 
     fail_projects = [
-        "te/st",
+        pytest.param("te/st",marks=pytest.mark.test_steps("one")),
         "te\\st",
         "te$st",
         "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglong",

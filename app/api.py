@@ -188,7 +188,7 @@ async def custom_404_handler(request: Request, exc: HTTPException) -> JSONRespon
 
 
 @app.get("/", include_in_schema=False)
-async def serve_front() -> FileResponse | None:
+async def serve_front() -> FileResponse:
     index_path = "app/front/index.html"
     if os.path.exists(index_path):
         return FileResponse(index_path)
