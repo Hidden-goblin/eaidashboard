@@ -1,5 +1,5 @@
 import {http, HttpResponse} from "msw";
-import { logger} from "@/composables/logger.ts"
+import { logger} from "@/composables/logger"
 
 const API_BASE = "http://mock-api";
 

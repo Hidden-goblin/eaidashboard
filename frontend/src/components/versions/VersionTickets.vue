@@ -66,12 +66,7 @@ const fetchTickets = async () => {
   error.value = '';
   try {
     const response = await fetchWithAuth(
-        `${apiBaseUrl}/api/v1/projects/${props.projectName}/versions/${props.versionId}/tickets`,
-        {
-          headers: {
-            Authorization: `Bearer ${authStore.token}`
-          }
-        }
+        `${apiBaseUrl}/api/v1/projects/${props.projectName}/versions/${props.versionId}/tickets`
     );
 
     if (!response.ok) {

@@ -3,7 +3,7 @@ import { useApiBaseUrl } from '@/composables/useApiBaseUrl';
 import { logger } from '@/composables/logger';
 import type { components } from "@/api/openapi";
 
-type Dashboard = components.schemas.Dashboard;
+type Dashboard = components["schemas"]["Dashboard"];
 
 export async function getDashboard(offSet = 0, limit = 10): Promise<{ data: Dashboard, total: number }> {
     const params = new URLSearchParams({

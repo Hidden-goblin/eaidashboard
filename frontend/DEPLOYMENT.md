@@ -31,7 +31,7 @@ The application connects to a backend API. The base URL for this API is determin
     This is suitable for deployments where the API is served from the same domain as the frontend, possibly under a specific path managed by a reverse proxy.
 
 3.  **Dynamic Same-Host URL (Runtime):**
-    If `VITE_API_BASE_URL` is **not set** or is an empty string or a generic default like `/api` at build time, the frontend will attempt to construct the API URL dynamically at runtime using the `useApiBaseUrl.js` composable. It assumes the API is running on the **same hostname** as the frontend, but on **port 8087**.
+    If `VITE_API_BASE_URL` is **not set** or is an empty string or a generic default like `/api` at build time, the frontend will attempt to construct the API URL dynamically at runtime using the `useApiBaseUrl.ts` composable. It assumes the API is running on the **same hostname** as the frontend, but on **port 8087**.
     The URL will be: `[current_protocol]//[current_hostname]:8087`.
     For example, if you access the frontend at `http://localhost:5173` (Vite dev server) or `https://app.yourdomain.com`, it will try to reach the API at `http://localhost:8087` or `https://app.yourdomain.com:8087` respectively.
     This mode requires no special build-time configuration for the API URL if your development or deployment setup matches this convention (API on port 8087, same host).

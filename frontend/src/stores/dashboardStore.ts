@@ -4,7 +4,7 @@ import { getDashboard } from '@/services/dashboardService';
 import { logger } from "@/composables/logger";
 import type { components } from "@/api/openapi";
 
-type Project = components.schemas.DashboardProject;
+type Project = components["schemas"]["DashboardProject"];
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const projects = ref<Project[]>([]);

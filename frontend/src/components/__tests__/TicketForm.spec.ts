@@ -1,22 +1,16 @@
-// src/components/tickets/__tests__/TicketForm.spec.ts
+/// <reference types="vitest/browser" />
 import {render, screen, fireEvent, waitFor} from '@testing-library/vue'
 import TicketForm from '../tickets/TicketForm.vue'
 import {vi} from 'vitest'
-import {beforeAll, afterAll, afterEach} from 'vitest'
+import {beforeAll, afterAll, afterEach, describe, it, expect} from 'vitest'
 import {server} from '@/mocks/node'
 import {nextTick} from 'vue'
+import {http, HttpResponse} from "msw";
 // Setup mock server
 vi.mock('@/composables/useApiBaseUrl', () => ({
     useApiBaseUrl: () => 'http://mock-api'
 }))
 
-vi.mock('@/stores/authStore', () => ({
-    useAuthStore: vi.fn(() => ({
-        token: 'valid.token',
-        user: { scopes: { demo: 'admin' } },
-        showLoginModal: false
-    })),
-}))
 
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
@@ -45,7 +39,9 @@ describe('TicketForm', () => {
         expect(emitted()['close']).toBeTruthy()
 
         emitted().close = [] // reset
-        await fireEvent.click(document.querySelector(".modal-overlay"))
+        const overlay = document.querySelector('.modal-overlay')
+        if (!overlay) throw new Error('modal overlay not found in DOM')
+        await fireEvent.click(overlay)
         expect(emitted()['close']).toBeTruthy()
     })
 
@@ -53,7 +49,9 @@ describe('TicketForm', () => {
         const {emitted} = render(TicketForm, {
             props: {projectName: 'demo', versionId: 'v1'}
         })
-
+        server.use( http.post('http://mock-api/api/v1/projects/demo/versions/v1/tickets', () => {
+            return HttpResponse.json({id: 33})
+        }))
         await fireEvent.update(screen.getByLabelText(/Reference/i), 'REF123')
         await fireEvent.update(screen.getByLabelText(/Description/i), 'Test ticket')
         await fireEvent.click(screen.getByText('Create Ticket'))
@@ -68,7 +66,9 @@ describe('TicketForm', () => {
         render(TicketForm, {
             props: {projectName: 'demo', versionId: 'v1'}
         })
-
+        server.use( http.post('http://mock-api/api/v1/projects/demo/versions/v1/tickets', () => {
+            return HttpResponse.json({detail:'Ticket reference already exits for the project' }, {status: 409})
+        }))
         await fireEvent.update(screen.getByLabelText(/Reference/i), 'EXISTING_REF')
         await fireEvent.update(screen.getByLabelText(/Description/i), 'Bad input')
         await fireEvent.click(screen.getByText('Create Ticket'))

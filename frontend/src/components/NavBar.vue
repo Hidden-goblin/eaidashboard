@@ -60,7 +60,7 @@ import {useRouter} from 'vue-router';
 import {storeToRefs} from 'pinia';
 
 import {useAuthStore} from '../stores/authStore.ts';
-import {useVersionStore} from '../stores/versionStore.js';
+import {useVersionStore} from '../stores/versionStore.ts';
 import LoginModal from './access/LoginModal.vue';
 import BaseButton from "./utils/BaseButton.vue";
 import {ArrowRightStartOnRectangleIcon, ArrowRightEndOnRectangleIcon} from '@heroicons/vue/20/solid';

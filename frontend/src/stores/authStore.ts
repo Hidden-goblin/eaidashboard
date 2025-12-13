@@ -19,16 +19,17 @@ interface User {
 // Store definition
 // -----------------------------
 export const useAuthStore = defineStore('auth', () => {
+    const apiBaseUrl = useApiBaseUrl()
     // State
-    const token = ref<string | null>(localStorage.getItem('jwtToken') || 'null')
     const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'))
     const allProjects = ref<string[]>(JSON.parse(localStorage.getItem('allProjects') || '[]'))
     const showLoginModal = ref(false)
 
     const { retryRequests, fetchWithAuth } = useApi()
+    // Helpers
 
     // Getters
-    const isAuthenticated = computed(() => !!token.value)
+    const isAuthenticated = computed(() => !!user.value)
 
     const isSuperAdmin = computed(() => user.value?.scopes?.['*'] === 'admin')
 
@@ -44,22 +45,32 @@ export const useAuthStore = defineStore('auth', () => {
     )
 
     // Actions
-    function login(newToken: string) {
-        token.value = newToken
-        localStorage.setItem('jwtToken', newToken)
-        user.value = jwtDecode<User>(newToken)
+    async function login(formBody: string): Promise<void> {
+        const response = await fetch(`${apiBaseUrl}/api/v1/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: formBody
+        })
+        if (!response.ok) {
+          const err = await response.json()
+          throw new Error(err.detail || 'Error logging in')
+        }
+        const data = await response.json()
+        const token = data.access_token
+        user.value = jwtDecode<User>(token)
+        await fetchProjects();
         localStorage.setItem('user', JSON.stringify(user.value))
         showLoginModal.value = false
-        retryRequests(newToken)
+        await retryRequests(token)
     }
 
     function logout() {
-        token.value = null
         user.value = null
         allProjects.value = []
-        localStorage.removeItem('jwtToken')
-        localStorage.removeItem('user')
-        localStorage.removeItem('allProjects')
+        localStorage.setItem('user', 'null')
+        localStorage.setItem('allProjects', '[]')
     }
 
     async function fetchProjects(): Promise<void> {
@@ -69,7 +80,6 @@ export const useAuthStore = defineStore('auth', () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token.value}`,
                 },
             })
 
@@ -79,6 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
             }
 
             const data: string[] = await response.json()
+            logger.debug(data);
             allProjects.value = data
             logger.debug('Fetched projects:', allProjects.value)
             localStorage.setItem('allProjects', JSON.stringify(data))
@@ -88,12 +99,8 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    function decodeToken(): void {
-        user.value = token.value ? jwtDecode<User>(token.value) : null
-    }
 
     return {
-        token,
         user,
         allProjects,
         showLoginModal,
@@ -105,6 +112,5 @@ export const useAuthStore = defineStore('auth', () => {
         login,
         logout,
         fetchProjects,
-        decodeToken,
     }
 })

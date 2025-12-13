@@ -70,30 +70,13 @@ const connect = async () => {
     return
   }
   logger.debug('fetching token from', `${apiBaseUrl}/api/v1/token`)
+  const formBody =
+      'username=' + encodeURIComponent(username.value) +
+      '&password=' + encodeURIComponent(password.value);
+
   try {
-    const formBody =
-        'username=' + encodeURIComponent(username.value) +
-        '&password=' + encodeURIComponent(password.value)
-
-    const response = await fetch(`${apiBaseUrl}/api/v1/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: formBody
-    })
-
-    if (!response.ok) {
-      const err = await response.json()
-      throw new Error(err.detail || 'Error logging in')
-    }
-    const data = await response.json()
-    const token = data.access_token
-
-    if (token) {
-      authStore.login(token)
-      emit('login-success', token)
-    }
+    await authStore.login( formBody);
+    emit('login-success', 'connected')
   } catch (err) {
     errorMessage.value = err.message
   }

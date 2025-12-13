@@ -32,7 +32,9 @@ router = APIRouter(prefix="/api/v1")
         401: {"model": ErrorMessage, "description": "User and/or password not recognized. Could not provide a JWT"}
     },
 )
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> TokenResponse:
+async def login_for_access_token(
+        response: Response,
+        form_data: OAuth2PasswordRequestForm = Depends()) -> TokenResponse:
     user = authenticate_user(
         form_data.username,
         form_data.password,
@@ -45,6 +47,15 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             scopes=user.scopes,
         ),
     )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
+
     return TokenResponse(access_token=access_token)
 
 

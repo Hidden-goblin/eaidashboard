@@ -1,17 +1,18 @@
 import { render, fireEvent, screen } from '@testing-library/vue'
 import LoginModal from '@/components/access/LoginModal.vue'
-import { describe, it, beforeAll, afterAll, afterEach, vi, expect } from 'vitest'
-import { server } from '@/mocks/node'
+import { describe, it,  afterEach, vi, expect } from 'vitest'
 import { createTestingPinia } from '@pinia/testing'
-import { http, HttpResponse } from 'msw'
 
-vi.mock('@/composables/useApiBaseUrl', () => ({
-    useApiBaseUrl: () => 'http://mock-api'
+let mockLogin: (...args: any[]) => Promise<any>
+
+vi.mock('@/stores/authStore', () => ({
+    useAuthStore: () => ({
+        login: (...args: any[]) => mockLogin(...args)
+    })
 }))
 
-beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
+afterEach(() => vi.clearAllMocks())
+
 
 describe('LoginModal', () => {
     it('renders the modal with email, password, connect, cancel', () => {
@@ -33,16 +34,16 @@ describe('LoginModal', () => {
                 plugins: [createTestingPinia()]
             }
         })
-
+        mockLogin = vi.fn(async () => Promise.resolve())
         const emailInput = screen.getByTestId('username-input')
         const passwordInput = screen.getByTestId('password-input')
 
-        await fireEvent.update(emailInput, 'valid@example.com')
+        await fireEvent.update(emailInput, 'john@jon.son')
         await fireEvent.update(passwordInput, 'password123')
         await fireEvent.click(screen.getByText('Connect'))
 
         await vi.waitFor(() => {
-            expect(emitted()).toHaveProperty('login-success')
+            expect(emitted()['login-success']).toBeTruthy()
         })
     })
 
@@ -52,7 +53,9 @@ describe('LoginModal', () => {
                 plugins: [createTestingPinia()]
             }
         })
-
+        mockLogin = vi.fn(async () => {
+            throw new Error('Invalid credentials')
+        })
         await fireEvent.update(screen.getByLabelText(/email/i), 'wrong@example.com')
         await fireEvent.update(screen.getByLabelText(/password/i), 'wrongpass')
         await fireEvent.click(screen.getByText('Connect'))
@@ -72,17 +75,13 @@ describe('LoginModal', () => {
     })
 
     it('handles network errors gracefully', async () => {
-        server.use(
-            // Simulate network failure
-            http.post('http://mock-api/api/v1/token',  async () => {
-                return HttpResponse.error()
-            })
-        )
-
         render(LoginModal, {
             global: {
                 plugins: [createTestingPinia()]
             }
+        })
+        mockLogin = vi.fn(async () => {
+            throw new Error('Failed to fetch')
         })
 
         await fireEvent.update(screen.getByLabelText(/email/i), 'valid@example.com')

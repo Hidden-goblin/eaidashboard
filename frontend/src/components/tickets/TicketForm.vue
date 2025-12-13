@@ -51,7 +51,6 @@ const emit = defineEmits(['close', 'ticket-created']);
 
 // Setup API tools
 const apiBaseUrl = useApiBaseUrl();
-const authStore = useAuthStore();
 const { fetchWithAuth } = useApi();
 
 // Reactive form data
@@ -76,8 +75,7 @@ const submitForm = async () => {
     const response = await fetchWithAuth(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authStore.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(ticket.value)
     });

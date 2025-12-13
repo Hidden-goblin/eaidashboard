@@ -1,34 +1,36 @@
 import {setActivePinia, createPinia} from 'pinia'
 import {useAuthStore} from '@/stores/authStore'
-import {describe, it, expect, beforeEach, afterEach, vi} from 'vitest'
-import {jwtDecode} from 'jwt-decode'
+import {describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll} from 'vitest'
+import {InvalidTokenError, jwtDecode} from 'jwt-decode'
 import {server} from '@/mocks/node'
 import {http, HttpResponse} from 'msw'
+import {authStoreHandler} from "@/mocks/authStoreHandler";
+import {nextTick} from "vue";
 
-beforeAll(() => server.listen())
-
+beforeAll(() => server.listen());
 afterEach(() => {
-    server.resetHandlers()
-    vi.clearAllMocks()
-    localStorage.clear()
-})
+    localStorage.clear();
+    server.resetHandlers();
+});
+afterAll(() => server.close());
 
-afterAll(() => server.close())
 
 vi.mock('@/composables/useApiBaseUrl', () => ({
     useApiBaseUrl: () => 'http://mock-api'
 }))
 
-vi.mock('jwt-decode', () => ({
-    jwtDecode: vi.fn(() => ({
-        username: 'john',
-        scopes: {
-            '*': 'admin',
-            project42: 'admin',
-            project1: 'user'
-        }
-    }))
-}))
+vi.mock('@/composables/useApi', () => {
+    return {
+        useApi: () => ({
+            retryRequests: vi.fn(async (_token?: string) => {
+            }),
+            fetchWithAuth: vi.fn(async (url: string, options?: RequestInit) => {
+                return fetch(url, options as any)
+            })
+        })
+    }
+})
+
 
 describe('authStore', () => {
     beforeEach(() => {
@@ -37,106 +39,82 @@ describe('authStore', () => {
 
     it('initializes with default state', () => {
         const store = useAuthStore()
-        expect(store.token).toBe(null)
         expect(store.user).toBe(null)
         expect(store.allProjects).toEqual([])
         expect(store.isAuthenticated).toBe(false)
         expect(store.isSuperAdmin).toBe(false)
     })
 
-    it('login updates token, user and localStorage', () => {
+    it('login updates user and localStorage', async () => {
+        setActivePinia(createPinia())
+        server.use(...authStoreHandler)
         const store = useAuthStore()
-        const fakeToken = 'my.jwt.token'
+        const loginString = "username=" + encodeURIComponent('john@jon.son') + '&password=' + encodeURIComponent("password")
 
-        store.login(fakeToken)
+        await store.login(loginString)
+        await nextTick()
 
-        expect(store.token).toBe(fakeToken)
-        expect(store.user.username).toBe('john')
-        expect(localStorage.getItem('jwtToken')).toBe(fakeToken)
+        expect(store.user?.username).toBe('john')
         expect(localStorage.getItem('user')).toContain('john')
     })
 
-    it('logout clears state and localStorage', () => {
-        const store = useAuthStore()
-        store.token = 'abc'
-        store.user = {name: 'x'}
-        store.allProjects = ['p1']
-        localStorage.setItem('jwtToken', 'abc')
-        localStorage.setItem('user', '{}')
-        localStorage.setItem('allProjects', '[]')
-
+    it('logout clears state and localStorage', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('john@jon.son') + '&password=' + encodeURIComponent("password");
+        await store.login(loginString);
+        await nextTick()
         store.logout()
 
-        expect(store.token).toBe(null)
         expect(store.user).toBe(null)
         expect(store.allProjects).toEqual([])
-        expect(localStorage.getItem('jwtToken')).toBe(null)
-        expect(localStorage.getItem('user')).toBe(null)
+        expect(localStorage.getItem('user')).toEqual('null')
+        expect(localStorage.getItem('allProjects')).toEqual('[]')
     })
 
-    it('filteredProjects returns all if super admin', () => {
-        const store = useAuthStore()
-        store.login('super.token')
-        store.allProjects = ['project1', 'project2']
-
-        expect(store.filteredProjects).toEqual(['project1', 'project2'])
+    it('filteredProjects returns all if super admin', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('john@jon.son') + '&password=' + encodeURIComponent("password");
+        await store.login(loginString);
+        await nextTick()
+        expect(store.filteredProjects).toEqual([ 'project42', 'project1','project10'])
     })
 
-    it('filteredProjects returns scoped projects if not super admin', () => {
-        (jwtDecode as any).mockReturnValueOnce({
-            username: 'john',
-            scopes: {
-                projectA: 'user',
-                projectB: 'admin'
-            }
-        })
-
-        const store = useAuthStore()
-        store.login('some.token')
-        store.allProjects = ['projectA', 'projectB', 'projectC']
-
-        expect(store.filteredProjects).toEqual(['projectA', 'projectB'])
+    it('filteredProjects returns scoped projects if not super admin', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('user@jon.son') + '&password=' + encodeURIComponent("password");
+        await store.login(loginString);
+        await nextTick()
+        expect(store.filteredProjects).toEqual(['project42', 'project1'])
     })
 
-    it('isAdminForProject returns true if user is admin for project', () => {
-        const store = useAuthStore()
-        store.login('super.token')
-
-        expect(store.isAdminForProject('project42')).toBe(true)
-        expect(store.isAdminForProject('project1')).toBe(false)
+    it('isAdminForProject returns true if user is admin for project', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('user@jon.son') + '&password=' + encodeURIComponent("password");
+        await store.login(loginString);
+        await nextTick()
+        expect(store.isAdminForProject('project42')).toBe(false)
+        expect(store.isAdminForProject('project1')).toBe(true)
     })
 
     it('fetchProjects updates allProjects and localStorage', async () => {
-        const store = useAuthStore()
-        store.token = 'valid.token'
-
-        await store.fetchProjects()
-        console.log("Form the test", store.allProjects)
-        expect(store.allProjects).toEqual(['project1', 'project2'])
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        await store.fetchProjects();
+        expect(store.allProjects).toEqual([ 'project42', 'project1','project10'])
         expect(localStorage.getItem('allProjects')).toContain('project1')
     })
 
-    it('decodeToken updates user if token exists', () => {
-        const store = useAuthStore()
-        store.token = 'some.token'
-        store.decodeToken()
-
-        expect(store.user.username).toBe('john')
-    })
-
-    it('decodeToken sets user to null if token is null', () => {
-        const store = useAuthStore()
-        store.token = null
-        store.decodeToken()
-
-        expect(store.user).toBe(null)
-    })
-
     it('fetchProjects handles API errors and clears allProjects', async () => {
-
         const store = useAuthStore()
-        store.token = 'not.allowed.token'
-
         await store.fetchProjects()
 
         expect(store.allProjects).toEqual([])
@@ -150,36 +128,43 @@ describe('authStore', () => {
         )
 
         const store = useAuthStore()
-        store.token = 'valid.token'
-
         await store.fetchProjects()
-
         expect(store.allProjects).toEqual([])
     })
 
-    it('getUserProjects returns [] when user has no scopes', () => {
-        const store = useAuthStore()
-        store.user = {username: 'test', scopes: {}}
+    it('getUserProjects returns [] when user has no scopes', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('noscope@jon.son') + '&password=' + encodeURIComponent("password");
+        await store.login(loginString);
 
         expect(store.getUserProjects).toEqual([])
     })
 
     it('isAdminForProject returns false when user is undefined or missing project', () => {
-        const store = useAuthStore()
-        store.user = null
-        expect(store.isAdminForProject('project1')).toBe(false)
+        setActivePinia(createPinia());
+        const store = useAuthStore();
 
-        store.user = {scopes: {project2: 'user'}}
-        expect(store.isAdminForProject('project1')).toBe(false)
+        // user is null
+        store.$patch({ user: null });
+        expect(store.isAdminForProject('project1')).toBe(false);
+
+        // user exists but has no scopes
+        store.$patch({ user: { username: 'noscope' } as any });
+        expect(store.isAdminForProject('project1')).toBe(false);
+
+        // user has scopes but not for the tested project
+        store.$patch({ user: { scopes: { project2: 'user' } } as any });
+        expect(store.isAdminForProject('project1')).toBe(false);
     })
 
-    it('login handles malformed token (jwtDecode throws)', () => {
-        const store = useAuthStore()
+    it('login handles malformed token (jwtDecode throws)', async () => {
+        setActivePinia(createPinia());
+        server.use(...authStoreHandler);
+        const store = useAuthStore();
+        const loginString = "username=" + encodeURIComponent('badjwt@jon.son') + '&password=' + encodeURIComponent("password");
 
-        ;(jwtDecode as any).mockImplementationOnce(() => {
-            throw new Error('Invalid token')
-        })
-
-        expect(() => store.login('not.allowed.token')).toThrow('Invalid token')
+        await expect(store.login(loginString)).rejects.toThrow(InvalidTokenError)
     })
 })

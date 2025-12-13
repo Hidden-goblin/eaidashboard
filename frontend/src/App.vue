@@ -5,17 +5,20 @@
 
 <script setup>
 import Layout from './views/Layout.vue';
-import { useAuthStore } from './stores/authStore.js';
+import { useAuthStore } from '@/stores/authStore';
 import { onMounted } from 'vue';
 import GlobalLoading from "@/components/utils/GlobalLoading.vue";
+import { storeToRefs } from 'pinia'
+import { useAuthEvents } from '@/composables/useAuthEvents'
 
 const authStore = useAuthStore();
+const { showLoginModal } = storeToRefs(authStore)
+const { onUnauthorized } = useAuthEvents()
 
-onMounted(async () => {
-  // Check authentication status when the app is mounted
-  // This is crucial for restoring session if user previously logged in
-  // and token is still valid/present.
-  await authStore.isAuthenticated;
+onMounted( () => {
+  onUnauthorized(() => {
+    showLoginModal.value = true;
+  })
 });
 </script>
 

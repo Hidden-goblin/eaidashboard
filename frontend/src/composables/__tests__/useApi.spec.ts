@@ -1,18 +1,26 @@
-import {setActivePinia, createPinia, storeToRefs} from 'pinia'
-import {describe, it, expect, vi, beforeEach} from 'vitest'
-import {http, HttpResponse} from 'msw'
-import {server} from '@/mocks/node'
-import {useApi} from '@/composables/useApi'
-import {waitFor} from '@testing-library/vue'
+import { setActivePinia, createPinia, storeToRefs } from 'pinia'
+import { describe, it, expect, vi, beforeEach, beforeAll, afterEach, afterAll } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/mocks/node'
+import { waitFor } from '@testing-library/vue'
+import { ref } from 'vue'
 
-// Mock the Composition API-style auth store
-// vi.mock('@/stores/authStore', () => ({
-//     useAuthStore: vi.fn()
-// }))
+// showLoginModal is exposed by the mocked useAuthEvents so tests can assert UI state
+const showLoginModal = ref(false)
 
+// Mock useAuthEvents before importing useApi so the module uses the mock
+vi.mock('@/composables/useAuthEvents', () => {
+    return {
+        useAuthEvents: () => ({
+            emitUnauthorized: () => {
+                showLoginModal.value = true
+            }
+        })
+    }
+})
 
-import {useAuthStore} from '@/stores/authStore'
-import {logger} from '@/composables/logger'
+import { useApi } from '@/composables/useApi'
+import { logger } from '@/composables/logger'
 
 beforeAll(() => server.listen())
 afterEach(() => {
@@ -25,11 +33,13 @@ afterAll(() => server.close())
 describe('useApi composable', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
+        showLoginModal.value = false
     })
+
     it('returns successful response with valid token', async () => {
-        const {fetchWithAuth} = useApi()
+        const { fetchWithAuth } = useApi()
         const res = await fetchWithAuth('http://mock-api/api/v1/settings/projects', {
-            headers: {Authorization: 'Bearer valid.token'}
+            headers: { Authorization: 'Bearer valid.token' }
         })
 
         const data = await res.json()
@@ -38,26 +48,18 @@ describe('useApi composable', () => {
     })
 
     it('throws error on 403 response and logs it', async () => {
-        //Prepare
-        const authStore = useAuthStore();
-        const {token} = storeToRefs(authStore);
-        token.value = 'not.allowed.token';
-        //Execute
-        const {fetchWithAuth} = useApi()
-        const fetch = fetchWithAuth('http://mock-api/api/v1/settings/projects')
-        //Control
+        const { fetchWithAuth } = useApi()
+        // Pass a token that the mock server treats as forbidden
+        const fetch = fetchWithAuth('http://mock-api/api/v1/settings/projects', {
+            headers: { Authorization: 'Bearer not.allowed.token' }
+        })
         await expect(fetch).rejects.toThrow('Access denied')
     })
 
     it('sets showLoginModal to true and queues retry on 401 Unauthorized', async () => {
-        // Call the store
-        const authStore = useAuthStore();
-        // destructive access to the reactive property of authStore showLoginModal
-        const {showLoginModal} = storeToRefs(authStore);
+        const { fetchWithAuth, retryRequests } = useApi()
 
-        const {fetchWithAuth, retryRequests} = useApi()
-
-        // Submit initial request that will be queued
+        // Submit initial request that will be queued (server responds 401 for this token)
         const requestPromise = fetchWithAuth('http://mock-api/api/v1/settings/projects', {
             method: 'GET',
             headers: {
@@ -65,11 +67,10 @@ describe('useApi composable', () => {
             }
         })
 
-        // ✅ The modal is triggered
+        // The mocked emitUnauthorized should set our ref
         await waitFor(() => {
-            expect(showLoginModal.value).toBe(true);
-        });
-
+            expect(showLoginModal.value).toBe(true)
+        })
 
         // Simulate login and retry with a valid token
         retryRequests('valid.token')
@@ -83,44 +84,33 @@ describe('useApi composable', () => {
     it('logs and throws on server 500 error', async () => {
         server.use(
             http.get('http://mock-api/api/v1/settings/projects', async () => {
-                    return HttpResponse.json(null, {status: 500})
-                }
-            )
+                return HttpResponse.json(null, { status: 500 })
+            })
         )
         const originalLoggerError = logger.error
         const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation((...args) => {
             return originalLoggerError(...args)
         })
 
-        const {fetchWithAuth} = useApi()
+        const { fetchWithAuth } = useApi()
 
-        await expect(fetchWithAuth('http://mock-api/api/v1/settings/projects', {
-            headers: {Authorization: 'Bearer valid.token'}
-        })).rejects.toThrow()
+        await expect(
+            fetchWithAuth('http://mock-api/api/v1/settings/projects')
+        ).rejects.toThrow()
 
         expect(loggerErrorSpy).toHaveBeenCalled()
     })
 
     it('queues multiple requests and retries them in order', async () => {
-        // Call the store
-        const authStore = useAuthStore();
-        // destructive access to the reactive property of authStore showLoginModal
-        const {showLoginModal} = storeToRefs(authStore);
+        const { fetchWithAuth, retryRequests } = useApi()
 
-        const {fetchWithAuth, retryRequests} = useApi()
+        const p1 = fetchWithAuth('http://mock-api/api/v1/settings/projects')
+        const p2 = fetchWithAuth('http://mock-api/api/v1/settings/projects')
 
-        const p1 = fetchWithAuth('http://mock-api/api/v1/settings/projects', {
-            headers: {Authorization: 'Bearer unauthorized.token'}
-        })
-        const p2 = fetchWithAuth('http://mock-api/api/v1/settings/projects', {
-            headers: {Authorization: 'Bearer unauthorized.token'}
-        })
-
-        // All requests should be queued
+        // The mocked emitUnauthorized should set our ref
         await waitFor(() => {
-            expect(showLoginModal.value).toBe(true);
+            expect(showLoginModal.value).toBe(true)
         })
-
 
         retryRequests('valid.token')
 

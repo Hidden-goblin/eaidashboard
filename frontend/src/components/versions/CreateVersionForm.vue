@@ -27,13 +27,11 @@
 
 <script setup lang="ts">
 import {ref} from "vue"
-import {useAuthStore} from "@/stores/authStore"
-import {useApi} from "@/composables/useApi"
-import {useApiBaseUrl} from "@/composables/useApiBaseUrl"
 import {useLoadingStore} from "@/stores/loadingStore";
 import {logger} from "@/composables/logger";
-import { useEscapeToClose } from '@/composables/useEscapteToClose';
+import {useEscapeToClose} from '@/composables/useEscapteToClose';
 import BaseButton from "@/components/utils/BaseButton.vue";
+import {createVersion as createVersionService, getVersion} from '@/services/versionService'
 
 
 // ✅ define props & emits in <script setup>
@@ -52,49 +50,29 @@ useEscapeToClose(closeModal);
 const versionName = ref("");
 const error = ref("");
 
-const authStore = useAuthStore();
-const {fetchWithAuth} = useApi();
-const apiBaseUrl = useApiBaseUrl();
-
 const loadingStore = useLoadingStore();
 
 const createVersion = async () => {
   logger.debug("Entering create version");
   loadingStore.startLoading();
   error.value = "";
-  // await loadingStore.withLoading(async () => {
-    logger.debug("Entering create version");
-    const url = `${apiBaseUrl}/api/v1/projects/${props.projectName}/versions`
-    logger.debug('url', url);
 
-    try {
-      // 1. POST new version
-      const response = await fetchWithAuth(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({version: versionName.value}),
-      })
+  try {
+    // 1. POST new version
+    await createVersionService(props.projectName, versionName.value);
 
-      logger.debug(`Version ${versionName.value} created`);
-      // 2. Fetch version details
-      const detailsResponse = await fetchWithAuth(`${url}/${versionName.value}`, {
-        method: "GET",
-      })
-
-      logger.debug(`Version ${versionName.value} retrieved`);
-      const data = await detailsResponse.json()
-
-      // emit and reset
-      emit("version-created", data)
-      versionName.value = ""
-      logger.debug(`End of CreateVersion`);
-    } catch (err: any) {
-      error.value = err.message
-    } finally {
-      loadingStore.stopLoading();
-    }
+    logger.debug(`Version ${versionName.value} created`);
+    // 2. Fetch version details
+    const detailsResponse = await getVersion(props.projectName, versionName.value);
+    // emit and reset
+    emit("version-created", detailsResponse)
+    versionName.value = ""
+    logger.debug(`End of CreateVersion`);
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loadingStore.stopLoading();
+  }
 
   // })
 }
@@ -142,19 +120,6 @@ const createVersion = async () => {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
-}
-
-button {
-  padding: 8px 16px;
-  border: none;
-  background: #3498db;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button[type='button'] {
-  background: #ccc;
 }
 
 button:hover {

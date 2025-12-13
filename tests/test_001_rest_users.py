@@ -118,6 +118,15 @@ class TestRestUsers:
         assert response.status_code == 200, response.text
         assert "admin@admin.fr" in response.json(), response.text
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "error", "401")
+    @pytest.mark.description("Test creating a user without authentication")
+    @pytest.mark.test_steps(
+        "Given 'anonymous' is querying",
+        "When 'anonymous' creates 'user1' user",
+        "Then 'anonymous' gets a '401' status code",
+        "Then 'anonymous' gets a 'Not authenticated' error message",
+    )
     def test_create_user_error_401(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -129,15 +138,40 @@ class TestRestUsers:
         assert response.json()["detail"] == "Not authenticated"
 
     payload_error_422 = [
-        ({"password": "pass"}, ["body", "username"], "Field required", "missing"),
-        (
+        pytest.param(
+            {"password": "pass"},
+            ["body", "username"],
+            "Field required",
+            "missing",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "Given 'admin' prepares a payload without 'username'",
+                    "When 'admin' creates '' user",
+                    "Then 'admin' gets a '422' status code",
+                    "Then 'admin' gets a 'Field required' error message for 'body/username'",
+                )
+            ],
+        ),
+        pytest.param(
             {"username": "test@test.fr", "alias": "test", "password": "pass"},
             ["body", "alias"],
             "Extra inputs are not permitted",
             "extra_forbidden",
+            marks=[
+                pytest.mark.test_steps(
+                    "Given 'admin' is logged in",
+                    "Given 'admin' prepares a payload with extra field 'alias'",
+                    "When 'admin' creates 'test' user",
+                    "Then 'admin' gets a '422' status code",
+                    "Then 'admin' gets an 'Extra inputs are not permitted' error message for 'body/alias'",
+                )
+            ],
         ),
     ]
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "error", "422")
     @pytest.mark.parametrize("payload,loc,message,err_type", payload_error_422)
     def test_create_user_error_422(
         self: "TestRestUsers",
@@ -154,35 +188,74 @@ class TestRestUsers:
         assert response.json()["detail"][0]["loc"] == loc
         assert response.json()["detail"][0]["type"] == err_type
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "error", "404")
+    @pytest.mark.description("Cannot create a user assigning role on unknown project")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'unknown' project does not exist",
+        "When 'admin' creates 'test_unknown' user",
+        "Then 'admin' gets a '404' status code",
+        "Then 'admin' gets a 'The projects 'unknown' are not registered.' error message",
+    )
     def test_create_user_error_404(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        # Ensure 'unknown' project does not exist
+        response = application.get("/api/v1/setting/projects", headers=logged, params={"is_list": True})
+        assert "unknown" not in response.json(), "Precondition failed: 'unknown' project exists"
+
+        # Action
         response = application.post(
             "/api/v1/users",
-            json={"username": "test@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
+            json={"username": "test_unknown@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
             headers=logged,
         )
         assert response.status_code == 404, response.text
         status_404_error_message_check(response, "The projects 'unknown' are not registered.")
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "error", "400")
+    @pytest.mark.description("Cannot create a user without password")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'admin' prepares a payload without password",
+        "When 'admin' creates 'test_passwordless' user",
+        "Then 'admin' gets a '400' status code",
+        "Then 'admin' gets a 'Cannot create user without password' error message",
+    )
     def test_create_user_error_400(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
         response = application.post(
-            "/api/v1/users", json={"username": "test@test.fr", "scopes": {"*": "user"}}, headers=logged
+            "/api/v1/users", json={"username": "test_passwordless@test.fr", "scopes": {"*": "user"}}, headers=logged
         )
         assert response.status_code == 400
         assert response.json()["detail"] == "Cannot create user without password"
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "mandatory")
+    @pytest.mark.description("Test creating a new user")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'test' user does not exist",
+        "When 'admin' creates 'test' user",
+        "Then 'admin' gets the new user internal id",
+    )
     def test_create_user(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        # Pre-condition: ensure 'test' user does not exist
+        response = application.get("/api/v1/users", headers=logged, params={"is_list": True})
+        assert "test@test.fr" not in response.json(), "Precondition failed: 'test' user exists"
+
+        # Action: create 'test' user
         response = application.post(
             "/api/v1/users",
             json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
@@ -191,10 +264,30 @@ class TestRestUsers:
         assert response.status_code == 200
         assert response.json()["inserted_id"] == "2"
 
+    @pytest.mark.path("/users")
+    @pytest.mark.tags("users", "login", "mandatory")
+    @pytest.mark.description("Test logging in with newly created user")
+    @pytest.mark.test_steps(
+        "Given 'test' user is created",
+        "When 'test' user logs in",
+        "Then 'test' user gets an access token",
+    )
     def test_newly_created_user_can_log_in(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
+        logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        # Pre-condition: ensure 'test' user exists
+        response = application.get("/api/v1/users", params={"is_list": True}, headers=logged)
+        if "test@test.fr" not in response.json():
+            response = application.post(
+                "/api/v1/users",
+                json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+                headers=logged,
+            )
+            assert response.status_code == 200, "Precondition failed: could not create 'test' user"
+
+        # Action: log in with 'test' user
         response = application.post(
             "/api/v1/token",
             data={"username": "test@test.fr", "password": "test"},
@@ -202,11 +295,31 @@ class TestRestUsers:
         assert response.status_code == 200
         assert response.json()["access_token"]
 
+    @pytest.mark.path("/users/create")
+    @pytest.mark.tags("users", "create", "error", "409")
+    @pytest.mark.description("Cannot create a duplicate user")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'test@test.fr' user already exists",
+        "When 'admin' creates 'test@test.fr' user",
+        "Then 'admin' gets a '409' status code",
+    )
     def test_create_user_duplicate_error(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
         logged: Generator[dict[str, str], Any, None],
     ) -> None:
+        # Pre-condition: ensure 'test@test.fr' user exists
+        response = application.get("/api/v1/users", params={"is_list": True}, headers=logged)
+        if "test@test.fr" not in response.json():
+            response = application.post(
+                "/api/v1/users",
+                json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+                headers=logged,
+            )
+            assert response.status_code == 200, "Precondition failed: could not create 'test' user"
+
+        # Action: attempt to create duplicate 'test@test.fr' user
         response = application.post(
             "/api/v1/users",
             json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
@@ -214,6 +327,15 @@ class TestRestUsers:
         )
         assert response.status_code == 409
 
+    @pytest.mark.path("/users/update")
+    @pytest.mark.tags("users", "update", "error", "401")
+    @pytest.mark.description("Cannot update a user wihhout authentication")
+    @pytest.mark.test_steps(
+        "Given 'anonymous' is querying",
+        "When 'anonymous' updates 'test@test.fr' user",
+        "Then 'anonymous' gets a '401' status code",
+        "Then 'anonymous' gets a 'Not authenticated' error message",
+    )
     def test_update_user_error_401(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -222,6 +344,17 @@ class TestRestUsers:
         assert response.status_code == 401
         assert response.json()["detail"] == "Not authenticated"
 
+    @pytest.mark.path("/users/update")
+    @pytest.mark.tags("users", "update", "error", "422")
+    @pytest.mark.description("Cannot update a user without either password or scopes")
+    @pytest.mark.test_steps(
+        "Given 'admin' is logged in",
+        "Given 'admin' prepares a payload without 'password' and 'scopes'",
+        "When 'admin' updates 'test@test.fr' user",
+        "Then 'admin' gets a '422' status code",
+        "Then 'admin' gets a 'Value error, UpdateUser must have at least one key of "
+        "'('password', 'scopes')'' error message",
+    )
     def test_update_user_error_422(
         self: "TestRestUsers",
         application: Generator[TestClient, Any, None],
@@ -234,6 +367,7 @@ class TestRestUsers:
             "Value error, UpdateUser must have at least one key of '('password', 'scopes')'"
         )
         assert response.json()["detail"][0]["type"] == "value_error"
+
 
     def test_get_user_error_401(
         self: "TestRestUsers",

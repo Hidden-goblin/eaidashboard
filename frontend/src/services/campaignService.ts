@@ -3,12 +3,12 @@ import {useApiBaseUrl} from '@/composables/useApiBaseUrl';
 import {logger} from '@/composables/logger';
 import type {components} from "@/api/openapi";
 
-type TicketProject = components.schemas.TicketProject;
-type CampaignLights = components.schemas.CampaignLights;
-type CampaignLight = components.schemas.CampaignLight;
-type CampaignProjections = components.schemas.CampaignProjections;
-type CampaignFull = components.schemas.CampaignFull;
-type CampaignPatch = components.schemas.CampaignPatch;
+type TicketProject = components['schemas']['TicketProject'];
+type CampaignLights = components['schemas']['CampaignLights'];
+type CampaignLight = components['schemas']['CampaignLight'];
+type CampaignProjections = components['schemas']['CampaignProjections'];
+type CampaignFull = components['schemas']['CampaignFull'];
+type CampaignPatch = components['schemas']['CampaignPatch'];
 
 export async function getProjectDetails(projectName: string, sections: string = 'current,future'): Promise<{
     data: TicketProject
@@ -65,7 +65,7 @@ export async function getCampaignProjections(projectName: string,
         limit: limit.toString(),
         projection: projection,
     });
-    console.log("in get camapign Projections");
+    console.log("in get campaign Projections");
     try {
         const {fetchWithAuth} = useApi();
         const response = await fetchWithAuth(`${useApiBaseUrl()}/api/v2/projects/${projectName}?${params}`);
@@ -79,7 +79,7 @@ export async function getCampaignProjections(projectName: string,
 }
 
 
-export async function getCampaignVersionOccurrence(projectName, version, occurrence): Promise<CampaignFull> {
+export async function getCampaignVersionOccurrence(projectName:string, version:string, occurrence:number): Promise<CampaignFull> {
     try {
         const {fetchWithAuth} = useApi();
         const response = await fetchWithAuth(`${useApiBaseUrl()}/api/v1/projects/${projectName}/campaigns/${version}/${occurrence}`);

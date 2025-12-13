@@ -2,6 +2,7 @@
 # -*- Author: E.Aivayan -*-
 import re
 from logging import getLogger
+from typing import Optional
 
 import jwt.exceptions
 from fastapi import Depends, HTTPException
@@ -12,15 +13,14 @@ from starlette.requests import Request
 from app.conf import templates
 from app.database.postgre.pg_users import get_user
 from app.database.redis.token_management import get_token_date, renew_token_date
+from app.database.utils.oauth2passwordbearerwithcookie import OAuth2PasswordBearerWithCookie
 from app.database.utils.token import token_scope, token_user
 from app.schema.users import User
 from app.utils.log_management import log_error
 
 log = getLogger(__name__)
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="api/v1/token", scopes={"admin": "All operations granted", "user": "Update"}
-)
+oauth2_scheme = OAuth2PasswordBearerWithCookie(token_url="api/v1/token")
 
 
 def path_project(request: Request) -> str:
@@ -58,6 +58,9 @@ def __generic_authorization(
     try:
         # Authorize method
         # Token contains the username
+        if token and isinstance(token, str) and token.startswith("Bearer "):
+            token = token.split(" ", 1)[1]
+
         email = token_user(token)
         if email is None:
             raise credentials_exception
