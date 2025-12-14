@@ -219,19 +219,33 @@ async def db_update_scenario(
     project_name: str,
     scenario: BaseScenario | ApplicationError,
     is_deleted: bool,
+    name: str = None,
+    tags: str = None,
+    steps: str = None,
 ) -> ApplicationError | None:
-    """Update a unique scenario in database
-    Currently only toggle the is_deleted flag
-    """
+    """Update a unique scenario in database"""
     if isinstance(scenario, ApplicationError):
         return scenario
 
-    query = """update scenarios as scn
-    set is_deleted = %s
+    set_clause = ["is_deleted = %s"]
+    parameters = [is_deleted]
+
+    if name is not None:
+        set_clause.append("name = %s")
+        parameters.append(name)
+    if tags is not None:
+        set_clause.append("tags = %s")
+        parameters.append(tags)
+    if steps is not None:
+        set_clause.append("steps = %s")
+        parameters.append(steps)
+
+    query = f"""update scenarios as scn
+    set {', '.join(set_clause)}
     from features as ft
     """
     where_clause = ["scn.feature_id = ft.id", "ft.project_id = %s", "ft.name = %s", "scn.scenario_id = %s"]
-    parameters = [is_deleted, project_name, scenario.feature_name, scenario.scenario_id]
+    parameters.extend([project_name, scenario.feature_name, scenario.scenario_id])
 
     if scenario.filename is not None:
         where_clause.append("ft.filename = %s")
@@ -249,5 +263,5 @@ async def db_update_scenario(
         else:
             return ApplicationError(
                 error=ApplicationErrorCode.database_no_update,
-                message=f"Scenario '{scenario.scenario_id}' has not been {'deleted' if is_deleted else 'activated'}",
+                message=f"Scenario '{scenario.scenario_id}' has not been updated",
             )
