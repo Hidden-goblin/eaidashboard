@@ -112,7 +112,11 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
+from dotenv import load_dotenv
+
+
 def pytest_configure(config: Config) -> None:
+    load_dotenv("tests/.env")
     print("Setting environment data")
     os.environ["PG_DB"] = "test_db"
 

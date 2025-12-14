@@ -74,3 +74,16 @@ class Scenarios(ExtendedBaseModel):
 
     def scenario_not_in_scenarios(self: "Scenarios", scenario_id: List[str]) -> set[str]:
         return set(scenario_id) - {scenario.scenario_id for scenario in self.scenarios}
+
+
+class UpdateScenario(ExtendedBaseModel):
+    """
+    Attributes:
+        name: Optional str defaulted to None
+        tags: Optional str defaulted to None
+        steps: Optional str defaulted to None
+    """
+
+    name: Optional[str] = None
+    tags: Optional[str] = None
+    steps: Optional[str] = None
