@@ -75,6 +75,8 @@ eaibat = "*"
 requests = "*"
 eaiautomatontools = "*"
 coverage-badge = "^1.1.2"
+pytest-postgresql = "*"
+pytest-redis = "*"
 
 [build-system]
 requires = ["poetry-core"]

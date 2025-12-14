@@ -1,61 +1,55 @@
-# -*- Product under GNU GPL v3 -*-
-# -*- Author: E.Aivayan -*-
+
 import importlib
 import os
-import time
 from typing import Any, Generator, List
 
-import psycopg
 import pytest
 from pytest import fixture
 from starlette.testclient import TestClient
 
+from tests.populate import populate_db
 
-def pytest_configure(config) -> None:  # noqa: ANN001
+
+def pytest_configure(config) -> None:
+    """Set up the environment variables for the tests."""
+    os.environ["PG_URL"] = "localhost"
+    os.environ["PG_PORT"] = "5432"
     os.environ["PG_DB"] = "test_db"
+    os.environ["PG_USR"] = "test"
+    os.environ["PG_PWD"] = "test"
+    os.environ["REDIS_URL"] = "localhost"
+    os.environ["REDIS_PORT"] = "6379"
 
 
-def pytest_unconfigure(config) -> None:  # noqa: ANN001
-    os.environ.pop("PG_DB")
-
-
-@fixture(autouse=True, scope="session")
-def application() -> Generator[TestClient, Any, None]:
-    # Override the environment variable
+@fixture(autouse=True, scope="function")
+def application(postgresql, redisdb) -> Generator[TestClient, Any, None]:
+    """Session-wide test `Application` fixture."""
     with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("PG_DB", "test_db")
+        mp.setenv("PG_URL", str(postgresql.info.host))
+        mp.setenv("PG_PORT", str(postgresql.info.port))
+        mp.setenv("PG_DB", str(postgresql.info.dbname))
+        mp.setenv("PG_USR", str(postgresql.info.user))
+        mp.setenv("PG_PWD", str(postgresql.info.password))
+        mp.setenv("REDIS_URL", str(redisdb.connection_pool.connection_kwargs["host"]))
+        mp.setenv("REDIS_PORT", str(redisdb.connection_pool.connection_kwargs["port"]))
+
         import app.conf
         import app.utils.pgdb
+        import app.utils.redis
 
         importlib.reload(app.conf)
         importlib.reload(app.utils.pgdb)
-        from app.conf import postgre_setting_string, postgre_string
+        importlib.reload(app.utils.redis)
 
-        assert "test_db" in postgre_string, postgre_string
-        print(postgre_string)
-        # Import your FastAPI application
+        populate_db(postgresql)
+
         from app.api import app
 
         yield TestClient(app)
-        # teardown_stuff
-        from app.utils.pgdb import pool
-
-        pool.close()
-        del pool
-        time.sleep(6.0)
-        conn = psycopg.connect(
-            postgre_setting_string,
-            autocommit=True,
-        )
-        cur = conn.cursor()
-        cur.execute("""SELECT pg_terminate_backend(pid)
-                        FROM pg_stat_activity
-                        WHERE datname = 'test_db';""")
-        cur.execute("DROP DATABASE IF EXISTS test_db")
 
 
 @fixture(scope="function")
-def logged(application: Generator[TestClient, Any, None]) -> Generator[dict[str, str], Any, None]:
+def logged(application: TestClient) -> Generator[dict[str, str], Any, None]:
     response = application.post(
         "/api/v1/token",
         data={"username": "admin@admin.fr", "password": "admin"},
