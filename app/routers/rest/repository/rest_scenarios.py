@@ -182,7 +182,6 @@ async def update_scenario(
         result = await db_update_scenario(
             project_name,
             scenario,
-            is_deleted=False,
             name=scenario_update.name,
             tags=scenario_update.tags,
             steps=scenario_update.steps,

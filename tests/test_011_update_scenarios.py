@@ -35,3 +35,12 @@ def test_update_scenario_no_auth(application):
         json={"name": "New name"},
     )
     assert response.status_code == 401
+
+
+def test_update_scenario_no_params(application, logged):
+    response = application.put(
+        "/api/v1/projects/default/epics/default/features/default/scenarios/default",
+        headers=logged,
+        json={},
+    )
+    assert response.status_code == 422

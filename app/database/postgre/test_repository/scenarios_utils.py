@@ -218,18 +218,35 @@ async def db_get_scenario_from_partial(
 async def db_update_scenario(
     project_name: str,
     scenario: BaseScenario | ApplicationError,
-    is_deleted: bool,
+    is_deleted: bool = None,
     name: str = None,
     tags: str = None,
     steps: str = None,
 ) -> ApplicationError | None:
-    """Update a unique scenario in database"""
+    """Update a unique scenario in database
+    Args:
+        project_name: The name of the project.
+        scenario: The scenario to update.
+        is_deleted: A boolean indicating if the scenario is deleted.
+        name: The new name of the scenario.
+        tags: The new tags of the scenario.
+        steps: The new steps of the scenario.
+    """
     if isinstance(scenario, ApplicationError):
         return scenario
 
-    set_clause = ["is_deleted = %s"]
-    parameters = [is_deleted]
+    if is_deleted is None and name is None and tags is None and steps is None:
+        return ApplicationError(
+            error=ApplicationErrorCode.value_error,
+            message="At least one of is_deleted, name, tags, or steps must be provided.",
+        )
 
+    set_clause = []
+    parameters = []
+
+    if is_deleted is not None:
+        set_clause.append("is_deleted = %s")
+        parameters.append(is_deleted)
     if name is not None:
         set_clause.append("name = %s")
         parameters.append(name)
