@@ -12,12 +12,12 @@ logger = getLogger(__name__)
 
 class OAuth2PasswordBearerWithCookie(OAuth2):
     def __init__(
-        self,
+        self: "OAuth2PasswordBearerWithCookie",
         token_url: str,
         scheme_name: Optional[str] = None,
         scopes: Optional[Dict[str, str]] = None,
         auto_error: bool = True,
-    ):
+    ) -> None:
         if not scopes:
             scopes = {}
         flows = OAuthFlowsModel(password={"tokenUrl": token_url, "scopes": scopes})

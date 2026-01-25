@@ -2,7 +2,7 @@
 # -*- Author: E.Aivayan -*-
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from app.schema.base_schema import ExtendedBaseModel
 from app.schema.postgres_enums import ScenarioStatusEnum, TestResultStatusEnum
@@ -76,7 +76,7 @@ class Scenarios(ExtendedBaseModel):
         return set(scenario_id) - {scenario.scenario_id for scenario in self.scenarios}
 
 
-class UpdateScenario(ExtendedBaseModel):
+class UpdateScenario(ExtendedBaseModel, extra="forbid"):
     """
     Attributes:
         name: Optional str defaulted to None
@@ -87,3 +87,10 @@ class UpdateScenario(ExtendedBaseModel):
     name: Optional[str] = None
     tags: Optional[str] = None
     steps: Optional[str] = None
+
+    @model_validator(mode="before")
+    def check_at_least_one(cls, update_scenario: "UpdateScenario"):  # noqa: ANN101, ANN201
+        keys = ("name", "tags", "steps")
+        if all(update_scenario.get(key) is None for key in keys):
+            raise ValueError(f"UpdateScenario must have at least one key of '{keys}'")
+        return update_scenario

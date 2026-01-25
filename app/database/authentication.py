@@ -2,12 +2,13 @@
 # -*- Author: E.Aivayan -*-
 import logging
 
-from jwt import decode, encode
+from jwt import encode
 
 from app import conf
 from app.database.postgre.pg_users import get_user, update_user_password
 from app.database.redis.token_management import register_connection, revoke
 from app.database.utils.password_management import generate_keys, verify_password
+from app.database.utils.token import token_user
 from app.schema.authentication import TokenData
 from app.schema.users import UpdateUser, User
 
@@ -40,5 +41,4 @@ def create_access_token(data: TokenData) -> str:
 
 
 def invalidate_token(token: str | bytes) -> None:
-    payload = decode(token, conf.PUBLIC_KEY, algorithms=[conf.ALGORITHM])
-    revoke(payload.get("sub"))
+    revoke(token_user(token))

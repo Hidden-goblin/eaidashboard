@@ -18,10 +18,16 @@ from pytest import fixture
 from starlette.responses import Response
 from starlette.testclient import TestClient
 
+from tests.utils.context_manager import Context
+
 
 def pytest_unconfigure(config) -> None:  # noqa: ANN001
     os.environ.pop("PG_DB")
 
+@fixture(autouse=True, scope="session")
+def context_manager():
+    context = Context()
+    yield context
 
 @fixture(autouse=True, scope="session")
 def application() -> Generator[TestClient, Any, None]:
@@ -58,18 +64,39 @@ def application() -> Generator[TestClient, Any, None]:
         cur.execute("DROP DATABASE IF EXISTS test_db")
 
 
-@fixture(scope="session")
-def logged(application: Generator[TestClient, Any, None]) -> Generator[dict[str, str], Any, None]:
+@fixture(scope="function")
+def logged_setting(application: Generator[TestClient, Any, None]) -> Generator[dict[str, str], Any, None]:
     response = application.post(
         "/api/v1/token",
         data={"username": "admin@admin.fr", "password": "admin"},
     )
     token = response.json()["access_token"]
     yield {"Authorization": f"Bearer {token}"}
+    # yield
     application.delete(
         "/api/v1/token",
         headers={"Authorization": f"Bearer {token}"},
     )
+    application.cookies.set("access_token", "")
+
+@fixture(scope="module")
+def logged_setting(application: Generator[TestClient, Any, None]) -> Generator[dict[str, str], Any, None]:
+    response = application.post(
+        "/api/v1/token",
+        data={"username": "admin@admin.fr", "password": "admin"},
+    )
+    token = response.json()["access_token"]
+    yield  {"Authorization": f"Bearer {token}"}
+    application.delete(
+        "/api/v1/token",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    application.cookies.set("access_token", "")
+
+@fixture(autouse=True)
+def clean_request(application):
+    yield
+    application.cookies.clear()
 
 
 def error_message_extraction(error_messages: List[dict] | dict) -> List[dict] | dict:
@@ -112,11 +139,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-from dotenv import load_dotenv
-
-
 def pytest_configure(config: Config) -> None:
-    load_dotenv("tests/.env")
     print("Setting environment data")
     os.environ["PG_DB"] = "test_db"
 

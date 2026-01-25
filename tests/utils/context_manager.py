@@ -31,3 +31,6 @@ class Context:
     def get_context(self: "Context", path: str) -> int | str | bool | dict | list:
         """Retrieve a value from context"""
         return dpath.get(self.__context, path, default=None)
+
+    def reset(self: "Context") -> None:
+        self.__context = {}

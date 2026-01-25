@@ -79,7 +79,16 @@ async def expire_access_token(
 ) -> Response:
     try:
         invalidate_token(token)
-        return Response(status_code=204)
+        resp = Response(status_code=204)
+        resp.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
+        return resp
     except DecodeError as ve:
         log_error(repr(ve))
         raise HTTPException(401, detail="JWT error") from ve

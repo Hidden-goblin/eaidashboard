@@ -27,3 +27,4 @@ def log_out(
     response = application.delete("/api/v1/token", headers=header)
     if response.status_code != 204:
         raise Exception(response.text)
+    application.cookies.set("access_token", "")

@@ -2,11 +2,10 @@
 # -*- Author: E.Aivayan -*-
 import re
 from logging import getLogger
-from typing import Optional
 
 import jwt.exceptions
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+from fastapi.security import SecurityScopes
 from starlette import status
 from starlette.requests import Request
 
@@ -58,13 +57,9 @@ def __generic_authorization(
     try:
         # Authorize method
         # Token contains the username
-        if token and isinstance(token, str) and token.startswith("Bearer "):
-            token = token.split(" ", 1)[1]
-
         email = token_user(token)
         if email is None:
             raise credentials_exception
-
         # Check user in db
         user = get_user(email, True)
         if user is None:
