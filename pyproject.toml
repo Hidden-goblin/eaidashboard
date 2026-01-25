@@ -63,6 +63,7 @@ markdown = "*"
 prometheus-fastapi-instrumentator = "*"
 psutil = "*"
 prometheus-client = "*"
+pip = "^25.3"
 pluggy = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]

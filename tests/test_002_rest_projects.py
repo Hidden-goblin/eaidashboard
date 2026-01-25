@@ -22,9 +22,10 @@ def _setup(
     application.cookies.set("access_token", "")
     yield
 
+
 def test_get_projects(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects",
@@ -33,12 +34,12 @@ def test_get_projects(
     assert response.status_code == 200
     projects = [pjt["name"] for pjt in response.json()]
     # Inclusion assertion - created as prerequisite included in retrieved
-    assert all(name in projects  for name in ["test", "test_users", "test_users2"]), f"Retrieved {projects}"
+    assert all(name in projects for name in ["test", "test_users", "test_users2"]), f"Retrieved {projects}"
 
 
 def test_get_projects_limit(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects",
@@ -55,7 +56,7 @@ limit_outbound = [(-4, -2, "OFFSET must not be negative"), (4, -2, "LIMIT must n
 @pytest.mark.parametrize("skip,limit,message", limit_outbound)
 def test_get_projects_limit_outbound(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     skip: int,
     limit: int,
     message: str,
@@ -71,7 +72,7 @@ def test_get_projects_limit_outbound(
 
 def test_get_projects_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.projects.get_projects") as rp:
         rp.side_effect = Exception("error")
@@ -84,7 +85,7 @@ def test_get_projects_errors_500(
 
 def test_get_one_project(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/test",
@@ -96,7 +97,7 @@ def test_get_one_project(
 
 def test_get_one_projects_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/unknown",
@@ -107,7 +108,7 @@ def test_get_one_projects_errors_404(
 
 def test_get_one_projects_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.projects.get_project") as rp:
         rp.side_effect = Exception("error")
@@ -131,7 +132,7 @@ def test_create_version_errors_401(
 
 def test_create_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/projects/test/versions",
@@ -144,7 +145,7 @@ def test_create_version(
 
 def test_create_version_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/projects/tests/versions",
@@ -163,7 +164,7 @@ def test_create_version_errors_404(
 )
 def test_create_version_errors_409(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/projects/test/versions",
@@ -182,7 +183,7 @@ def test_create_version_errors_409(
 
 def test_create_version_errors_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/projects/test/versions",
@@ -197,7 +198,7 @@ def test_create_version_errors_422(
 
 def test_create_version_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.version.create_project_version") as rp:
         rp.side_effect = Exception("error")
@@ -212,7 +213,7 @@ def test_create_version_errors_500(
 
 def test_update_version_errors_401(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         "/api/v1/projects/test/versions/1.0.0",
@@ -249,7 +250,7 @@ def test_update_version_errors_401(
 
 def test_get_one_project_with_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/test",
@@ -279,7 +280,7 @@ transition = [
 @pytest.mark.parametrize("status", transition)
 def test_update_versions_transition(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     status: str,
 ) -> None:
     response = application.put("/api/v1/projects/test/versions/1.0.2", json={"status": status}, headers=logged_setting)
@@ -289,7 +290,7 @@ def test_update_versions_transition(
 
 def test_update_versions_empty_payload(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         "/api/v1/projects/test/versions/1.0.2",
@@ -309,7 +310,7 @@ update_errors = [
 @pytest.mark.parametrize("payload,message", update_errors)
 def test_update_versions_400(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     message: str,
 ) -> None:
@@ -324,7 +325,7 @@ def test_update_versions_400(
 
 def test_update_versions_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.version.update_version_data") as rp:
         rp.side_effect = Exception("error")
@@ -339,7 +340,7 @@ def test_update_versions_500(
 
 def test_get_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/test/versions/1.0.1",
@@ -361,7 +362,7 @@ version_errors_404 = [
 @pytest.mark.parametrize("project,version,message", version_errors_404)
 def test_get_version_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     message: str,
@@ -375,7 +376,7 @@ def test_get_version_errors_404(
 
 def test_get_version_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.version.get_version") as rp:
         rp.side_effect = Exception("error")

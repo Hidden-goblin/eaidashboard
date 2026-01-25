@@ -17,7 +17,6 @@ from tests.utils.project_setting import (
     set_project_versions,
 )
 
-
 # noinspection PyUnresolvedReferences
 
 PROJECT_NAME: str = "test_deliverables"
@@ -105,7 +104,10 @@ def test_setup(
 
 
 @pytest.fixture(scope="module")
-def campaign_occurrence(application, logged_setting):
+def campaign_occurrence(  # noqa: ANN201
+    application: Generator[TestClient, Any, None],
+    logged_setting: Generator[dict[str, str], Any, None],
+):
     yield set_project_campaign(
         PROJECT_NAME,
         PROJECT_VERSION,
@@ -116,7 +118,11 @@ def campaign_occurrence(application, logged_setting):
 
 
 @pytest.fixture(scope="module")
-def campaign_scenario_status(application, logged_setting, campaign_occurrence):
+def campaign_scenario_status(  # noqa: ANN201
+    application: Generator[TestClient, Any, None],
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
+):
     set_campaign_scenario_status(
         PROJECT_NAME,
         PROJECT_VERSION,
@@ -129,12 +135,11 @@ def campaign_scenario_status(application, logged_setting, campaign_occurrence):
 
 def test_register_campaign_status(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}",
         headers=logged_setting,
     )
     assert response.status_code == 200, response.text
@@ -150,8 +155,8 @@ campaign_error_404 = [
 @pytest.mark.parametrize("project_name,project_version,campaign_occurrence_type", campaign_error_404)
 def test_register_campaign_status_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-    campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
     project_name: str,
     project_version: str,
     campaign_occurrence_type: int,
@@ -169,14 +174,13 @@ def test_register_campaign_status_error_404(
 
 def test_register_campaign_status_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     with patch("app.routers.rest.project_campaigns.register_manual_campaign_result") as rp:
         rp.side_effect = Exception("Error")
         response = application.post(
-            f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-            f"/{campaign_occurrence}",
+            f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}",
             headers=logged_setting,
         )
         assert response.status_code == 500, response.text
@@ -184,25 +188,23 @@ def test_register_campaign_status_error_500(
 
 def test_register_campaign_status_error_401(
     application: Generator[TestClient, Any, None],
-        campaign_occurrence,
+    campaign_occurrence: int,
 ) -> None:
     application.cookies.set("access_token", "")
     response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}",
     )
     assert response.status_code == 401, response.text
 
 
 def test_get_campaign_results(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     # Default
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
         headers=logged_setting,
     )
     assert response.status_code == 200, response.text
@@ -210,8 +212,7 @@ def test_get_campaign_results(
 
     # Existing file
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
         headers=logged_setting,
     )
     assert response.status_code == 200, response.text
@@ -221,8 +222,8 @@ def test_get_campaign_results(
 @pytest.mark.parametrize("project_name,project_version,campaign_occurrence_type", campaign_error_404)
 def test_get_campaign_results_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
     project_name: str,
     project_version: str,
     campaign_occurrence_type: int,
@@ -240,26 +241,24 @@ def test_get_campaign_results_error_404(
 
 def test_get_campaign_results_error_401(
     application: Generator[TestClient, Any, None],
-        campaign_occurrence,
+    campaign_occurrence: int,
 ) -> None:
     application.cookies.set("access_token", "")
     # Default
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
     )
     assert response.status_code == 401, response.text
 
 
 def test_get_campaign_results_error_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     # Passing case
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
         params={"deliverable_type": DeliverableTypeEnum.EVIDENCE.value, "ticket_ref": "td-001"},
         headers=logged_setting,
     )
@@ -267,8 +266,7 @@ def test_get_campaign_results_error_422(
 
     # Error case
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
         params={"deliverable_type": "test", "ticket_ref": "td-001"},
         headers=logged_setting,
     )
@@ -277,13 +275,12 @@ def test_get_campaign_results_error_422(
 
 def test_get_campaign_results_error_404_specific(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     # Passing case
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}/deliverables",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
         params={"deliverable_type": DeliverableTypeEnum.EVIDENCE.value, "ticket_ref": "td-003"},
         headers=logged_setting,
     )
@@ -292,14 +289,13 @@ def test_get_campaign_results_error_404_specific(
 
 def test_get_campaign_results_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     with patch("app.routers.rest.project_campaigns.rs_retrieve_file") as rp:
         rp.side_effect = Exception("Error")
         response = application.get(
-            f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-            f"/{campaign_occurrence}/deliverables",
+            f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}/deliverables",
             params={"deliverable_type": DeliverableTypeEnum.EVIDENCE.value, "ticket_ref": "td-001"},
             headers=logged_setting,
         )
@@ -308,12 +304,11 @@ def test_get_campaign_results_error_500(
 
 def test_get_asynchronous_status(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        campaign_occurrence,
+    logged_setting: Generator[dict[str, str], Any, None],
+    campaign_occurrence: int,
 ) -> None:
     response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}"
-        f"/{campaign_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION}/{campaign_occurrence}",
         headers=logged_setting,
     )
     response = application.get(

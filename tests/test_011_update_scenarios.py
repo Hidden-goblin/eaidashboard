@@ -5,7 +5,7 @@ from typing import Any, Generator
 import pytest
 from starlette.testclient import TestClient
 
-from tests.utils.project_setting import set_project_repository, set_project
+from tests.utils.project_setting import set_project, set_project_repository
 
 PROJECT_NAME = "test_scenario_update"
 SCENARIO = {
@@ -16,7 +16,7 @@ SCENARIO = {
     "tags": "event, id=test_1",
     "steps": """Given I write a workflow reference
 When I generate the report
-Then The workflow picture is added"""
+Then The workflow picture is added""",
 }
 
 
@@ -40,7 +40,7 @@ def _setup(
 
 def test_update_scenario(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/epics/first_epic/features/New Test feature/scenarios/test_1",
@@ -62,7 +62,7 @@ def test_update_scenario(
 
 def test_update_scenario_not_found(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         "/api/v1/projects/default/epics/default/features/default/scenarios/not-found",
@@ -84,7 +84,7 @@ def test_update_scenario_no_auth(
 
 def test_update_scenario_no_params(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/epics/first_epic/features/New Test feature/scenarios/test_1",

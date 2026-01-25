@@ -50,9 +50,10 @@ def _setup(
     application.cookies.set("access_token", "")
     yield
 
+
 def test_get_campaigns(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -64,7 +65,7 @@ def test_get_campaigns(
 
 def test_get_campaigns_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # project not found
     response = application.get(
@@ -84,7 +85,7 @@ def test_get_campaigns_errors_404(
 
 def test_get_campaigns_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.project_campaigns.retrieve_campaign") as rp:
         rp.side_effect = Exception("error")
@@ -109,7 +110,7 @@ def test_create_campaigns_errors_401(
 
 def test_create_campaigns(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -138,7 +139,7 @@ payload_error_422 = [
 @pytest.mark.parametrize("payload,message", payload_error_422)
 def test_create_campaigns_errors_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     message: dict,
 ) -> None:
@@ -153,7 +154,7 @@ def test_create_campaigns_errors_422(
 
 def test_create_campaigns_errors_404_project(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/projects/unknown_project/campaigns",
@@ -165,7 +166,7 @@ def test_create_campaigns_errors_404_project(
 
 def test_create_campaigns_errors_404_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -177,7 +178,7 @@ def test_create_campaigns_errors_404_version(
 
 def test_create_campaigns_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.project_campaigns.create_campaign") as rp:
         rp.side_effect = Exception("error")
@@ -203,7 +204,7 @@ def test_fill_campaign_errors_401(
 
 def test_fill_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns/{CURRENT_VERSION}/1",
@@ -221,7 +222,7 @@ def test_fill_campaign(
 
 def test_fill_campaign_200_no_error_on_duplicate(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns/{CURRENT_VERSION}/1",
@@ -272,7 +273,7 @@ campaign_error_404 = [
 @pytest.mark.parametrize("project,version,occurrence,ticket, message", campaign_error_404)
 def test_fill_campaign_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     occurrence: int,
@@ -289,7 +290,7 @@ def test_fill_campaign_errors_404(
 
 def test_get_campaigns_with_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -310,7 +311,7 @@ def test_get_campaigns_with_version(
 
 def test_get_campaigns_with_status(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -331,7 +332,7 @@ def test_get_campaigns_with_status(
 
 def test_get_campaigns_with_status_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -355,7 +356,7 @@ def test_get_campaigns_with_status_version(
 
 def test_get_campaigns_with_status_no_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -368,7 +369,7 @@ def test_get_campaigns_with_status_no_campaign(
 
 def test_get_campaigns_with_version_no_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns",
@@ -388,7 +389,7 @@ status_version_param = [
 @pytest.mark.parametrize("status,version,status_code,payload", status_version_param)
 def test_get_campaigns_with_status_version_no_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     status: str,
     version: str,
     status_code: int,
@@ -408,7 +409,7 @@ def test_get_campaigns_with_status_version_no_campaign(
 
 def test_get_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/campaigns/{CURRENT_VERSION}/1",
@@ -435,7 +436,7 @@ get_campaign_errors_404 = [
 @pytest.mark.parametrize("project,version,occurrence,message", get_campaign_errors_404)
 def test_get_campaign_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     occurrence: int,
@@ -450,7 +451,7 @@ def test_get_campaign_errors_404(
 
 def test_get_campaign_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.project_campaigns.get_campaign_content") as rp:
         rp.side_effect = Exception("error")
@@ -510,7 +511,7 @@ patch_campaign_params = [
 @pytest.mark.parametrize("payload,result", patch_campaign_params)
 def test_patch_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     result: dict,
 ) -> None:
@@ -554,7 +555,7 @@ patch_campaign_422 = [
 @pytest.mark.parametrize("payload,result", patch_campaign_422)
 def test_patch_campaign_errors_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     result: list,
 ) -> None:
@@ -577,7 +578,7 @@ patch_campaign_404 = [
 @pytest.mark.parametrize("PROJECT_NAME,version,occurrence", patch_campaign_404)
 def test_patch_campaign_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     PROJECT_NAME: str,
     version: str,
     occurrence: int,
@@ -592,7 +593,7 @@ def test_patch_campaign_error_404(
 
 def test_patch_campaign_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.project_campaigns.pg_update_campaign_occurrence") as rp:
         rp.return_value = ApplicationError(error=ApplicationErrorCode.database_no_update, message="No update")

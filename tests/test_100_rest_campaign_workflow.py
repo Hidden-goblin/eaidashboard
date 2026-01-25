@@ -1,5 +1,6 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
+from dataclasses import dataclass
 from random import choice
 from typing import Any, Generator
 
@@ -11,7 +12,6 @@ from tests.utils.api_model import (
     log_in,
     log_out,
 )
-from tests.utils.context_manager import Context
 from tests.utils.project_setting import (
     set_project,
     set_project_campaign,
@@ -20,7 +20,6 @@ from tests.utils.project_setting import (
     set_project_users,
     set_project_versions,
 )
-
 
 # noinspection PyUnresolvedReferences
 
@@ -146,14 +145,18 @@ USERS = [
     ALFRED,
 ]
 
-current_campaign_occurrence = None
-context: Context = Context()
+
+@dataclass
+class ScenarioAndBugIds:
+    scenario_internal_id: int
+    bug_internal_id: int
+    ticket_reference: str
 
 
 @pytest.fixture(scope="module", autouse=True)
 def _setup(
     application: Generator[TestClient, Any, None],
-    logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     """setup any state specific to the execution of the given class (which
     usually contains tests).
@@ -194,9 +197,9 @@ def _setup(
 
 
 @pytest.fixture(scope="module")
-def current_campaign_occurrence(
-    application,
-    logged_setting,
+def current_campaign_occurrence(  # noqa: ANN201
+    application: Generator[TestClient, Any, None],
+    logged_setting: Generator[dict[str, str], Any, None],
 ):
     # Create campaign for current version
     yield set_project_campaign(
@@ -208,9 +211,9 @@ def current_campaign_occurrence(
     )
 
 
-def test_retrieve_campaign_and_snapshot(
+def test_complete_campaign_workflow(
     application: Generator[TestClient, Any, None],
-    current_campaign_occurrence,
+    current_campaign_occurrence: int,
 ) -> None:
     """
     - log in as admin
@@ -218,14 +221,30 @@ def test_retrieve_campaign_and_snapshot(
     - snapshot the status
     - log out
     """
+    # Admin Snapshot initial status
+    _snapshot_initial_campaign_status(application, current_campaign_occurrence)
+
+    # Tester executes tests
+    test_and_bug_ids = _tester_execute_tests(application, current_campaign_occurrence)
+
+    # Admin checks bug-scenario link
+    _admin_check_bug_scenario_link(application, current_campaign_occurrence, test_and_bug_ids)
+
+    test_results = _tester_complete_the_testing_day(application, current_campaign_occurrence)
+
+    _test_manager_report_campaign_advancement(application, current_campaign_occurrence, test_results)
+
+
+def _snapshot_initial_campaign_status(
+    application: Generator[TestClient, Any, None],
+    current_campaign_occurrence: int,
+) -> None:
     header = log_in(
         ALFRED,
         application,
     )
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}"
-        f"/campaigns/{PROJECT_VERSION['current']}"
-        f"/{current_campaign_occurrence}/tickets",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION['current']}/{current_campaign_occurrence}/tickets",
         headers=header,
     )
     assert response.status_code == 200
@@ -237,9 +256,7 @@ def test_retrieve_campaign_and_snapshot(
     assert all(item in tickets for item in ["ref-001", "ref-002"])
 
     response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}"
-        f"/campaigns/{PROJECT_VERSION['current']}"
-        f"/{current_campaign_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION['current']}/{current_campaign_occurrence}",
         headers=header,
     )
     assert response.status_code == 200
@@ -251,10 +268,10 @@ def test_retrieve_campaign_and_snapshot(
 
 
 # Process test, record bug, link test to bug
-def test_workflow_test_and_record_bug(
+def _tester_execute_tests(
     application: Generator[TestClient, Any, None],
-        current_campaign_occurrence,
-) -> None:
+    current_campaign_occurrence: int,
+) -> ScenarioAndBugIds:
     """- log in as user
     - retrieve the test evidence for one ticket
     - Update the status of one test to "waiting fix"
@@ -307,14 +324,7 @@ def test_workflow_test_and_record_bug(
         params={"new_status": "waiting fix"},
     )
     assert response.status_code == 200, response.text
-    TestRestCampaignWorkflow.context.set_context(
-        f"scenarios_result/{scenario_internal_id}",
-        "waiting fix",
-    )
-    TestRestCampaignWorkflow.context.set_context(
-        "scenario_tech_id",
-        scenario_internal_id,
-    )
+
     # Create bug with link
     response = application.post(
         f"api/v1/projects/{PROJECT_NAME}/bugs",
@@ -335,22 +345,18 @@ def test_workflow_test_and_record_bug(
     )
 
     assert response.status_code == 201, response.text
-    TestRestCampaignWorkflow.context.set_context(
-        "bugs",
-        {
-            "ticket_reference": "ref-002",
-            "scenario_tech_id": scenario_internal_id,
-            "bug_id": response.json()["inserted_id"],
-        },
-    )
+
     log_out(
         header,
         application,
     )
+    return ScenarioAndBugIds(scenario_internal_id, response.json()["inserted_id"], "ref-002")
 
 
-def test_check_bugs_in_the_version(
+def _admin_check_bug_scenario_link(
     application: Generator[TestClient, Any, None],
+    current_campaign_occurrence: int,
+    scenario_bug_ids: ScenarioAndBugIds,
 ) -> None:
     """- log in as admin
     - retrieve bugs
@@ -372,7 +378,7 @@ def test_check_bugs_in_the_version(
     )
     assert response.status_code == 200, response.text
     assert any(
-        elem[1] == TestRestCampaignWorkflow.context.get_context("bugs/bug_id")
+        elem[1] == scenario_bug_ids.bug_internal_id
         for elem in dpath.search(
             response.json(),
             "*/internal_id",
@@ -380,14 +386,14 @@ def test_check_bugs_in_the_version(
         )
     ), response.text
     response = application.get(
-        f"api/v1/projects/{PROJECT_NAME}/bugs/{TestRestCampaignWorkflow.context.get_context('bugs/bug_id')}",
+        f"api/v1/projects/{PROJECT_NAME}/bugs/{scenario_bug_ids.bug_internal_id}",
         headers=header,
     )
     assert response.status_code == 200, response.text
     assert {
-        "ticket_reference": TestRestCampaignWorkflow.context.get_context("bugs/ticket_reference"),
-        "scenario_tech_id": TestRestCampaignWorkflow.context.get_context("bugs/scenario_tech_id"),
-        "occurrence": TestRestCampaignWorkflow.current_campaign_occurrence,
+        "ticket_reference": scenario_bug_ids.ticket_reference,
+        "scenario_tech_id": scenario_bug_ids.scenario_internal_id,
+        "occurrence": current_campaign_occurrence,
     } in response.json()["related_to"], response.text
 
     log_out(
@@ -396,9 +402,10 @@ def test_check_bugs_in_the_version(
     )
 
 
-def test_complete_the_testing_day(
+def _tester_complete_the_testing_day(
     application: Generator[TestClient, Any, None],
-) -> None:
+    current_campaign_occurrence: int,
+) -> dict:
     """- log in as user
     - update the remaining scenario status
     - create the snapshot of the current campaign status
@@ -411,34 +418,29 @@ def test_complete_the_testing_day(
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}"
         f"/campaigns/{PROJECT_VERSION['current']}"
-        f"/{TestRestCampaignWorkflow.current_campaign_occurrence}"
+        f"/{current_campaign_occurrence}"
         f"/tickets/ref-001",
         headers=header,
     )
     assert response.status_code == 200
-
-    for _, _scenario_id in dpath.search(response.json(), "*/internal_id", yielded=True):
+    scenario_results = {}
+    for _, _scenario_id in dpath.search(response.json(), "*/scenario_tech_id", yielded=True):
         # Update status
         _new_status = choice(["cancelled", "done"])
         resp = application.put(
             f"api/v1/projects/{PROJECT_NAME}"
             f"/campaigns/{PROJECT_VERSION['current']}"
-            f"/{TestRestCampaignWorkflow.current_campaign_occurrence}"
+            f"/{current_campaign_occurrence}"
             f"/tickets/ref-001"
             f"/scenarios/{_scenario_id}/status",
             headers=header,
             params={"new_status": _new_status},
         )
-        TestRestCampaignWorkflow.context.set_context(
-            f"scenarios_result/{_scenario_id}",
-            _new_status,
-        )
+        scenario_results[_scenario_id] = _new_status
         assert resp.status_code == 200, resp.text
 
     response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}"
-        f"/campaigns/{PROJECT_VERSION['current']}"
-        f"/{TestRestCampaignWorkflow.current_campaign_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{PROJECT_VERSION['current']}/{current_campaign_occurrence}",
         headers=header,
     )
     assert response.status_code == 200
@@ -447,10 +449,13 @@ def test_complete_the_testing_day(
         header,
         application,
     )
+    return scenario_results
 
 
-def test_test_manager_report_campaign_advancement(
+def _test_manager_report_campaign_advancement(
     application: Generator[TestClient, Any, None],
+    current_campaign_occurrence: int,
+    scenario_results: dict,
 ) -> None:
     """- log in as admin
     - retrieve campaign testing status
@@ -469,7 +474,7 @@ def test_test_manager_report_campaign_advancement(
             "category": "scenarios",
             "rendering": "map",
             "version": "1.0",
-            "campaign_occurrence": TestRestCampaignWorkflow.current_campaign_occurrence,
+            "campaign_occurrence": current_campaign_occurrence,
         },
     )
 
@@ -484,15 +489,14 @@ def test_test_manager_report_campaign_advancement(
                 return "skipped"
 
     assert response.status_code == 200, response.text
+    # Transform {element_id: [], element_status:[]} to [[elem1, status1],[elem2,status2]...]
     test_results = list(zip(response.json().get("element_id"), response.json().get("element_status")))
+    # 2 run on 3 scenarios
     assert len(test_results) == 6, f"{test_results}"
+
+    # 1st 3 results are before testing
     assert all(item[1] == "skipped" for index, item in enumerate(test_results) if index <= 2), test_results
-    assert test_results[3][1] == simple_cast(
-        TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[3][0]}")
-    ), f"{TestRestCampaignWorkflow.context}"
-    assert test_results[4][1] == simple_cast(
-        TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[4][0]}")
-    ), TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[4][0]}")
-    assert test_results[5][1] == simple_cast(
-        TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[5][0]}")
-    ), TestRestCampaignWorkflow.context.get_context(f"scenarios_result/{test_results[5][0]}")
+
+    # Validate that the random result are present
+    for key, value in scenario_results.items():
+        assert (key, simple_cast(value)) in test_results[3:], f"{test_results}"

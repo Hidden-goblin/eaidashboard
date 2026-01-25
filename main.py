@@ -104,6 +104,7 @@ if __name__ == "__main__":
         cert_path, key_path = generate_self_signed_cert(hostname="localhost")
         temp_files.extend([cert_path, key_path])
         ssl_param = {"ssl_certfile": cert_path, "ssl_keyfile": key_path}
+
         # Ensure cleanup on exit
         def _cleanup_temp_files() -> None:
             for p in temp_files:

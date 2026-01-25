@@ -6,7 +6,6 @@ import dpath
 import pytest
 from starlette.testclient import TestClient
 
-from tests.utils.context_manager import Context
 from tests.utils.project_setting import (
     set_campaign_scenario_status,
     set_project,
@@ -15,7 +14,6 @@ from tests.utils.project_setting import (
     set_project_tickets,
     set_project_versions,
 )
-
 
 # noinspection PyUnresolvedReferences
 
@@ -77,11 +75,12 @@ SCENARIOS_STATUS = [
     },
 ]
 
+
 @pytest.fixture(scope="module", autouse=True)
 def test_setup(
     application: Generator[TestClient, Any, None],
     logged_setting: Generator[dict[str, str], Any, None],
-        context_manager,
+    context_manager,  # noqa: ANN001
 ) -> None:
     set_project(
         PROJECT_NAME,
@@ -129,14 +128,14 @@ def test_setup(
         logged_setting,
     )
 
+
 @pytest.fixture()
 def scenario_tech_id(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/"
-        f"features/Test feature/scenarios/t_test_1",
+        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios/t_test_1",
         headers=logged_setting,
     )
     assert response.status_code == 200, f"{response.text}, {logged_setting}"
@@ -146,7 +145,7 @@ def scenario_tech_id(
 
 def test_get_scenarios_from_feature(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios",
@@ -175,7 +174,7 @@ project_epic_feature_not_found = [
 @pytest.mark.parametrize("project_name,epic_ref,feature_ref", project_epic_feature_not_found)
 def test_get_scenarios_from_feature_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
     epic_ref: str,
     feature_ref: str,
@@ -192,8 +191,7 @@ def test_get_scenario_from_feature_error_401(
 ) -> None:
     application.cookies.set("access_token", "")
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/"
-        f"features/Test feature/scenarios/t_test_1",
+        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios/t_test_1",
     )
     assert response.status_code == 401, response.text
 
@@ -209,7 +207,7 @@ project_epic_feature_scenario_not_found = [
 @pytest.mark.parametrize("project_name,epic_ref,feature_ref,scenario_ref", project_epic_feature_scenario_not_found)
 def test_get_scenario_from_feature_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
     epic_ref: str,
     feature_ref: str,
@@ -222,17 +220,13 @@ def test_get_scenario_from_feature_error_404(
     assert response.status_code == 404, response.text
 
 
-
-
 def test_get_scenario_from_feature_with_tech_id(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        scenario_tech_id,
+    logged_setting: Generator[dict[str, str], Any, None],
+    scenario_tech_id: int,
 ) -> None:
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/"
-        f"features/Test feature"
-        f"/scenarios/{scenario_tech_id}",
+        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios/{scenario_tech_id}",
         headers=logged_setting,
         params={"technicalId": True},
     )
@@ -242,7 +236,7 @@ def test_get_scenario_from_feature_with_tech_id(
 
 def test_get_scenario_from_feature_with_tech_id_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios/10000",
@@ -255,7 +249,7 @@ def test_get_scenario_from_feature_with_tech_id_error_404(
 @pytest.mark.parametrize("project_name,epic_ref,feature_ref,scenario_ref", project_epic_feature_scenario_not_found)
 def test_delete_scenario_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
     epic_ref: str,
     feature_ref: str,
@@ -274,8 +268,7 @@ def test_delete_scenario_error_401(
 ) -> None:
     application.cookies.set("access_token", "")
     response = application.delete(
-        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/"
-        f"features/Test feature/scenarios/t_test_1",
+        f"/api/v1/projects/{PROJECT_NAME}/epics/second_epic/features/Test feature/scenarios/t_test_1",
     )
 
     assert response.status_code == 401, response.text
@@ -283,7 +276,7 @@ def test_delete_scenario_error_401(
 
 def test_delete_scenario(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.delete(
         f"/api/v1/projects/{PROJECT_NAME}/epics/first_epic/features/Test feature/scenarios/test_2",
@@ -295,7 +288,7 @@ def test_delete_scenario(
 
 def test_deleted_scenario_cannot_be_requested(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Deleted scenario cannot be requested repository, feature' scenarios
     response = application.get(
@@ -307,7 +300,7 @@ def test_deleted_scenario_cannot_be_requested(
 
 def test_deleted_scenario_cannot_be_in_new_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Deleted scenario cannot be added to new campaign
     # Create new occurrence
@@ -329,13 +322,12 @@ def test_deleted_scenario_cannot_be_in_new_campaign(
 
 def test_deleted_scenario_appear_on_existing_campaign(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        context_manager,
+    logged_setting: Generator[dict[str, str], Any, None],
+    context_manager,  # noqa: ANN001
 ) -> None:
     _occurrence = context_manager.get_context(f"campaign/{CURRENT_VERSION}/occurrence")
     response = application.get(
-        f"/api/v1/projects/{PROJECT_NAME}/campaigns/"
-        f"{CURRENT_VERSION}/{_occurrence}",
+        f"/api/v1/projects/{PROJECT_NAME}/campaigns/{CURRENT_VERSION}/{_occurrence}",
         headers=logged_setting,
     )
     assert response.status_code == 200, response.text

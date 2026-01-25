@@ -28,6 +28,6 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
             authorization: str = request.headers.get("Authorization")
         else:
             authorization: str = request.cookies.get("access_token")
-        logger.debug(f"access_token is { authorization}")
+        logger.debug(f"access_token is {authorization}")
 
         return authorization

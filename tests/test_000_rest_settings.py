@@ -9,14 +9,12 @@ from starlette.testclient import TestClient
 
 # noinspection PyUnresolvedReferences
 
+
 @pytest.mark.path("/authentication")
 @pytest.mark.tags("authentication", "error", "422", "401")
-@pytest.mark.test_steps(
-    "Given 'test' user doesn't exist", "When 'test' logs in", "Then 'test' user get a 401 error"
-)
+@pytest.mark.test_steps("Given 'test' user doesn't exist", "When 'test' logs in", "Then 'test' user get a 401 error")
 @pytest.mark.description("Check log bad request and unauthorized")
 def test_log_in_errors(
-
     application: Generator[TestClient, Any, None],
 ) -> None:
     response = application.post("/api/v1/token")
@@ -28,14 +26,12 @@ def test_log_in_errors(
     )
     assert response.status_code == 401
 
+
 @pytest.mark.path("/authentication")
 @pytest.mark.tags("authentication", "mandatory")
-@pytest.mark.test_steps(
-    "Given 'admin' user doe exist", "When 'admin' logs in", "Then 'admin' user get a 200 response"
-)
+@pytest.mark.test_steps("Given 'admin' user doe exist", "When 'admin' logs in", "Then 'admin' user get a 200 response")
 @pytest.mark.description("Unupdated admin can log in")
 def test_log_in_success(
-
     application: Generator[TestClient, Any, None],
 ) -> None:
     # Assert success
@@ -44,6 +40,7 @@ def test_log_in_success(
         data={"username": "admin@admin.fr", "password": "admin"},
     )
     assert response.status_code == 200, response.text
+
 
 @pytest.mark.path("/authentication")
 @pytest.mark.tags("authentication", "error", "401")
@@ -56,7 +53,6 @@ def test_log_in_success(
 )
 @pytest.mark.description("Cannot log off without token")
 def test_log_out_error(
-
     application: Generator[TestClient, Any, None],
 ) -> None:
     # Prepare
@@ -77,6 +73,7 @@ def test_log_out_error(
     # Assert
     assert response.status_code == 401
 
+
 @pytest.mark.path("/authentication")
 @pytest.mark.tags("authentication", "mandatory")
 @pytest.mark.test_steps(
@@ -87,7 +84,6 @@ def test_log_out_error(
 )
 @pytest.mark.description("Check success logg out request")
 def test_log_out_success(
-
     application: Generator[TestClient, Any, None],
 ) -> None:
     # Prepare
@@ -106,6 +102,7 @@ def test_log_out_success(
     # Assert
     assert response.status_code == 204, response.text
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.test_steps(
     "Given 'admin' is logged in", "When 'admin' requests the project list", "Then 'admin' retrieve a list"
@@ -113,9 +110,8 @@ def test_log_out_success(
 @pytest.mark.tags("projects", "mandatory")
 @pytest.mark.description("Simple setting route validation, no content validation")
 def test_registered_projects_200(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Action
     response = application.get(
@@ -127,6 +123,7 @@ def test_registered_projects_200(
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "authorization", "error", "401")
 @pytest.mark.test_steps(
@@ -135,9 +132,8 @@ def test_registered_projects_200(
     "Then 'admin' get '401' status code",
 )
 def test_authorization_error_no_email(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.database.authorization.token_user") as rp:
         rp.return_value = None
@@ -146,6 +142,7 @@ def test_authorization_error_no_email(
             headers=logged_setting,
         )
         assert response.status_code == 401, response.text
+
 
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "authorization", "error", "401")
@@ -157,9 +154,8 @@ def test_authorization_error_no_email(
 )
 # TODO: review this case as it doesn't make sense for admin
 def test_authorization_error_user_not_found(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.database.authorization.get_user") as rp:
         rp.return_value = None
@@ -168,6 +164,7 @@ def test_authorization_error_user_not_found(
             headers=logged_setting,
         )
         assert response.status_code == 401, response.text
+
 
 @pytest.mark.path("/projects/management")
 @pytest.mark.test_steps(
@@ -178,9 +175,8 @@ def test_authorization_error_user_not_found(
 )
 @pytest.mark.tags("error", "401", "projects", "authorization")
 def test_authorization_error_signature_error(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.database.authorization.token_user") as rp:
         rp.side_effect = jwt.InvalidSignatureError("Error")
@@ -189,6 +185,7 @@ def test_authorization_error_signature_error(
             headers=logged_setting,
         )
         assert response.status_code == 401, response.text
+
 
 @pytest.mark.path("/projects/management")
 @pytest.mark.test_steps(
@@ -199,9 +196,8 @@ def test_authorization_error_signature_error(
 )
 @pytest.mark.tags("projects", "error", "500")
 def test_registered_projects_errors_500(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.settings.settings.registered_projects") as rp:
         rp.side_effect = Exception("error")
@@ -210,6 +206,7 @@ def test_registered_projects_errors_500(
             headers=logged_setting,
         )
         assert response.status_code == 500
+
 
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "create", "mandatory")
@@ -221,9 +218,8 @@ def test_registered_projects_errors_500(
 )
 @pytest.mark.description("Register a new empty project. We add randomness seed to avoid test collision")
 def test_create_projects(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     import random
 
@@ -248,6 +244,7 @@ def test_create_projects(
     )
     assert response.status_code == 200
     assert project_name in response.json(), response.text
+
 
 fail_projects = [
     pytest.param(
@@ -307,13 +304,13 @@ fail_projects = [
     ),
 ]
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "create", "error", "400")
 @pytest.mark.parametrize("project_name", fail_projects)
 def test_create_projects_errors_400(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
 ) -> None:
     response = application.post(
@@ -323,6 +320,7 @@ def test_create_projects_errors_400(
     )
     assert response.status_code == 400
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "creation", "error", "401")
 @pytest.mark.test_steps(
@@ -331,7 +329,6 @@ def test_create_projects_errors_400(
     "Then 'anonymous' gets '401' status code",
 )
 def test_create_projects_errors_401(
-
     application: Generator[TestClient, Any, None],
 ) -> None:
     response = application.post(
@@ -339,6 +336,7 @@ def test_create_projects_errors_401(
         json={"name": "test"},
     )
     assert response.status_code == 401
+
 
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "creation", "error", "409")
@@ -349,9 +347,8 @@ def test_create_projects_errors_401(
     "Then 'admin' gets '409' status code",
 )
 def test_create_projects_errors_409(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/settings/projects",
@@ -371,6 +368,7 @@ def test_create_projects_errors_409(
     )
     assert response.status_code == 409
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "creation", "error", "500")
 @pytest.mark.test_steps(
@@ -380,9 +378,8 @@ def test_create_projects_errors_409(
     "Then 'admin' gets '500' status code",
 )
 def test_create_projects_errors_500(
-
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.settings.settings.register_project") as rp:
         rp.side_effect = Exception("error")

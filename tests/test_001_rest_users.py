@@ -75,7 +75,7 @@ def test_get_users_error_401(
 )
 def test_get_users_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.users.get_users") as rp:
         rp.side_effect = Exception("error")
@@ -95,7 +95,7 @@ def test_get_users_error_500(
 )
 def test_get_users(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get("/api/v1/users", headers=logged_setting)
     assert response.status_code == 200
@@ -113,7 +113,7 @@ def test_get_users(
 )
 def test_get_users_list_1(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get("api/v1/users", headers=logged_setting, params={"is_list": True})
     assert response.status_code == 200, response.text
@@ -178,7 +178,7 @@ payload_error_422 = [
 @pytest.mark.parametrize("payload,loc,message,err_type", payload_error_422)
 def test_create_user_error_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     loc: List,
     message: str,
@@ -203,7 +203,7 @@ def test_create_user_error_422(
 )
 def test_create_user_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Ensure 'unknown' project does not exist
     response = application.get("/api/v1/setting/projects", headers=logged_setting, params={"is_list": True})
@@ -231,7 +231,7 @@ def test_create_user_error_404(
 )
 def test_create_user_error_400(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         "/api/v1/users", json={"username": "test_passwordless@test.fr", "scopes": {"*": "user"}}, headers=logged_setting
@@ -251,7 +251,7 @@ def test_create_user_error_400(
 )
 def test_create_user(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Pre-condition: ensure 'test' user does not exist
     response = application.get("/api/v1/users", headers=logged_setting, params={"is_list": True})
@@ -277,7 +277,7 @@ def test_create_user(
 )
 def test_newly_created_user_can_log_in(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Pre-condition: ensure 'test' user exists
     response = application.get("/api/v1/users", params={"is_list": True}, headers=logged_setting)
@@ -309,7 +309,7 @@ def test_newly_created_user_can_log_in(
 )
 def test_create_user_duplicate_error(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Pre-condition: ensure 'test@test.fr' user exists
     response = application.get("/api/v1/users", params={"is_list": True}, headers=logged_setting)
@@ -360,7 +360,7 @@ def test_update_user_error_401(
 )
 def test_update_user_error_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.patch("/api/v1/users", json={"username": "test@test.fr"}, headers=logged_setting)
     assert response.status_code == 422
@@ -381,7 +381,7 @@ def test_get_user_error_401(
 
 def test_get_user_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get("/api/v1/users/unknown", headers=logged_setting)
     status_404_error_message_check(response, "User 'unknown' is not found.")
@@ -389,7 +389,7 @@ def test_get_user_error_404(
 
 def test_get_user(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get("/api/v1/users/test@test.fr", headers=logged_setting)
     assert response.status_code == 200
@@ -398,7 +398,7 @@ def test_get_user(
 
 def test_update_user(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     user = application.get("/api/v1/users/test@test.fr", headers=logged_setting).json()
     response = application.patch(
@@ -483,7 +483,7 @@ def test_user_scopes_401(
 
 def test_delete_user(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     _users = application.get("/api/v1/users", headers=logged_setting)
     if "test@test.fr" not in [item["username"] for item in _users.json()]:
@@ -499,7 +499,7 @@ def test_delete_user(
 
 def test_delete_user_400_last_super_admin(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Set test so that only one super admin exist
     _users = application.get("/api/v1/users", headers=logged_setting)
@@ -511,9 +511,10 @@ def test_delete_user_400_last_super_admin(
     assert _del_user.status_code == 400
     assert _del_user.json()["detail"] == "Does not match the user management rules"
 
+
 def test_delete_user_400_unknown_user(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     _del_user = application.delete("/api/v1/users/fake@fake.lu", headers=logged_setting)
     assert _del_user.status_code == 400

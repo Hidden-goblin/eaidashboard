@@ -258,7 +258,7 @@ async def db_update_scenario(
         parameters.append(steps)
 
     query = f"""update scenarios as scn
-    set {', '.join(set_clause)}
+    set {", ".join(set_clause)}
     from features as ft
     """
     where_clause = ["scn.feature_id = ft.id", "ft.project_id = %s", "ft.name = %s", "scn.scenario_id = %s"]

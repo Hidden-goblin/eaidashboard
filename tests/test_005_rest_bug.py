@@ -10,7 +10,6 @@ from app.schema.mongo_enums import BugCriticalityEnum
 from app.schema.status_enum import BugStatusEnum
 from tests.conftest import error_message_extraction
 
-
 # noinspection PyUnresolvedReferences
 
 PROJECT_NAME = "test_bug"
@@ -28,7 +27,10 @@ SPECIFIC_BUG = {
 
 
 @pytest.fixture
-def specific_bug(application, logged_setting):
+def specific_bug(
+    application: Generator[TestClient, Any, None],
+    logged_setting: Generator[dict[str, str], Any, None],
+) -> int:
     """
 
     Args:
@@ -104,7 +106,7 @@ def _setup(
 
 def test_get_bugs_from_project(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/bugs",
@@ -116,7 +118,7 @@ def test_get_bugs_from_project(
 
 def test_get_bugs_from_project_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/unknown/bugs",
@@ -128,7 +130,7 @@ def test_get_bugs_from_project_error_404(
 
 def test_get_bugs_from_project_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.bugs.db_g_bugs") as rp:
         rp.side_effect = Exception("error")
@@ -174,7 +176,7 @@ create_error_404 = [
 @pytest.mark.parametrize("project_name,payload,message", create_error_404)
 def test_create_bug_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
     payload: dict,
     message: str,
@@ -219,7 +221,7 @@ payload_error_422 = [
 @pytest.mark.parametrize("payload,message", payload_error_422)
 def test_create_bug_error_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     message: List[dict],
 ) -> None:
@@ -234,7 +236,7 @@ def test_create_bug_error_422(
 
 def test_create_bug_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.bugs.insert_bug") as rp:
         rp.side_effect = Exception("error")
@@ -278,7 +280,7 @@ create_payload = [
 @pytest.mark.parametrize("payload,inserted_id", create_payload)
 def test_create_bug(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     inserted_id: int,
 ) -> None:
@@ -309,7 +311,7 @@ duplicate_error = [
 @pytest.mark.parametrize("payload,message", duplicate_error)
 def test_create_bug_error_409(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     message: str,
 ) -> None:
@@ -355,7 +357,7 @@ populate_bug = [
 @pytest.mark.parametrize("payload", populate_bug)
 def test_create_bug_populate(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
 ) -> None:
     response = application.post(
@@ -368,7 +370,7 @@ def test_create_bug_populate(
 
 def test_get_bugs_from_project_multi_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/bugs",
@@ -380,7 +382,7 @@ def test_get_bugs_from_project_multi_version(
 
 def test_get_bugs_from_specific_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/bugs",
@@ -400,7 +402,7 @@ bugs_project_filter = [
 @pytest.mark.parametrize("payload,count", bugs_project_filter)
 def test_get_bugs_from_version_filter(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     payload: dict,
     count: int,
 ) -> None:
@@ -415,7 +417,7 @@ def test_get_bugs_from_version_filter(
 
 def test_get_bug(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     specific_bug: int,
 ) -> None:
     response = application.get(
@@ -434,7 +436,7 @@ def test_get_bug(
 
 def test_get_bug_internal_id_not_found(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/100",
@@ -447,7 +449,7 @@ def test_get_bug_internal_id_not_found(
 
 def test_get_bug_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/unknown/bugs/1",
@@ -460,7 +462,7 @@ def test_get_bug_error_404(
 
 def test_get_bug_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.bugs.db_get_bug") as rp:
         rp.side_effect = Exception("error")
@@ -495,7 +497,7 @@ update_bug_404 = [
 @pytest.mark.parametrize("project_name,bug_id,payload,message", update_bug_404)
 def test_update_bug_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project_name: str,
     bug_id: str,
     payload: dict,
@@ -513,7 +515,7 @@ def test_update_bug_error_404(
 
 def test_update_bug_error_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/1",
@@ -533,7 +535,7 @@ def test_update_bug_error_422(
 
 def test_update_bug_error_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.bugs.db_update_bugs") as rp:
         rp.side_effect = Exception("error")
@@ -548,7 +550,7 @@ def test_update_bug_error_500(
 
 def test_update_bug(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     specific_bug: int,
 ) -> None:
     response = application.put(
@@ -567,8 +569,8 @@ def test_update_bug(
 
 def test_update_bug_status(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        specific_bug: int,
+    logged_setting: Generator[dict[str, str], Any, None],
+    specific_bug: int,
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/{specific_bug}",
@@ -581,8 +583,8 @@ def test_update_bug_status(
 
 def test_update_bug_status_error(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        specific_bug: int,
+    logged_setting: Generator[dict[str, str], Any, None],
+    specific_bug: int,
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/{specific_bug}",
@@ -594,8 +596,8 @@ def test_update_bug_status_error(
 
 def test_update_bug_status_transition(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        specific_bug: int,
+    logged_setting: Generator[dict[str, str], Any, None],
+    specific_bug: int,
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/{specific_bug}",
@@ -616,8 +618,8 @@ def test_update_bug_status_transition(
 
 def test_update_bug_version_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        specific_bug
+    logged_setting: Generator[dict[str, str], Any, None],
+    specific_bug: int,
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/{specific_bug}",
@@ -626,11 +628,11 @@ def test_update_bug_version_error_404(
     )
     assert response.status_code == 404
 
-def test_update_bug_version(
 
+def test_update_bug_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
-        specific_bug: int
+    logged_setting: Generator[dict[str, str], Any, None],
+    specific_bug: int,
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/bugs/{specific_bug}",

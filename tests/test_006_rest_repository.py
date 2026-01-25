@@ -3,18 +3,17 @@
 from typing import Any, Generator
 
 import pytest
-from behave import fixture
 from starlette.testclient import TestClient
 
 from tests.utils.context_manager import Context
 from tests.utils.project_setting import set_project
-
 
 # noinspection PyUnresolvedReferences
 
 PROJECT_NAME = "test_repository"
 SECOND_PROJECT_NAME = "test.repository"
 context = Context()
+
 
 @pytest.fixture(autouse=True, scope="module")
 def test_setup(
@@ -40,7 +39,7 @@ def test_setup(
 
 def test_upload_repository(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with open("tests/resources/repository_as_csv.csv", "rb") as file:
         response = application.post(
@@ -59,7 +58,7 @@ def test_upload_repository(
 
 def test_upload_repository_error_404_project_not_found(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with open("tests/resources/repository_as_csv.csv", "rb") as file:
         response = application.post(
@@ -72,7 +71,7 @@ def test_upload_repository_error_404_project_not_found(
 
 def test_upload_repository_error_400_malformed_csv(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with open("tests/resources/repository_as_csv_malformed.csv", "rb") as file:
         response = application.post(
@@ -85,15 +84,13 @@ def test_upload_repository_error_401(
     application: Generator[TestClient, Any, None],
 ) -> None:
     with open("tests/resources/repository_as_csv.csv", "rb") as file:
-        response = application.post(
-            f"/api/v1/projects/{PROJECT_NAME}/repository", files={"file": file}
-        )
+        response = application.post(f"/api/v1/projects/{PROJECT_NAME}/repository", files={"file": file})
         assert response.status_code == 401
 
 
 def test_retrieve_repository(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(f"/api/v1/projects/{PROJECT_NAME}/repository", headers=logged_setting)
     assert response.status_code == 200
@@ -101,7 +98,7 @@ def test_retrieve_repository(
 
 def test_retrieve_repository_all_features(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -113,7 +110,7 @@ def test_retrieve_repository_all_features(
 
 def test_retrieve_repository_specific_features(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -125,7 +122,7 @@ def test_retrieve_repository_specific_features(
 
 def test_retrieve_repository_non_existing_specific_features(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -138,7 +135,7 @@ def test_retrieve_repository_non_existing_specific_features(
 
 def test_retrieve_repository_all_scenarios(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -151,7 +148,7 @@ def test_retrieve_repository_all_scenarios(
 
 def test_retrieve_repository_epic_specific_scenarios(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -164,7 +161,7 @@ def test_retrieve_repository_epic_specific_scenarios(
 
 def test_retrieve_repository_feature_specific_scenarios(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -177,7 +174,7 @@ def test_retrieve_repository_feature_specific_scenarios(
 
 def test_retrieve_repository_feature_specific_scenarios_case_sensitive(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/repository",
@@ -190,7 +187,7 @@ def test_retrieve_repository_feature_specific_scenarios_case_sensitive(
 
 def test_retrieve_repository_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get("/api/v1/projects/unknown/repository", headers=logged_setting)
     assert response.status_code == 404
@@ -205,7 +202,7 @@ def test_retrieve_repository_error_401(
 
 def test_retrieve_epics(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(f"/api/v1/projects/{PROJECT_NAME}/epics", headers=logged_setting)
     assert response.status_code == 200
@@ -214,7 +211,7 @@ def test_retrieve_epics(
 
 def test_retrieve_epics_error_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/unknown/epics",
@@ -225,7 +222,7 @@ def test_retrieve_epics_error_404(
 
 def test_retrieve_features(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/epics/first_epic/features",
@@ -239,7 +236,7 @@ def test_retrieve_features(
 
 def test_retrieve_features_error_404_project(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         "/api/v1/projects/unknown/epics/first_epic/features",
@@ -250,7 +247,7 @@ def test_retrieve_features_error_404_project(
 
 def test_retrieve_features_unknown_epic(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/epics/first_epc/features",

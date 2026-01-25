@@ -77,7 +77,7 @@ async def one_user(
     user: User = Security(authorize_user, scopes=["admin"]),
 ) -> UserLight:
     try:
-        if username =="me":
+        if username == "me":
             username = user.username
         _user = get_user(username)
     except Exception as exp:

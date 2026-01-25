@@ -42,7 +42,7 @@ def _setup(
 
 def test_add_ticket(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets",
@@ -73,7 +73,7 @@ ticket_error_404 = [
 @pytest.mark.parametrize("project,version,message", ticket_error_404)
 def test_add_ticket_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     message: str,
@@ -89,7 +89,7 @@ def test_add_ticket_errors_404(
 
 def test_add_ticket_errors_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets",
@@ -105,7 +105,7 @@ def test_add_ticket_errors_422(
 
 def test_add_ticket_errors_409(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets",
@@ -132,7 +132,7 @@ def test_add_ticket_errors_409(
 
 def test_add_ticket_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.tickets.add_ticket") as rp:
         rp.side_effect = Exception("error")
@@ -147,7 +147,7 @@ def test_add_ticket_errors_500(
 
 def test_get_ticket(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets",
@@ -162,7 +162,7 @@ def test_get_ticket(
 @pytest.mark.parametrize("project,version,message", ticket_error_404)
 def test_get_ticket_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     message: str,
@@ -177,7 +177,7 @@ def test_get_ticket_errors_404(
 
 def test_get_ticket_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.tickets.get_tickets") as rp:
         rp.side_effect = Exception("error")
@@ -191,7 +191,7 @@ def test_get_ticket_errors_500(
 
 def test_get_one_ticket(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.get(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets/ref-001",
@@ -230,7 +230,7 @@ one_ticket_error_404 = [
 @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
 def test_get_one_ticket_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     ticket: str,
@@ -246,7 +246,7 @@ def test_get_one_ticket_errors_404(
 
 def test_get_one_ticket_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.tickets.get_ticket") as rp:
         rp.side_effect = Exception("error")
@@ -260,7 +260,7 @@ def test_get_one_ticket_errors_500(
 
 def test_update_ticket(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets/ref-001",
@@ -301,7 +301,7 @@ def test_update_ticket_errors_401(
 @pytest.mark.parametrize("project,version,ticket,message", one_ticket_error_404)
 def test_update_ticket_errors_404(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
     project: str,
     version: str,
     ticket: str,
@@ -318,7 +318,7 @@ def test_update_ticket_errors_404(
 
 def test_update_ticket_move_version(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.post(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets",
@@ -338,7 +338,7 @@ def test_update_ticket_move_version(
 
 def test_update_ticket_errors_404_payload(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     # Set
     set_project_tickets(
@@ -365,7 +365,7 @@ def test_update_ticket_errors_404_payload(
 
 def test_update_ticket_errors_422(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     response = application.put(
         f"/api/v1/projects/{PROJECT_NAME}/versions/1.0.1/tickets/ref-001",
@@ -394,7 +394,7 @@ def test_update_ticket_errors_422(
 
 def test_update_ticket_errors_500(
     application: Generator[TestClient, Any, None],
-        logged_setting,
+    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
     with patch("app.routers.rest.tickets.update_ticket") as rp:
         rp.side_effect = Exception("error")
