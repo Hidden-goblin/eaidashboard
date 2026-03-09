@@ -2,8 +2,13 @@
   <nav class="navbar">
     <!-- Brand & burger -->
     <div class="navbar-left">
-
       <button class="burger" @click="toggleMenu" aria-label="Toggle menu">☰</button>
+      <BaseButton
+          v-if="authStore.isSuperAdmin"
+          @click="createProject"
+          variant="create"
+      >New project
+      </BaseButton>
     </div>
 
     <!-- Right-side Login/Logout buttons -->
@@ -36,14 +41,15 @@
             @click="goToProject"
         >Go to project
         </BaseButton>
+      </div>
 
-        <BaseButton
+      <BaseButton
             v-if="authStore.isSuperAdmin"
             @click="goToAdmin"
             variant="admin"
         >Administration
-        </BaseButton>
-      </div>
+      </BaseButton>
+
     </div>
 
     <!-- Login Modal -->
@@ -51,6 +57,11 @@
         v-if="showLoginModal"
         @login-success="handleLogin"
         @close="showLoginModal = false"
+    />
+    <CreateProjectForm
+      v-if="showCreateProjectModal"
+      @project-created="handleRefreshProject"
+      @close="showCreateProjectModal = false"
     />
   </nav>
 </template>
@@ -65,6 +76,7 @@ import LoginModal from './access/LoginModal.vue';
 import BaseButton from "./utils/BaseButton.vue";
 import {ArrowRightStartOnRectangleIcon, ArrowRightEndOnRectangleIcon} from '@heroicons/vue/20/solid';
 import styles from '../styles/buttons.module.css';
+import CreateProjectForm from "@/components/projects/CreateProjectForm.vue";
 
 // Stores
 const authStore = useAuthStore();
@@ -77,6 +89,7 @@ const router = useRouter();
 const isMenuOpen = ref(false);
 const {showLoginModal} = storeToRefs(authStore);
 const {selectedProject} = storeToRefs(versionStore);
+const showCreateProjectModal = ref(false);
 
 // Methods
 const toggleMenu = () => {
@@ -93,6 +106,15 @@ const goToProject = () => {
 const goToAdmin = () => {
   router.push('/admin');
 };
+
+const handleRefreshProject = () => {
+  authStore.fetchProjects();
+  showCreateProjectModal.value = false;
+};
+
+const createProject = () => {
+  showCreateProjectModal.value = true;
+}
 
 const handleLogin = () => {
   authStore.fetchProjects();
