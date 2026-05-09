@@ -12,8 +12,8 @@ from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authentication import authenticate_user, create_access_token, invalidate_token
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.pg_versions import dashboard as db_dash
+from app.database.postgre.projects.pg_projects import registered_projects
+from app.database.postgre.versions.pg_versions import dashboard as db_dash
 from app.schema.authentication import TokenData
 from app.schema.users import User
 from app.utils.log_management import log_error

@@ -11,7 +11,7 @@ from starlette.responses import Response
 
 from app.app_exception import MalformedCsvFile
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import registered_projects
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.database.postgre.testrepository import (
     add_epic,
     add_feature,

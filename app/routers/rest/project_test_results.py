@@ -12,7 +12,7 @@ from app.app_exception import DuplicateTestResults, IncorrectFieldsRequest, Malf
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
-from app.database.postgre.pg_versions import version_exists
+from app.database.postgre.versions.pg_versions import version_exists
 from app.database.redis.rs_file_management import rs_invalidate_file, rs_record_file, rs_retrieve_file
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import insert_result

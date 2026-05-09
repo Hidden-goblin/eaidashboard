@@ -118,7 +118,8 @@ if __name__ == "__main__":
         ssl_context = build_ssl_context(cert_path, key_path)
 
     uvicorn.run(
-        "app.api:app",
+        "app.api:create_app",
+        factory=True,
         host=args.host,
         port=args.port,
         reload=True,

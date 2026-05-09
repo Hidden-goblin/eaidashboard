@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import registered_projects
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.database.postgre.test_repository.scenarios_utils import db_get_scenario_from_partial, db_update_scenario
 from app.database.postgre.testrepository import db_scenarios
 from app.database.utils.object_existence import if_error_raise_http

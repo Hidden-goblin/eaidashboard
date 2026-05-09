@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Query, Response, Security
 
 from app.database.authorization import authorize_user
 from app.database.postgre.pg_campaigns_management import retrieve_campaigns
-from app.database.postgre.pg_projects import get_project, get_projects
-from app.database.postgre.pg_versions import dashboard, get_project_versions_v2
+from app.database.postgre.projects.pg_projects import get_project, get_projects
+from app.database.postgre.versions.pg_versions import dashboard, get_project_versions_v2
 from app.database.utils.object_existence import project_version_raise
 from app.schema.campaign_schema import CampaignProjections
 from app.schema.dashboard_schema import Dashboard

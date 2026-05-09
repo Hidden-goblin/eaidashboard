@@ -12,10 +12,10 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
-from app.database.postgre.pg_projects import registered_projects
-from app.database.postgre.pg_versions import get_versions
+from app.database.postgre.bugs.pg_bugs import db_get_bug, db_update_bugs, get_bugs, insert_bug
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.database.postgre.testcampaign import db_set_campaign_ticket_scenario_status
+from app.database.postgre.versions.pg_versions import get_versions
 from app.schema.bugs_schema import BugTicket, UpdateBugTicket
 from app.schema.error_code import ApplicationError
 from app.schema.mongo_enums import BugCriticalityEnum

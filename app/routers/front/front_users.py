@@ -8,8 +8,8 @@ from starlette.responses import HTMLResponse
 from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
-from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_users import create_user, get_user, get_users, update_user
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.schema.users import UpdateUser, User, UserLight
 from app.utils.log_management import log_error
 from app.utils.pages import page_numbering

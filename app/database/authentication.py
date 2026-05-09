@@ -10,12 +10,15 @@ from app.database.redis.token_management import register_connection, revoke
 from app.database.utils.password_management import generate_keys, verify_password
 from app.database.utils.token import token_user
 from app.schema.authentication import TokenData
+from app.schema.error_code import ApplicationError
 from app.schema.users import UpdateUser, User
 
 
 def authenticate_user(username: str, password: str) -> User | None:
     try:
         user = get_user(username, False)
+        if isinstance(user, ApplicationError):
+            raise Exception(user.message)
         is_authenticated, new_hash = verify_password(password, user["password"])
         if is_authenticated:
             return maybe_update_password_hash(user, new_hash, password)

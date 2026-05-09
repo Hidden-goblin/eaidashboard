@@ -6,7 +6,7 @@ from psycopg.rows import tuple_row
 
 from app.database.postgre.pg_campaigns_management import retrieve_campaign_id
 from app.database.postgre.pg_tickets import get_ticket
-from app.database.postgre.pg_versions import version_exists
+from app.database.postgre.versions.pg_versions import version_exists
 from app.database.redis.rs_file_management import rs_invalidate_file
 from app.schema.error_code import ApplicationError
 from app.utils.pgdb import pool

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Security
 
 from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import register_project, registered_projects
+from app.database.postgre.projects.pg_projects import register_project, registered_projects
 from app.schema.error_code import ErrorMessage
 from app.schema.project_schema import Project, RegisterProject
 from app.schema.users import UpdateUser

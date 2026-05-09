@@ -65,10 +65,14 @@ psutil = "*"
 prometheus-client = "*"
 pip = "^25.3"
 pluggy = "^1.6.0"
+argon2-cffi = "^25.1.0"
+sqlalchemy = "^2.0.49"
+alembic = "^1.18.4"
 
 [tool.poetry.group.dev.dependencies]
 pydeps = "*"
 coverage = {extras = ["toml"], version = "*"}
+pytest = "*"
 pytest-order = "*"
 httpx = "*"
 ruff = "*"

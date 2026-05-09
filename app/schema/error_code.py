@@ -24,11 +24,13 @@ class ApplicationErrorCode(Enum):
     user_not_found = 10
     # 409 error
     duplicate_element = 100
+    # 401 error
+    credential_not_recognised = 101
     # 400 error
-    transition_forbidden = 101
-    unknown_status = 102
-    type_error = 103
-    value_error = 104
+    transition_forbidden = 102
+    unknown_status = 103
+    type_error = 104
+    value_error = 105
     # 500 error
     database_error = 200
     database_no_update = 201

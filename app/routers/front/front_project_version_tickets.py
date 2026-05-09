@@ -11,7 +11,7 @@ from app.app_exception import front_error_message
 from app.conf import templates
 from app.database.authorization import front_authorize
 from app.database.postgre.pg_tickets import get_ticket, get_tickets, update_ticket
-from app.database.postgre.pg_versions import refresh_version_stats
+from app.database.postgre.versions.pg_versions import refresh_version_stats
 from app.routers.front.utils import header_request
 from app.schema.ticket_schema import UpdatedTicket
 from app.schema.users import User, UserLight

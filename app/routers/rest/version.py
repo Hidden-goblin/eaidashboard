@@ -4,8 +4,8 @@
 from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import create_project_version
-from app.database.postgre.pg_versions import get_version, update_version_data
+from app.database.postgre.projects.pg_projects import create_project_version
+from app.database.postgre.versions.pg_versions import get_version, update_version_data
 from app.database.utils.object_existence import if_error_raise_http, project_version_exists, project_version_raise
 from app.schema.bugs_schema import UpdateVersion
 from app.schema.error_code import ApplicationError, ErrorMessage

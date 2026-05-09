@@ -5,7 +5,7 @@ from typing import List, Union
 from psycopg import IntegrityError
 from psycopg.rows import dict_row, tuple_row
 
-from app.database.postgre.pg_versions import refresh_version_stats, update_status_for_ticket_in_version
+from app.database.postgre.versions.pg_versions import refresh_version_stats, update_status_for_ticket_in_version
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.ticket_schema import Ticket, ToBeTicket, UpdatedTicket

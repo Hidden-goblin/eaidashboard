@@ -5,7 +5,7 @@ const { fetchWithAuth } = useApi()
 const apiBaseUrl = useApiBaseUrl()
 
 export async function createProject(projectName: string): Promise<any> {
-    const baseUrl = `${apiBaseUrl}/api/v1/settings/projects/`
+    const baseUrl = `${apiBaseUrl}/api/v1/settings/projects`
     const postResp = await fetchWithAuth(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

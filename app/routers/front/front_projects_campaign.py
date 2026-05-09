@@ -18,11 +18,10 @@ from app.database.postgre.pg_campaigns_management import (
     retrieve_campaign,
     update_campaign_occurrence,
 )
-from app.database.postgre.pg_projects import registered_projects
 from app.database.postgre.pg_test_results import TestResults
 from app.database.postgre.pg_test_results import insert_result as pg_insert_result
 from app.database.postgre.pg_tickets_management import get_tickets_not_in_campaign
-from app.database.postgre.pg_versions import get_versions
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.database.postgre.testcampaign import (
     db_delete_campaign_ticket_scenario,
     db_get_campaign_ticket_scenario,
@@ -34,6 +33,7 @@ from app.database.postgre.testcampaign import (
     get_campaign_content,
 )
 from app.database.postgre.testrepository import db_project_epics, db_project_features, db_project_scenarios
+from app.database.postgre.versions.pg_versions import get_versions
 from app.database.redis.rs_file_management import rs_invalidate_file, rs_record_file, rs_retrieve_file
 from app.database.utils.output_strategy import REGISTERED_OUTPUT
 from app.database.utils.test_result_management import register_manual_campaign_result

@@ -3,10 +3,27 @@
 from datetime import datetime
 from typing import List, Tuple
 
+from psycopg import Connection
 from psycopg.rows import dict_row, tuple_row
 
 from app.app_exception import StatusTransitionForbidden, UnknownStatusException
-from app.database.postgre.pg_projects import get_projects
+from app.database.postgre.pg_utils import _compile
+from app.database.postgre.projects.pg_projects import get_projects
+from app.database.postgre.versions.versions_query import (
+    build_count_project_versions_projection_query,
+    build_count_tickets_by_status_query,
+    build_current_ticket_query,
+    build_get_project_versions_projection_query,
+    build_get_project_versions_query,
+    build_get_version_query,
+    build_get_versions_query,
+    build_refresh_versions_query,
+    build_update_version_data_query,
+    build_update_version_stats_query,
+    build_update_version_ticket_status_stats_query,
+    build_version_exists_query,
+    build_version_internal_id_query,
+)
 from app.database.utils.transitions import version_transition
 from app.schema.bugs_schema import Bugs, UpdateVersion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
@@ -23,18 +40,9 @@ async def version_exists(
     project_name: str,
     version: str,
 ) -> bool:
+    query, params = _compile(build_version_exists_query(provide(project_name), version))
     with pool.connection() as connection:
-        row = connection.execute(
-            "select ve.id "
-            " from versions as ve "
-            " join projects as pjt on pjt.id = ve.project_id "
-            " where pjt.alias = %s "
-            " and ve.version = %s;",
-            (
-                provide(project_name),
-                version,
-            ),
-        ).fetchone()
+        row = connection.execute(query, params).fetchone()
         return row is not None
 
 
@@ -44,19 +52,10 @@ async def get_version(
 ) -> Version:
     """Assuming that project_name and version exists
     :raise TypeError: 'NoneType' object is not subscriptable"""
+    query, params = _compile(build_get_version_query(provide(project_name), version))
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        row = connection.execute(
-            "select * "
-            " from versions as ve"
-            " join projects as pjt on pjt.id = ve.project_id "
-            " where pjt.alias = %s "
-            " and ve.version = %s;",
-            (
-                provide(project_name),
-                version,
-            ),
-        ).fetchone()
+        row = connection.execute(query, params).fetchone()
 
         stats = Statistics(
             open=row["open"],
@@ -89,54 +88,20 @@ async def get_versions(
     project_name: str,
     exclude_archived: bool = False,
 ) -> List[str]:
+    query, params = _compile(build_get_versions_query(provide(project_name), exclude_archived))
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        if exclude_archived:
-            return [
-                row[0]
-                for row in connection.execute(
-                    "select version "
-                    " from versions as ve "
-                    " join projects as pjt on pjt.id = "
-                    "ve.project_id"
-                    " where pjt.alias = %s"
-                    " and ve.status != 'archived';",
-                    (provide(project_name),),
-                ).fetchall()
-            ]
-        return [
-            row[0]
-            for row in connection.execute(
-                "select version "
-                " from versions as ve "
-                " join projects as pjt on pjt.id = "
-                "ve.project_id"
-                " where pjt.alias = %s;",
-                (provide(project_name),),
-            ).fetchall()
-        ]
+        return [row[0] for row in connection.execute(query, params).fetchall()]
 
 
 async def get_project_versions(
     project_name: str,
     exclude_archived: bool = False,
 ) -> List[Version]:
+    query, params = _compile(build_get_project_versions_query(provide(project_name), exclude_archived))
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        if exclude_archived:
-            rows = connection.execute(
-                "select * "
-                " from versions as ve"
-                " join projects as pjt on pjt.id = ve.project_id "
-                " where pjt.alias = %s "
-                " and ve.status != 'archived';",
-                (provide(project_name),),
-            ).fetchall()
-        else:
-            rows = connection.execute(
-                "select *  from versions as ve join projects as pjt on pjt.id = ve.project_id  where pjt.alias = %s ;",
-                (provide(project_name),),
-            ).fetchall()
+        rows = connection.execute(query, params).fetchall()
         return _row_to_list_version(rows)
 
 
@@ -146,36 +111,27 @@ async def get_project_versions_v2(
     limit: int = 10,
     skip: int = 0,
 ) -> VersionProjections:
-    query = "select *  from versions as ve join projects as pjt on pjt.id = ve.project_id"
-    where_clause = [
-        "pjt.alias = %s",
-    ]
-    params = [
-        provide(project_name),
-    ]
-    query_count = "select count(ve.id) as total from versions as ve join projects as pjt on pjt.id = ve.project_id"
-
-    if projection == ProjectProjections.VERSIONS:
-        where_clause.append("ve.status != %s")
-        params.append(StatusEnum.ARCHIVED.value)
-    if projection == ProjectProjections.FUTURE_VERSIONS:
-        where_clause.append("ve.status = %s")
-        params.append(StatusEnum.RECORDED.value)
-    if projection == ProjectProjections.ARCHIVED_VERSIONS:
-        where_clause.append("ve.status = %s")
-        params.append(StatusEnum.ARCHIVED.value)
-
-    params.extend([limit, skip])
+    projection_status, exclude_status = _projection_filters(projection)
+    query, params = _compile(
+        build_get_project_versions_projection_query(
+            provide(project_name),
+            projection_status,
+            exclude_status,
+            limit,
+            skip,
+        )
+    )
+    count_query, count_params = _compile(
+        build_count_project_versions_projection_query(
+            provide(project_name),
+            projection_status,
+            exclude_status,
+        )
+    )
     with pool.connection() as connection:
         connection.row_factory = dict_row
-        conn = connection.execute(
-            f"{query} where {' and '.join(where_clause)} order by ve.created desc  limit %s offset %s;",
-            params,
-        ).fetchall()
-        conn_count = connection.execute(
-            f"{query_count} where {' and '.join(where_clause)};",
-            params[:-2],
-        ).fetchone()
+        conn = connection.execute(query, params).fetchall()
+        conn_count = connection.execute(count_query, count_params).fetchone()
 
         return VersionProjections(count=conn_count["total"], data=_row_to_list_version(conn))
 
@@ -211,6 +167,16 @@ def _row_to_list_version(rows: list) -> List[Version]:
             )
         )
     return result
+
+
+def _projection_filters(projection: ProjectProjections) -> tuple[str | None, str | None]:
+    if projection == ProjectProjections.VERSIONS:
+        return None, StatusEnum.ARCHIVED.value
+    if projection == ProjectProjections.FUTURE_VERSIONS:
+        return StatusEnum.RECORDED.value, None
+    if projection == ProjectProjections.ARCHIVED_VERSIONS:
+        return StatusEnum.ARCHIVED.value, None
+    return None, None
 
 
 async def update_version_data(
@@ -261,24 +227,10 @@ async def update_version_data(
         updates["status"] = body.status
     if updates:
         updates["updated"] = datetime.now()
+        query, params = _compile(build_update_version_data_query(provide(project_name), version, updates))
         with pool.connection() as connection:
-            query = (
-                "update versions ve"
-                " set " + ", ".join(f"{k} = %s" for k in updates) + " from projects pjt"
-                " where pjt.alias = %s"
-                " and pjt.id = ve.project_id"
-                " and version = %s"
-            )
             log_message(query)
-            data = [
-                *updates.values(),
-                provide(project_name),
-                version,
-            ]
-            connection.execute(
-                query,
-                data,
-            )
+            connection.execute(query, params)
 
     return await get_version(
         project_name,
@@ -318,35 +270,20 @@ async def update_status_for_ticket_in_version(
     ticket_reference: str,
     updated_status: str,
 ) -> bool | ApplicationError:
+    query, params = _compile(build_current_ticket_query(provide(project_name), version, ticket_reference))
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        current_ticket = connection.execute(
-            "select tk.status, tk.current_version"
-            " from tickets as tk"
-            " join versions as ve on tk.current_version = ve.id"
-            " join projects as pj on pj.id = ve.project_id"
-            " where pj.alias = %s"
-            " and ve.version = %s"
-            " and tk.reference = %s;",
-            (
-                provide(project_name),
-                version,
-                ticket_reference,
-            ),
-        ).fetchone()
+        current_ticket = connection.execute(query, params).fetchone()
         if current_ticket is None:
             return ApplicationError(
                 error=ApplicationErrorCode.ticket_not_found,
                 message=f"Ticket '{ticket_reference}' does not exist in project '{project_name}' version '{version}'",
             )
         if current_ticket[0] != updated_status:
-            row = connection.execute(
-                "update versions"
-                f" set {current_ticket[0]} = {current_ticket[0]} -1,"
-                f" {updated_status} = {updated_status} + 1"
-                f" where id = %s",
-                (current_ticket[1],),
+            update_query, update_params = _compile(
+                build_update_version_ticket_status_stats_query(current_ticket[1], current_ticket[0], updated_status)
             )
+            row = connection.execute(update_query, update_params)
             log_message(row)
         return True
 
@@ -355,19 +292,10 @@ async def version_internal_id(
     project_name: str,
     version: str,
 ) -> int | ApplicationError:
+    query, params = _compile(build_version_internal_id_query(provide(project_name), version))
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        result = connection.execute(
-            "select ve.id"
-            " from versions as ve"
-            " join projects as pj on pj.id = ve.project_id"
-            " where pj.alias = %s"
-            " and ve.version = %s;",
-            (
-                provide(project_name),
-                version,
-            ),
-        ).fetchone()
+        result = connection.execute(query, params).fetchone()
         if result is None:
             return ApplicationError(
                 error=ApplicationErrorCode.version_not_found, message=f"The version '{version}' is not found."
@@ -380,87 +308,36 @@ async def refresh_version_stats(
     version: str = None,
 ) -> None:
     # TODO: Limit to project-version in general except for future cron task
+    query, params = _compile(
+        build_refresh_versions_query(
+            provide(project_name) if project_name is not None else None,
+            version,
+        )
+    )
     with pool.connection() as connection:
         connection.row_factory = tuple_row
-        query_version = "select ve.id from versions as ve {join} {where} {filter};"
-        query_join = ""
-        query_filter = ""
-        query_data = []
-        if project_name is not None:
-            query_join = "join projects as pj on pj.id = ve.project_id"
-            query_filter = "pj.alias = %s"
-            query_data.append(
-                provide(
-                    project_name,
-                ),
-            )
-        if version is not None:
-            query_filter = f"{query_filter} {'and' if query_filter else ''} ve.version = %s"
-            query_data.append(
-                version,
-            )
-        full_query = query_version.format(
-            join=query_join,
-            where="where" if query_filter else "",
-            filter=query_filter,
-        )
-        versions = connection.execute(
-            full_query,
-            query_data,
-        ).fetchall()
+        versions = connection.execute(query, params).fetchall()
 
-        query = "select count(tk.id) from tickets as tk where tk.current_version = %s and tk.status = %s;"
-        for version in versions:
-            count_open = connection.execute(
-                query,
-                (
-                    version[0],
-                    TicketType.OPEN.value,
-                ),
-            ).fetchone()[0]
-            count_in_progress = connection.execute(
-                query,
-                (
-                    version[0],
-                    TicketType.IN_PROGRESS.value,
-                ),
-            ).fetchone()[0]
-            count_blocked = connection.execute(
-                query,
-                (
-                    version[0],
-                    TicketType.BLOCKED.value,
-                ),
-            ).fetchone()[0]
-            count_cancelled = connection.execute(
-                query,
-                (
-                    version[0],
-                    TicketType.CANCELLED.value,
-                ),
-            ).fetchone()[0]
-            count_done = connection.execute(
-                query,
-                (
-                    version[0],
-                    TicketType.DONE.value,
-                ),
-            ).fetchone()[0]
-            connection.execute(
-                "update versions"
-                " set open = %s,"
-                " in_progress = %s,"
-                " blocked = %s,"
-                " cancelled = %s,"
-                " done = %s"
-                " where id = %s;",
-                (
+        for version_row in versions:
+            count_open = _count_tickets_by_status(connection, version_row[0], TicketType.OPEN.value)
+            count_in_progress = _count_tickets_by_status(connection, version_row[0], TicketType.IN_PROGRESS.value)
+            count_blocked = _count_tickets_by_status(connection, version_row[0], TicketType.BLOCKED.value)
+            count_cancelled = _count_tickets_by_status(connection, version_row[0], TicketType.CANCELLED.value)
+            count_done = _count_tickets_by_status(connection, version_row[0], TicketType.DONE.value)
+            update_query, update_params = _compile(
+                build_update_version_stats_query(
+                    version_row[0],
                     count_open,
                     count_in_progress,
                     count_blocked,
                     count_cancelled,
                     count_done,
-                    version[0],
-                ),
+                )
             )
+            connection.execute(update_query, update_params)
             connection.commit()
+
+
+def _count_tickets_by_status(connection: Connection, version_id: int, status: str) -> int:
+    query, params = _compile(build_count_tickets_by_status_query(version_id, status))
+    return connection.execute(query, params).fetchone()[0]

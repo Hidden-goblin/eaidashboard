@@ -1,23 +1,26 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
-import importlib
 import json
 import os
-import time
-from typing import Any, Generator, List
+from typing import Any, Callable, Generator, List
+from unittest.mock import patch
 from xml.etree import ElementTree
 
-import psycopg
 import pytest
 from _pytest.config import Config, ExitCode, Parser
 from _pytest.main import Session
 from _pytest.nodes import Item
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
+from fastapi import HTTPException
+from fastapi.security import SecurityScopes
 from pytest import fixture
 from starlette.responses import Response
 from starlette.testclient import TestClient
 
+from app.api import create_app
+from app.database.authorization import authorize_user
+from app.schema.users import User
 from tests.utils.context_manager import Context
 
 
@@ -33,54 +36,68 @@ def context_manager() -> Generator[Context, None, None]:
 
 @fixture(autouse=True, scope="session")
 def application() -> Generator[TestClient, Any, None]:
-    # Override the environment variable
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("PG_DB", "test_db")
-        import app.conf
-        import app.utils.pgdb
-
-        importlib.reload(app.conf)
-        importlib.reload(app.utils.pgdb)
-        from app.conf import postgre_setting_string, postgre_string
-
-        assert "test_db" in postgre_string, postgre_string
-        print(postgre_string)
-        # Import your FastAPI application
-        from app.api import app
-
+    with (
+        patch("app.database.postgre.postgres.init_postgres"),
+        patch("app.api.init_postgres"),
+        patch("app.api.update_postgres"),
+        patch("app.api.init_user"),
+        patch("app.api.pool"),
+        patch("app.api.postgre_register"),
+    ):
+        app = create_app()
         yield TestClient(app, raise_server_exceptions=False)
-        # teardown_stuff
-        from app.utils.pgdb import pool
-
-        pool.close()
-        del pool
-        time.sleep(6.0)
-        conn = psycopg.connect(
-            postgre_setting_string,
-            autocommit=True,
-        )
-        cur = conn.cursor()
-        cur.execute("""SELECT pg_terminate_backend(pid)
-                       FROM pg_stat_activity
-                       WHERE datname = 'test_db';""")
-        cur.execute("DROP DATABASE IF EXISTS test_db")
 
 
-@fixture(scope="module")
-def logged_setting(
-    application: Generator[TestClient, Any, None],
-) -> Generator[dict[str, str], Any, None]:
-    response = application.post(
-        "/api/v1/token",
-        data={"username": "admin@admin.fr", "password": "admin"},
-    )
-    token = response.json()["access_token"]
-    yield {"Authorization": f"Bearer {token}"}
-    application.delete(
-        "/api/v1/token",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    application.cookies.set("access_token", "")
+# @fixture(scope="function")
+# def authenticated_application(application):
+#     def override_authorize_user(security_scopes: SecurityScopes):
+#         return UpdateUser(
+#             username="admin@admin.fr",
+#             scopes={"*": "admin"},
+#         )
+#
+#     application.app.dependency_overrides[authorize_user] = override_authorize_user
+#     yield application
+#     application.app.dependency_overrides.pop(authorize_user, None)
+
+
+@fixture
+def mock_security(
+    application: TestClient,
+) -> Generator[Callable[..., dict[str, str]], Any, None]:
+    def apply(
+        *,
+        username: str = "admin@admin.fr",
+        scopes: dict[str, str | None] | None = None,
+        status_code: int | None = None,
+        detail: str = "Could not validate credentials",
+    ) -> dict[str, str]:
+        user = User(username=username, scopes=scopes or {"*": "admin"})
+
+        def override_authorize_user(security_scopes: SecurityScopes) -> User:
+            if status_code is not None:
+                raise HTTPException(status_code=status_code, detail=detail)
+
+            if security_scopes.scopes:
+                right = user.right(project_name=None)
+                if right not in security_scopes.scopes:
+                    raise HTTPException(403, detail="You are not authorized to access this resource.")
+
+            return user
+
+        application.app.dependency_overrides[authorize_user] = override_authorize_user
+
+        # Existing tests can keep passing headers=logged_setting.
+        # The token value is irrelevant because authorize_user is overridden.
+        return {"Authorization": "Bearer test-token"}
+
+    yield apply
+    application.app.dependency_overrides.pop(authorize_user, None)
+
+
+@fixture(scope="function")
+def logged_setting(mock_security: Callable[..., dict[str, str]]) -> dict[str, str]:
+    return mock_security()
 
 
 @fixture(autouse=True)

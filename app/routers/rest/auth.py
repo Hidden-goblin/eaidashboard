@@ -65,7 +65,7 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     responses={
         401: {
             "model": ErrorMessage,
-            "description": "The providen token has already been invalidated.",
+            "description": "The provided token has already been invalidated.",
         }
     },
 )

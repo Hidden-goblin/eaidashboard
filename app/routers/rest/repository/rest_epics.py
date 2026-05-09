@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Security
 
 from app.database.authorization import authorize_user
-from app.database.postgre.pg_projects import registered_projects
+from app.database.postgre.projects.pg_projects import registered_projects
 from app.database.postgre.testrepository import db_project_epics
 from app.database.utils.object_existence import if_error_raise_http
 from app.schema.error_code import ErrorMessage

@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
 from app.app_exception import ProjectNotRegistered
-from app.database.postgre.pg_versions import version_exists
+from app.database.postgre.versions.pg_versions import version_exists
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.utils.log_management import log_error
 from app.utils.project_alias import provide
@@ -75,6 +75,11 @@ def if_error_raise_http(
             case 100:
                 raise HTTPException(
                     409,
+                    result_to_test.message,
+                )
+            case 101:
+                raise HTTPException(
+                    401,
                     result_to_test.message,
                 )
             case result_to_test.error.value if result_to_test.error.value < 200:

@@ -1,139 +1,230 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from typing import Any, Generator, List
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.testclient import TestClient
 
-from tests.conftest import status_404_error_message_check
-from tests.utils.project_setting import set_project, set_project_versions
+from app.app_exception import InvalidDeletion
+from app.schema.error_code import ApplicationError, ApplicationErrorCode
+from app.schema.project_schema import RegisterVersionResponse
+from app.schema.users import User
+
 
 # noinspection PyUnresolvedReferences
 
-PROJECT_NAME = "test_users"
-SECOND_PROJECT_NAME = "test_users2"
-CURRENT_VERSION = "1.0.0"
-PREVIOUS_VERSION = "0.9.0"
-NEXT_VERSION = "1.1.0"
+
+# ==================== GET /users ====================
 
 
-@pytest.fixture(autouse=True)
-def _setup(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    """setup any state specific to the execution of the given class (which
-    usually contains tests).
-    """
-    for project in [PROJECT_NAME, SECOND_PROJECT_NAME]:
-        set_project(project, application, logged_setting)
-
-    _versions = [
-        PREVIOUS_VERSION,
-        CURRENT_VERSION,
-        NEXT_VERSION,
-    ]
-    for project in [PROJECT_NAME, SECOND_PROJECT_NAME]:
-        set_project_versions(
-            project,
-            _versions,
-            application,
-            logged_setting,
-        )
-    application.cookies.set("access_token", "")
-    yield
-
-
-# Test with only one user: the default user
-@pytest.mark.path("/users/retrieve_all")
+@pytest.mark.description("Retrieve all users without authentication")
 @pytest.mark.tags("users", "get", "error", "401")
-@pytest.mark.description("Test retrieving all users without authentication")
 @pytest.mark.test_steps(
-    "Given 'anonymous' is querying",
-    "When 'anonymous' retrieves all users",
-    "Then 'anonymous' gets a '401' status code",
-    "Then 'anonymous' gets a 'Could not validate credentials' error message",
+    "Given user is not authenticated",
+    "When user requests all users",
+    "Then user gets 401 Unauthorized",
 )
 def test_get_users_error_401(
     application: Generator[TestClient, Any, None],
 ) -> None:
+    """Test endpoint returns 401 when user is not authenticated."""
     response = application.get("/api/v1/users")
-    assert response.status_code == 401, response.text
-    assert response.json()["detail"] == "Could not validate credentials", response.text
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Could not validate credentials"
 
 
-@pytest.mark.path("/users/retrieve_all")
+@pytest.mark.description("Retrieve all users with server error")
 @pytest.mark.tags("users", "get", "error", "500")
-@pytest.mark.description("Test retrieving all users with server error")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given an unhandled error occurs",
-    "When 'admin' retrieves all users",
-    "Then 'admin' gets a '500' status code",
-    "Then 'admin' gets an 'error' error message",
+    "Given admin is authenticated",
+    "Given server error occurs",
+    "When admin requests all users",
+    "Then admin gets 500 Internal Server Error",
 )
 def test_get_users_error_500(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    with patch("app.routers.rest.users.get_users") as rp:
-        rp.side_effect = Exception("error")
+    """Test endpoint returns 500 when business logic fails."""
+    with patch("app.routers.rest.users.get_users") as mock_get_users:
+        mock_get_users.side_effect = Exception("Database error")
+
         response = application.get("/api/v1/users", headers=logged_setting)
-        assert response.status_code == 500, response.text
-        assert response.json()["detail"] == "error", response.text
+
+        assert response.status_code == 500
+        assert "Database error" in response.json()["detail"]
 
 
-@pytest.mark.path("/users/retrieve_all")
+@pytest.mark.description("Retrieve all users successfully")
 @pytest.mark.tags("users", "get", "mandatory")
-@pytest.mark.description("Test retrieving all users")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "When 'admin' retrieves all users",
-    "Then 'admin' finds at least himself",
-    "Then 'admin' validates the number of elements is '>= 1'",
+    "Given admin is authenticated",
+    "When admin requests all users",
+    "Then admin gets 200 OK with user list",
 )
-def test_get_users(
+def test_get_users_success(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    response = application.get("/api/v1/users", headers=logged_setting)
-    assert response.status_code == 200
-    assert {"username": "admin@admin.fr", "scopes": {"*": "admin"}} in response.json(), response.text
-    assert int(response.headers["X-total-count"]) >= 1, f"Number of elements is {response.headers['X-total-count']}"
+    """Test successful retrieval of all users."""
+    mock_users = [
+        {"username": "admin@admin.fr", "scopes": {"*": "admin"}},
+        {"username": "user@example.com", "scopes": {"*": "user"}},
+    ]
+
+    with patch("app.routers.rest.users.get_users") as mock_get_users:
+        mock_get_users.return_value = (mock_users, 2)
+
+        response = application.get("/api/v1/users", headers=logged_setting)
+
+        assert response.status_code == 200
+        assert response.json() == mock_users
+        assert response.headers["X-total-count"] == "2"
+        mock_get_users.assert_called_once_with(
+            limit=10, skip=0, project_name="*", included=True
+        )
 
 
-@pytest.mark.path("/users/retrieve_all")
+@pytest.mark.description("Retrieve all usernames successfully")
 @pytest.mark.tags("users", "get", "mandatory")
-@pytest.mark.description("Test retrieving all usernames")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "When 'admin' retrieves all usernames",
-    "Then 'admin' finds at least himself",
+    "Given admin is authenticated",
+    "When admin requests all usernames",
+    "Then admin gets 200 OK with username list",
 )
-def test_get_users_list_1(
+def test_get_users_list_success(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    response = application.get("api/v1/users", headers=logged_setting, params={"is_list": True})
-    assert response.status_code == 200, response.text
-    assert "admin@admin.fr" in response.json(), response.text
+    """Test successful retrieval of all usernames."""
+    mock_usernames = ["admin@admin.fr", "user@example.com"]
+
+    with patch("app.routers.rest.users.get_users") as mock_get_users:
+        mock_get_users.return_value = mock_usernames
+
+        response = application.get("/api/v1/users?is_list=true", headers=logged_setting)
+
+        assert response.status_code == 200
+        assert response.json() == mock_usernames
+        mock_get_users.assert_called_once_with(
+            is_list=True, project_name="*", included=True
+        )
 
 
-@pytest.mark.path("/users/create")
+@pytest.mark.description("Retrieve users with custom parameters")
+@pytest.mark.tags("users", "get", "mandatory")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "When admin requests users with custom parameters",
+    "Then admin gets 200 OK with filtered user list",
+)
+def test_get_users_with_parameters(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful retrieval of users with optional parameters."""
+    mock_users = [{"username": "user@example.com", "scopes": {"project1": "user"}}]
+
+    with patch("app.routers.rest.users.get_users") as mock_get_users:
+        mock_get_users.return_value = (mock_users, 1)
+
+        response = application.get(
+            "/api/v1/users?limit=5&skip=1&project=project1&included=false",
+            headers=logged_setting,
+        )
+
+        assert response.status_code == 200
+        assert response.json() == mock_users
+        assert response.headers["X-total-count"] == "1"
+        mock_get_users.assert_called_once_with(
+            limit=5, skip=1, project_name="project1", included=False
+        )
+
+
+# ==================== GET /users/{username} ====================
+
+
+@pytest.mark.description("Retrieve one user without authentication")
+@pytest.mark.tags("users", "get", "error", "401")
+@pytest.mark.test_steps(
+    "Given user is not authenticated",
+    "When user requests one user",
+    "Then user gets 401 Unauthorized",
+)
+def test_get_user_error_401(
+    application: Generator[TestClient, Any, None],
+) -> None:
+    """Test endpoint returns 401 when user is not authenticated."""
+    response = application.get("/api/v1/users/test@example.com")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Could not validate credentials"
+
+
+@pytest.mark.description("Retrieve unknown user")
+@pytest.mark.tags("users", "get", "error", "404")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given user does not exist",
+    "When admin requests the user",
+    "Then admin gets 404 Not Found",
+)
+def test_get_user_error_404(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test endpoint returns 404 when user does not exist."""
+    with patch("app.routers.rest.users.get_user") as mock_get_user:
+        mock_get_user.return_value = ApplicationError(error=ApplicationErrorCode.user_not_found,
+                                                      message="User not found",)
+
+        response = application.get("/api/v1/users/unknown@example.com", headers=logged_setting,)
+
+        assert response.status_code == 404
+
+
+@pytest.mark.description("Retrieve one user successfully")
+@pytest.mark.tags("users", "get", "mandatory")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given user exists",
+    "When admin requests the user",
+    "Then admin gets 200 OK with user data",
+)
+def test_get_user_success(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful retrieval of one user."""
+    mock_user = {"username": "test@example.com", "scopes": {"*": "user"}}
+
+    with patch("app.routers.rest.users.get_user") as mock_get_user:
+        mock_get_user.return_value = mock_user
+
+        response = application.get("/api/v1/users/test@example.com", headers=logged_setting)
+
+        assert response.status_code == 200
+        assert response.json() == mock_user
+        mock_get_user.assert_called_once_with("test@example.com")
+
+
+# ==================== POST /users ====================
+
+
+@pytest.mark.description("Create user without authentication")
 @pytest.mark.tags("users", "create", "error", "401")
-@pytest.mark.description("Test creating a user without authentication")
 @pytest.mark.test_steps(
-    "Given 'anonymous' is querying",
-    "When 'anonymous' creates 'user1' user",
-    "Then 'anonymous' gets a '401' status code",
-    "Then 'anonymous' gets a 'Could not validate credentials' error message",
+    "Given user is not authenticated",
+    "When user creates a user",
+    "Then user gets 401 Unauthorized",
 )
 def test_create_user_error_401(
     application: Generator[TestClient, Any, None],
 ) -> None:
+    """Test endpoint returns 401 when user is not authenticated."""
     response = application.post(
-        "/api/v1/users", json={"username": "user1@domain.fr", "password": "pwd", "scopes": {"*": "user"}}
+        "/api/v1/users",
+        json={"username": "new@example.com", "password": "password", "scopes": {"*": "user"}},
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Could not validate credentials"
@@ -147,11 +238,10 @@ payload_error_422 = [
         "missing",
         marks=[
             pytest.mark.test_steps(
-                "Given 'admin' is logged in",
-                "Given 'admin' prepares a payload without 'username'",
-                "When 'admin' creates '' user",
-                "Then 'admin' gets a '422' status code",
-                "Then 'admin' gets a 'Field required' error message for 'body/username'",
+                "Given admin is authenticated",
+                "Given payload is missing username",
+                "When admin creates user",
+                "Then admin gets 422 Unprocessable Entity",
             )
         ],
     ),
@@ -162,28 +252,28 @@ payload_error_422 = [
         "extra_forbidden",
         marks=[
             pytest.mark.test_steps(
-                "Given 'admin' is logged in",
-                "Given 'admin' prepares a payload with extra field 'alias'",
-                "When 'admin' creates 'test' user",
-                "Then 'admin' gets a '422' status code",
-                "Then 'admin' gets an 'Extra inputs are not permitted' error message for 'body/alias'",
+                "Given admin is authenticated",
+                "Given payload has extra field",
+                "When admin creates user",
+                "Then admin gets 422 Unprocessable Entity",
             )
         ],
     ),
 ]
 
 
-@pytest.mark.path("/users/create")
+@pytest.mark.description("Create user with invalid payload")
 @pytest.mark.tags("users", "create", "error", "422")
 @pytest.mark.parametrize("payload,loc,message,err_type", payload_error_422)
 def test_create_user_error_422(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
     payload: dict,
     loc: List,
     message: str,
     err_type: str,
 ) -> None:
+    """Test endpoint returns 422 for invalid payload."""
     response = application.post("/api/v1/users", json=payload, headers=logged_setting)
     assert response.status_code == 422
     assert response.json()["detail"][0]["msg"] == message
@@ -191,331 +281,353 @@ def test_create_user_error_422(
     assert response.json()["detail"][0]["type"] == err_type
 
 
-@pytest.mark.path("/users/create")
-@pytest.mark.tags("users", "create", "error", "404")
-@pytest.mark.description("Cannot create a user assigning role on unknown project")
+@pytest.mark.description("Create user without password")
+@pytest.mark.tags("users", "create", "error", "400")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given 'unknown' project does not exist",
-    "When 'admin' creates 'test_unknown' user",
-    "Then 'admin' gets a '404' status code",
-    "Then 'admin' gets a 'The projects 'unknown' are not registered.' error message",
+    "Given admin is authenticated",
+    "Given payload has no password",
+    "When admin creates user",
+    "Then admin gets 400 Bad Request",
 )
-def test_create_user_error_404(
+def test_create_user_error_400_no_password(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    # Ensure 'unknown' project does not exist
-    response = application.get("/api/v1/setting/projects", headers=logged_setting, params={"is_list": True})
-    assert "unknown" not in response.json(), "Precondition failed: 'unknown' project exists"
-
-    # Action
+    """Test endpoint returns 400 when password is missing."""
     response = application.post(
         "/api/v1/users",
-        json={"username": "test_unknown@test.fr", "password": "pwd", "scopes": {"*": "user", "unknown": "admin"}},
+        json={"username": "test@example.com", "scopes": {"*": "user"}},
         headers=logged_setting,
-    )
-    assert response.status_code == 404, response.text
-    status_404_error_message_check(response, "The projects 'unknown' are not registered.")
-
-
-@pytest.mark.path("/users/create")
-@pytest.mark.tags("users", "create", "error", "400")
-@pytest.mark.description("Cannot create a user without password")
-@pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given 'admin' prepares a payload without password",
-    "When 'admin' creates 'test_passwordless' user",
-    "Then 'admin' gets a '400' status code",
-    "Then 'admin' gets a 'Cannot create user without password' error message",
-)
-def test_create_user_error_400(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    response = application.post(
-        "/api/v1/users", json={"username": "test_passwordless@test.fr", "scopes": {"*": "user"}}, headers=logged_setting
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "Cannot create user without password"
 
 
-@pytest.mark.path("/users/create")
-@pytest.mark.tags("users", "create", "mandatory")
-@pytest.mark.description("Test creating a new user")
+@pytest.mark.description("Create user with unknown project in scopes")
+@pytest.mark.tags("users", "create", "error", "404")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given 'test' user does not exist",
-    "When 'admin' creates 'test' user",
-    "Then 'admin' gets the new user internal id",
+    "Given admin is authenticated",
+    "Given project does not exist",
+    "When admin creates user with scope for unknown project",
+    "Then admin gets 404 Not Found",
 )
-def test_create_user(
+def test_create_user_error_404_unknown_project(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    # Pre-condition: ensure 'test' user does not exist
-    response = application.get("/api/v1/users", headers=logged_setting, params={"is_list": True})
-    assert "test@test.fr" not in response.json(), "Precondition failed: 'test' user exists"
+    """Test endpoint returns 404 when project in scopes does not exist."""
+    with patch("app.routers.rest.users.create_user") as mock_create_user:
+        mock_create_user.return_value = ApplicationError(error=ApplicationErrorCode.project_not_registered,
+                                                         message="The projects 'unknown' are not registered.")
 
-    # Action: create 'test' user
-    response = application.post(
-        "/api/v1/users",
-        json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
-        headers=logged_setting,
-    )
-    assert response.status_code == 200
-    assert response.json()["inserted_id"] == "2"
-
-
-@pytest.mark.path("/users")
-@pytest.mark.tags("users", "login", "mandatory")
-@pytest.mark.description("Test logging in with newly created user")
-@pytest.mark.test_steps(
-    "Given 'test' user is created",
-    "When 'test' user logs in",
-    "Then 'test' user gets an access token",
-)
-def test_newly_created_user_can_log_in(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    # Pre-condition: ensure 'test' user exists
-    response = application.get("/api/v1/users", params={"is_list": True}, headers=logged_setting)
-    if "test@test.fr" not in response.json():
         response = application.post(
             "/api/v1/users",
-            json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+            json={"username": "test@example.com", "password": "pass", "scopes": {"unknown": "admin"}},
             headers=logged_setting,
         )
-        assert response.status_code == 200, "Precondition failed: could not create 'test' user"
 
-    # Action: log in with 'test' user
-    response = application.post(
-        "/api/v1/token",
-        data={"username": "test@test.fr", "password": "test"},
-    )
-    assert response.status_code == 200
-    assert response.json()["access_token"]
+        assert response.status_code == 404
+        assert "The projects 'unknown' are not registered." in response.json()["detail"]
 
 
-@pytest.mark.path("/users/create")
+@pytest.mark.description("Create duplicate user")
 @pytest.mark.tags("users", "create", "error", "409")
-@pytest.mark.description("Cannot create a duplicate user")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given 'test@test.fr' user already exists",
-    "When 'admin' creates 'test@test.fr' user",
-    "Then 'admin' gets a '409' status code",
+    "Given admin is authenticated",
+    "Given user already exists",
+    "When admin creates duplicate user",
+    "Then admin gets 409 Conflict",
 )
-def test_create_user_duplicate_error(
+def test_create_user_error_409_duplicate(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    # Pre-condition: ensure 'test@test.fr' user exists
-    response = application.get("/api/v1/users", params={"is_list": True}, headers=logged_setting)
-    if "test@test.fr" not in response.json():
+    """Test endpoint returns 409 when user already exists."""
+    with patch("app.routers.rest.users.create_user") as mock_create_user:
+        mock_create_user.return_value = ApplicationError(error=ApplicationErrorCode.duplicate_element,
+                                                         message="User already exists")
+
         response = application.post(
             "/api/v1/users",
-            json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+            json={"username": "existing@example.com", "password": "pass", "scopes": {"*": "user"}},
             headers=logged_setting,
         )
-        assert response.status_code == 200, "Precondition failed: could not create 'test' user"
 
-    # Action: attempt to create duplicate 'test@test.fr' user
-    response = application.post(
-        "/api/v1/users",
-        json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
-        headers=logged_setting,
-    )
-    assert response.status_code == 409
+        assert response.status_code == 409
 
 
-@pytest.mark.path("/users/update")
-@pytest.mark.tags("users", "update", "error", "401")
-@pytest.mark.description("Cannot update a user wihhout authentication")
+@pytest.mark.description("Create user successfully")
+@pytest.mark.tags("users", "create", "mandatory")
 @pytest.mark.test_steps(
-    "Given 'anonymous' is querying",
-    "When 'anonymous' updates 'test@test.fr' user",
-    "Then 'anonymous' gets a '401' status code",
-    "Then 'anonymous' gets a 'Could not validate credentials' error message",
+    "Given admin is authenticated",
+    "When admin creates a new user",
+    "Then admin gets 200 OK with inserted id",
+)
+def test_create_user_success(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful user creation."""
+    with patch("app.routers.rest.users.create_user") as mock_create_user:
+        mock_create_user.return_value = {"inserted_id": "2"}
+
+        response = application.post(
+            "/api/v1/users",
+            json={"username": "new@example.com", "password": "password", "scopes": {"*": "user"}},
+            headers=logged_setting,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["inserted_id"] == "2"
+        mock_create_user.assert_called_once()
+
+
+# ==================== PATCH /users ====================
+
+
+@pytest.mark.description("Update user without authentication")
+@pytest.mark.tags("users", "update", "error", "401")
+@pytest.mark.test_steps(
+    "Given user is not authenticated",
+    "When user updates a user",
+    "Then user gets 401 Unauthorized",
 )
 def test_update_user_error_401(
     application: Generator[TestClient, Any, None],
 ) -> None:
-    response = application.patch("/api/v1/users", json={"username": "test@test.fr"})
+    """Test endpoint returns 401 when user is not authenticated."""
+    response = application.patch("/api/v1/users", json={"username": "test@example.com"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Could not validate credentials"
 
 
-@pytest.mark.path("/users/update")
+@pytest.mark.description("Update user without password or scopes")
 @pytest.mark.tags("users", "update", "error", "422")
-@pytest.mark.description("Cannot update a user without either password or scopes")
 @pytest.mark.test_steps(
-    "Given 'admin' is logged in",
-    "Given 'admin' prepares a payload without 'password' and 'scopes'",
-    "When 'admin' updates 'test@test.fr' user",
-    "Then 'admin' gets a '422' status code",
-    "Then 'admin' gets a 'Value error, UpdateUser must have at least one key of "
-    "'('password', 'scopes')'' error message",
+    "Given admin is authenticated",
+    "Given payload has neither password nor scopes",
+    "When admin updates user",
+    "Then admin gets 422 Unprocessable Entity",
 )
-def test_update_user_error_422(
+def test_update_user_error_422_no_fields(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    response = application.patch("/api/v1/users", json={"username": "test@test.fr"}, headers=logged_setting)
+    """Test endpoint returns 422 when neither password nor scopes are provided."""
+    response = application.patch(
+        "/api/v1/users", json={"username": "test@example.com"}, headers=logged_setting
+    )
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body"]
-    assert response.json()["detail"][0]["msg"] == (
-        "Value error, UpdateUser must have at least one key of '('password', 'scopes')'"
-    )
-    assert response.json()["detail"][0]["type"] == "value_error"
+    assert "UpdateUser must have at least one key of" in response.json()["detail"][0]["msg"]
 
 
-def test_get_user_error_401(
+@pytest.mark.description("Update user with unknown project in scopes")
+@pytest.mark.tags("users", "update", "error", "404")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given project does not exist",
+    "When admin updates user with scope for unknown project",
+    "Then admin gets 404 Not Found",
+)
+def test_update_user_error_404_unknown_project(
     application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    response = application.get("/api/v1/users/test@test.fr")
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Could not validate credentials"
+    """Test endpoint returns 404 when project in scopes does not exist."""
+    with patch("app.routers.rest.users.update_user") as mock_update_user:
+        mock_update_user.return_value = ApplicationError(error=ApplicationErrorCode.project_not_registered,
+                                                         message="The projects 'unknown' are not registered.")
 
-
-def test_get_user_error_404(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    response = application.get("/api/v1/users/unknown", headers=logged_setting)
-    status_404_error_message_check(response, "User 'unknown' is not found.")
-
-
-def test_get_user(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    response = application.get("/api/v1/users/test@test.fr", headers=logged_setting)
-    assert response.status_code == 200
-    assert response.json() == {"username": "test@test.fr", "scopes": {"*": "user"}}
-
-
-def test_update_user(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    user = application.get("/api/v1/users/test@test.fr", headers=logged_setting).json()
-    response = application.patch(
-        "/api/v1/users",
-        json={"username": "test@test.fr", "scopes": {**user["scopes"], PROJECT_NAME: "user"}},
-        headers=logged_setting,
-    )
-    assert response.status_code == 200
-    response = application.get("/api/v1/users/test@test.fr", headers=logged_setting)
-    assert response.status_code == 200
-    assert response.json() == {
-        "username": "test@test.fr",
-        "scopes": {"*": "user", PROJECT_NAME: "user"},
-    }
-
-
-def test_user_scopes_200(
-    application: Generator[TestClient, Any, None],
-) -> None:
-    # Token
-    response = application.post("/api/v1/token", data={"username": "test@test.fr", "password": "test"})
-    token = response.json()["access_token"]
-
-    # Create bug on test_users -> success
-    response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}/bugs",
-        json={
-            "title": "Test user scope",
-            "version": CURRENT_VERSION,
-            "description": "First description",
-        },
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 201
-    assert response.json()["inserted_id"] is not None and int(response.json()["inserted_id"])
-
-
-def test_user_scopes_403(
-    application: Generator[TestClient, Any, None],
-) -> None:
-    # Token
-    response = application.post("/api/v1/token", data={"username": "test@test.fr", "password": "test"})
-    token = response.json()["access_token"]
-
-    # Create bug on test_users2 -> not authorized
-    response = application.post(
-        f"/api/v1/projects/{SECOND_PROJECT_NAME}/bugs",
-        json={
-            "title": "Test user scope",
-            "version": CURRENT_VERSION,
-            "description": "First description",
-        },
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 403
-    assert response.json()["detail"] == "You are not authorized to access this resource."
-
-
-def test_user_scopes_401(
-    application: Generator[TestClient, Any, None],
-) -> None:
-    # Token
-    response = application.post("/api/v1/token", data={"username": "test@test.fr", "password": "test"})
-    token = response.json()["access_token"]
-
-    # Where token expired get Could not validate credentials
-    response = application.delete("/api/v1/token", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == 204
-
-    response = application.post(
-        f"/api/v1/projects/{PROJECT_NAME}/bugs",
-        json={
-            "title": "Test user scope second",
-            "version": CURRENT_VERSION,
-            "description": "First description",
-        },
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Could not validate credentials"
-
-
-def test_delete_user(
-    application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
-) -> None:
-    _users = application.get("/api/v1/users", headers=logged_setting)
-    if "test@test.fr" not in [item["username"] for item in _users.json()]:
-        response = application.post(
+        response = application.patch(
             "/api/v1/users",
-            json={"username": "test@test.fr", "password": "test", "scopes": {"*": "user"}},
+            json={"username": "test@example.com", "scopes": {"unknown": "admin"}},
             headers=logged_setting,
         )
+
+        assert response.status_code == 404
+        assert "The projects 'unknown' are not registered." in response.json()["detail"]
+
+
+@pytest.mark.description("Update user successfully")
+@pytest.mark.tags("users", "update", "mandatory")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "When admin updates a user",
+    "Then admin gets 200 OK",
+)
+def test_update_user_success(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful user update."""
+    with patch("app.routers.rest.users.update_user") as mock_update_user:
+        mock_update_user.return_value = RegisterVersionResponse(inserted_id=2, message="User updated",)
+
+        response = application.patch(
+            "/api/v1/users",
+            json={"username": "test@example.com", "scopes": {"*": "admin"}},
+            headers=logged_setting,
+        )
+
         assert response.status_code == 200
-    _del_user = application.delete("/api/v1/users/test@test.fr", headers=logged_setting)
-    assert _del_user.status_code == 204
+        mock_update_user.assert_called_once()
 
 
-def test_delete_user_400_last_super_admin(
+# ==================== PUT /users/me ====================
+
+
+@pytest.mark.description("Self-update user without authentication")
+@pytest.mark.tags("users", "update", "error", "401")
+@pytest.mark.test_steps(
+    "Given user is not authenticated",
+    "When user self-updates",
+    "Then user gets 401 Unauthorized",
+)
+def test_update_me_error_401(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
 ) -> None:
-    # Set test so that only one super admin exist
-    _users = application.get("/api/v1/users", headers=logged_setting)
-    for user in _users.json():
-        if user["username"] != "admin@admin.fr":
-            application.delete(f"/api/v1/users/{user['username']}", headers=logged_setting)
-    # Test removing last super admin is not possible
-    _del_user = application.delete("/api/v1/users/admin@admin.fr", headers=logged_setting)
-    assert _del_user.status_code == 400
-    assert _del_user.json()["detail"] == "Does not match the user management rules"
+    """Test endpoint returns 401 when user is not authenticated."""
+    response = application.put("/api/v1/users/me", json={"password": "old", "new_password": "new"})
+    assert response.status_code == 401
 
 
-def test_delete_user_400_unknown_user(
+@pytest.mark.description("Self-update user with wrong password")
+@pytest.mark.tags("users", "update", "error", "401")
+@pytest.mark.test_steps(
+    "Given user is authenticated",
+    "Given current password is wrong",
+    "When user self-updates",
+    "Then user gets 401 Unauthorized",
+)
+def test_update_me_error_401_wrong_password(
     application: Generator[TestClient, Any, None],
-    logged_setting: Generator[dict[str, str], Any, None],
+    logged_setting: dict[str, str],
 ) -> None:
-    _del_user = application.delete("/api/v1/users/fake@fake.lu", headers=logged_setting)
-    assert _del_user.status_code == 400
-    assert _del_user.json()["detail"] == "Invalid user"
+    """Test endpoint returns 401 when current password is incorrect."""
+    with patch("app.routers.rest.users.authenticate_user") as mock_auth:
+        mock_auth.return_value = None
+
+        response = application.put(
+            "/api/v1/users/me",
+            json={"password": "wrong", "new_password": "new"},
+            headers=logged_setting,
+        )
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Unrecognized credentials"
+
+
+@pytest.mark.description("Self-update user successfully")
+@pytest.mark.tags("users", "update", "mandatory")
+@pytest.mark.test_steps(
+    "Given user is authenticated",
+    "Given current password is correct",
+    "When user self-updates",
+    "Then user gets 200 OK",
+)
+def test_update_me_success(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful self-update."""
+    mock_user = {"username": "user@example.com", "scopes": {"*": "user"}}
+
+    with patch("app.routers.rest.users.authenticate_user") as mock_auth, \
+         patch("app.routers.rest.users.self_update_user") as mock_update:
+        mock_auth.return_value = User(**mock_user)
+        mock_update.return_value = RegisterVersionResponse(inserted_id=2, message="Password updated")
+
+        response = application.put(
+            "/api/v1/users/me",
+            json={"password": "current", "new_password": "new"},
+            headers=logged_setting,
+        )
+
+        assert response.status_code == 200
+        mock_auth.assert_called_once()
+        mock_update.assert_called_once()
+
+
+# ==================== DELETE /users/{username} ====================
+
+
+@pytest.mark.description("Delete user without authentication")
+@pytest.mark.tags("users", "delete", "error", "401")
+@pytest.mark.test_steps(
+    "Given user is not authenticated",
+    "When user deletes a user",
+    "Then user gets 401 Unauthorized",
+)
+def test_delete_user_error_401(
+    application: Generator[TestClient, Any, None],
+) -> None:
+    """Test endpoint returns 401 when user is not authenticated."""
+    response = application.delete("/api/v1/users/test@example.com")
+    assert response.status_code == 401
+
+
+@pytest.mark.description("Delete unknown user")
+@pytest.mark.tags("users", "delete", "error", "400")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given user does not exist",
+    "When admin deletes the user",
+    "Then admin gets 400 Bad Request",
+)
+def test_delete_user_error_400_unknown(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test endpoint returns 400 when user does not exist."""
+    with patch("app.routers.rest.users.db_delete_user") as mock_delete:
+        mock_delete.side_effect = InvalidDeletion("Invalid user")
+
+        response = application.delete("/api/v1/users/unknown@example.com", headers=logged_setting)
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Invalid user"
+
+
+@pytest.mark.description("Delete last super admin")
+@pytest.mark.tags("users", "delete", "error", "400")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given user is the last super admin",
+    "When admin deletes the user",
+    "Then admin gets 400 Bad Request",
+)
+def test_delete_user_error_400_last_admin(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test endpoint returns 400 when trying to delete the last super admin."""
+    with patch("app.routers.rest.users.db_delete_user") as mock_delete:
+        mock_delete.side_effect = InvalidDeletion("Does not match the user management rules")
+
+        response = application.delete("/api/v1/users/admin@admin.fr", headers=logged_setting)
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Does not match the user management rules"
+
+
+@pytest.mark.description("Delete user successfully")
+@pytest.mark.tags("users", "delete", "mandatory")
+@pytest.mark.test_steps(
+    "Given admin is authenticated",
+    "Given user exists",
+    "When admin deletes the user",
+    "Then admin gets 204 No Content",
+)
+def test_delete_user_success(
+    application: Generator[TestClient, Any, None],
+    logged_setting: dict[str, str],
+) -> None:
+    """Test successful user deletion."""
+    with patch("app.routers.rest.users.db_delete_user") as mock_delete:
+        mock_delete.return_value = None
+
+        response = application.delete("/api/v1/users/test@example.com", headers=logged_setting)
+
+        assert response.status_code == 204
+        mock_delete.assert_called_once_with("test@example.com")

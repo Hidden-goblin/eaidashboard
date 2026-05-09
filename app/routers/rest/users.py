@@ -17,7 +17,7 @@ from app.database.postgre.pg_users import (
     update_user,
 )
 from app.database.utils.object_existence import if_error_raise_http
-from app.schema.error_code import ErrorMessage
+from app.schema.error_code import ErrorMessage, ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import UpdateMe, UpdateUser, User, UserLight
 
@@ -106,11 +106,12 @@ async def update_me(
             body.password,
         )
         if _user is None:
-            raise HTTPException(401, "Unrecognized credentials")
-        return self_update_user(username=user["username"], new_password=body.new_password)
+            _user = ApplicationError(error=ApplicationErrorCode.credential_not_recognised, message="Unrecognized credentials")
+        else:
+            _user = self_update_user(username=user["username"], new_password=body.new_password)
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
-
+    return if_error_raise_http(_user)
 
 @router.patch(
     "/users",
@@ -123,14 +124,14 @@ async def patch_user(
     user: User = Security(authorize_user, scopes=["admin"]),
 ) -> RegisterVersionResponse:
     try:
-        return update_user(body)
+        _response =  update_user(body)
     except IncorrectFieldsRequest as ifr:
         raise HTTPException(400, ", ".join(ifr.args)) from ifr
     except ProjectNotRegistered as pnr:
         raise HTTPException(404, ", ".join(pnr.args)) from pnr
     except Exception as exp:
         raise HTTPException(500, ", ".join(exp.args)) from exp
-
+    return if_error_raise_http(_response)
 
 @router.post(
     "/users",
