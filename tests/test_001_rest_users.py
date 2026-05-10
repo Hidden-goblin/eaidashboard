@@ -1,7 +1,7 @@
 # -*- Product under GNU GPL v3 -*-
 # -*- Author: E.Aivayan -*-
 from typing import Any, Generator, List
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -10,7 +10,6 @@ from app.app_exception import InvalidDeletion
 from app.schema.error_code import ApplicationError, ApplicationErrorCode
 from app.schema.project_schema import RegisterVersionResponse
 from app.schema.users import User
-
 
 # noinspection PyUnresolvedReferences
 
@@ -81,9 +80,7 @@ def test_get_users_success(
         assert response.status_code == 200
         assert response.json() == mock_users
         assert response.headers["X-total-count"] == "2"
-        mock_get_users.assert_called_once_with(
-            limit=10, skip=0, project_name="*", included=True
-        )
+        mock_get_users.assert_called_once_with(limit=10, skip=0, project_name="*", included=True)
 
 
 @pytest.mark.description("Retrieve all usernames successfully")
@@ -107,9 +104,7 @@ def test_get_users_list_success(
 
         assert response.status_code == 200
         assert response.json() == mock_usernames
-        mock_get_users.assert_called_once_with(
-            is_list=True, project_name="*", included=True
-        )
+        mock_get_users.assert_called_once_with(is_list=True, project_name="*", included=True)
 
 
 @pytest.mark.description("Retrieve users with custom parameters")
@@ -137,9 +132,7 @@ def test_get_users_with_parameters(
         assert response.status_code == 200
         assert response.json() == mock_users
         assert response.headers["X-total-count"] == "1"
-        mock_get_users.assert_called_once_with(
-            limit=5, skip=1, project_name="project1", included=False
-        )
+        mock_get_users.assert_called_once_with(limit=5, skip=1, project_name="project1", included=False)
 
 
 # ==================== GET /users/{username} ====================
@@ -175,10 +168,15 @@ def test_get_user_error_404(
 ) -> None:
     """Test endpoint returns 404 when user does not exist."""
     with patch("app.routers.rest.users.get_user") as mock_get_user:
-        mock_get_user.return_value = ApplicationError(error=ApplicationErrorCode.user_not_found,
-                                                      message="User not found",)
+        mock_get_user.return_value = ApplicationError(
+            error=ApplicationErrorCode.user_not_found,
+            message="User not found",
+        )
 
-        response = application.get("/api/v1/users/unknown@example.com", headers=logged_setting,)
+        response = application.get(
+            "/api/v1/users/unknown@example.com",
+            headers=logged_setting,
+        )
 
         assert response.status_code == 404
 
@@ -317,8 +315,9 @@ def test_create_user_error_404_unknown_project(
 ) -> None:
     """Test endpoint returns 404 when project in scopes does not exist."""
     with patch("app.routers.rest.users.create_user") as mock_create_user:
-        mock_create_user.return_value = ApplicationError(error=ApplicationErrorCode.project_not_registered,
-                                                         message="The projects 'unknown' are not registered.")
+        mock_create_user.return_value = ApplicationError(
+            error=ApplicationErrorCode.project_not_registered, message="The projects 'unknown' are not registered."
+        )
 
         response = application.post(
             "/api/v1/users",
@@ -344,8 +343,9 @@ def test_create_user_error_409_duplicate(
 ) -> None:
     """Test endpoint returns 409 when user already exists."""
     with patch("app.routers.rest.users.create_user") as mock_create_user:
-        mock_create_user.return_value = ApplicationError(error=ApplicationErrorCode.duplicate_element,
-                                                         message="User already exists")
+        mock_create_user.return_value = ApplicationError(
+            error=ApplicationErrorCode.duplicate_element, message="User already exists"
+        )
 
         response = application.post(
             "/api/v1/users",
@@ -414,9 +414,7 @@ def test_update_user_error_422_no_fields(
     logged_setting: dict[str, str],
 ) -> None:
     """Test endpoint returns 422 when neither password nor scopes are provided."""
-    response = application.patch(
-        "/api/v1/users", json={"username": "test@example.com"}, headers=logged_setting
-    )
+    response = application.patch("/api/v1/users", json={"username": "test@example.com"}, headers=logged_setting)
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body"]
     assert "UpdateUser must have at least one key of" in response.json()["detail"][0]["msg"]
@@ -436,8 +434,9 @@ def test_update_user_error_404_unknown_project(
 ) -> None:
     """Test endpoint returns 404 when project in scopes does not exist."""
     with patch("app.routers.rest.users.update_user") as mock_update_user:
-        mock_update_user.return_value = ApplicationError(error=ApplicationErrorCode.project_not_registered,
-                                                         message="The projects 'unknown' are not registered.")
+        mock_update_user.return_value = ApplicationError(
+            error=ApplicationErrorCode.project_not_registered, message="The projects 'unknown' are not registered."
+        )
 
         response = application.patch(
             "/api/v1/users",
@@ -462,7 +461,10 @@ def test_update_user_success(
 ) -> None:
     """Test successful user update."""
     with patch("app.routers.rest.users.update_user") as mock_update_user:
-        mock_update_user.return_value = RegisterVersionResponse(inserted_id=2, message="User updated",)
+        mock_update_user.return_value = RegisterVersionResponse(
+            inserted_id=2,
+            message="User updated",
+        )
 
         response = application.patch(
             "/api/v1/users",
@@ -533,8 +535,10 @@ def test_update_me_success(
     """Test successful self-update."""
     mock_user = {"username": "user@example.com", "scopes": {"*": "user"}}
 
-    with patch("app.routers.rest.users.authenticate_user") as mock_auth, \
-         patch("app.routers.rest.users.self_update_user") as mock_update:
+    with (
+        patch("app.routers.rest.users.authenticate_user") as mock_auth,
+        patch("app.routers.rest.users.self_update_user") as mock_update,
+    ):
         mock_auth.return_value = User(**mock_user)
         mock_update.return_value = RegisterVersionResponse(inserted_id=2, message="Password updated")
 

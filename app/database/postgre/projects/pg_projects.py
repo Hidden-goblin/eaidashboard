@@ -39,6 +39,7 @@ def validate_project_name(project_name: str) -> None:
             f"Project name '{project_name}' already exists. Please update the name so that project can be registered."
         )
 
+
 async def register_project(project_name: str) -> str:
     validate_project_name(project_name)
     register(project_name)

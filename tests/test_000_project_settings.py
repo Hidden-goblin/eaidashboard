@@ -1,9 +1,9 @@
+import re
 from unittest.mock import patch
 
 import pytest
-import re
 
-from app.app_exception import ProjectNameInvalid, DuplicateProject
+from app.app_exception import DuplicateProject, ProjectNameInvalid
 from app.database.postgre.projects.pg_projects import validate_project_name
 
 
@@ -104,8 +104,12 @@ def test_projects_invalid_raises_exception(project_name: str, error_message: str
 @pytest.mark.tags("projects", "create", "error")
 @pytest.mark.description("Cannot create duplicate project")
 def test_projects_duplicate_raises_exception() -> None:
-    with pytest.raises(DuplicateProject, match=re.escape(
-            "Project name 'test' already exists. Please update the name so that project can be registered."), ):
+    with pytest.raises(
+        DuplicateProject,
+        match=re.escape(
+            "Project name 'test' already exists. Please update the name so that project can be registered."
+        ),
+    ):
         with patch("app.database.postgre.projects.pg_projects.contains") as contains_mock:
             contains_mock.return_value = True
             validate_project_name("test")

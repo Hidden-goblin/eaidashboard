@@ -3,7 +3,6 @@
 from typing import Any, Callable, Generator
 from unittest.mock import AsyncMock, patch
 
-import jwt
 import pytest
 from starlette.testclient import TestClient
 
@@ -100,6 +99,7 @@ def test_log_out_error(
         # Assert
         assert response.status_code == 401
 
+
 @pytest.fixture
 def mock_oauth2_scheme(application: TestClient) -> Generator[str, None, None]:
     token = "test-token"
@@ -119,8 +119,8 @@ def mock_oauth2_scheme(application: TestClient) -> Generator[str, None, None]:
 @pytest.mark.description("Check success log out request")
 def test_log_out_success(
     application: Generator[TestClient, Any, None],
-        logged_setting : dict[str, str],
-        mock_oauth2_scheme:str,
+    logged_setting: dict[str, str],
+    mock_oauth2_scheme: str,
 ) -> None:
     with patch("app.routers.rest.auth.invalidate_token") as mock_invalidate_token:
         response = application.delete(
@@ -179,6 +179,7 @@ def test_project_list_missing_authentication(
     )
     assert response.status_code == 401, response.text
 
+
 @pytest.mark.path("/projects/management")
 @pytest.mark.test_steps(
     "Given 'admin' is logged in",
@@ -215,7 +216,11 @@ def test_create_projects(
 ) -> None:
     project_name: str = "test"
 
-    with patch("app.routers.rest.settings.settings.register_project", new_callable=AsyncMock, return_value=project_name) as rp:
+    with patch(
+        "app.routers.rest.settings.settings.register_project",
+        new_callable=AsyncMock,
+        return_value=project_name,
+    ):
         response = application.post(
             "/api/v1/settings/projects",
             json={"name": project_name},
@@ -225,15 +230,12 @@ def test_create_projects(
         assert Project(name=project_name).model_dump() == response.json(), response.text
 
 
-
-
 @pytest.mark.path("/projects/management")
 @pytest.mark.tags("projects", "create", "error", "409")
 @pytest.mark.test_steps(
     "Given 'admin' is log in",
     "Given 'admin' provide 'test' project name",
-    "Given 'test' project does exist"
-    "When 'admin' creates 'test' project",
+    "Given 'test' project does existWhen 'admin' creates 'test' project",
     "Then 'admin' gets '409' status code",
 )
 def test_create_projects_errors_409(
